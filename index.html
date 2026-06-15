@@ -3058,7 +3058,7 @@ function Configuracoes({polo, notify}){
 
   async function del(op){
     if(!confirm(`Excluir operador "${op.nome}"? Esta ação não pode ser desfeita.`)) return;
-    await sb.from('operadores').delete().eq('id',op.id);
+    await sb.from('operadores').eq('id',op.id).delete();
     setOps(prev=>prev.filter(o=>o.id!==op.id));
     notify('Operador removido','success');
   }
@@ -4331,7 +4331,8 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         const before = existing? existing.stock : 0;
         if(qty!==before) registrarMov(pid, {id, name:form.name.trim(), sku}, qty>before?'ajuste_positivo':'ajuste_negativo', before, qty-before, 'Gestão de Estoque','','Gestão');
       } else if(existing){
-        await sb.from('products').delete().eq('polo',pid).in('id',[String(existing.id)]);
+        const {error:delErr}=await sb.from('products').eq('polo',pid).in('id',[String(existing.id)]).delete();
+        if(delErr){ notify('Não foi possível remover o polo '+((POLOS[pid]&&POLOS[pid].sigla)||pid)+': '+delErr.message,'error'); }
       }
     }
     if(ups.length>0){ const {error}=await sb.from('products').upsert(ups); if(error){ notify('Erro ao salvar: '+error.message,'error'); return; } }
@@ -4343,7 +4344,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   async function deleteGroup(g){
     if(!confirm(`Excluir "${g.name}" de TODOS os polos? Esta ação não pode ser desfeita.`)) return;
     for(const pid of Object.keys(g.polos)){
-      await sb.from('products').delete().eq('polo',pid).in('id',[String(g.polos[pid].id)]);
+      await sb.from('products').eq('polo',pid).in('id',[String(g.polos[pid].id)]).delete();
     }
     notify('Produto removido','success');
     await load(); if(reloadProducts) reloadProducts();
@@ -5001,7 +5002,10 @@ const sb = {
       const opts = {method, headers};
       if(body!==undefined) opts.body = JSON.stringify(body);
       const res = await fetch(this._url(), opts);
-      if(this._head||method==='DELETE') return {data:null,error:null,count:0};
+      if(this._head||method==='DELETE'){
+        if(!res.ok){ let t=''; try{t=await res.text();}catch(e){} return {data:null, error:{message:t||res.statusText}, count:0}; }
+        return {data:null,error:null,count:0};
+      }
       const text = await res.text();
       let data = null;
       try{ data = text ? JSON.parse(text) : null; }catch(e){ data=null; }
@@ -5118,7 +5122,7 @@ function usePoloData(polo){
     const toDelete = products.filter(p=>!nextIds.has(String(p.id))).map(p=>String(p.id));
     let error=null;
     if(toUpsert.length>0){ const r=await sb.from('products').upsert(toUpsert.map(p=>prodToDB(p,polo))); error=r.error; }
-    if(toDelete.length>0){ await sb.from('products').delete().eq('polo',polo).in('id',toDelete); }
+    if(toDelete.length>0){ await sb.from('products').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
 
@@ -5145,7 +5149,7 @@ function usePoloData(polo){
     const toDelete = prev.filter(c=>!nextIds.has(String(c.id))).map(c=>String(c.id));
     let error=null;
     if(toUpsert.length>0){ const r=await sb.from('customers').upsert(toUpsert.map(c=>custToDB(c,polo))); error=r.error; }
-    if(toDelete.length>0){ await sb.from('customers').delete().eq('polo',polo).in('id',toDelete); }
+    if(toDelete.length>0){ await sb.from('customers').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
 
@@ -5154,7 +5158,7 @@ function usePoloData(polo){
     setCategoriesLocal(next);
     setSyncStatus('saving');
     const rows=next.map((name,i)=>({id:`${polo}-cat-${i}-${name.toLowerCase().replace(/\s+/g,'_')}`,polo,name}));
-    await sb.from('categories').delete().eq('polo',polo);
+    await sb.from('categories').eq('polo',polo).delete();
     const {error}=next.length>0 ? await sb.from('categories').insert(rows) : {error:null};
     flash(!error);
   }
@@ -5169,7 +5173,7 @@ function usePoloData(polo){
     const toDelete = encomendas.filter(e=>!nextIds.has(String(e.id))).map(e=>String(e.id));
     let error=null;
     if(toUpsert.length>0){ const r=await sb.from('encomendas').upsert(toUpsert.map(e=>encToDB(e,polo))); error=r.error; }
-    if(toDelete.length>0){ await sb.from('encomendas').delete().eq('polo',polo).in('id',toDelete); }
+    if(toDelete.length>0){ await sb.from('encomendas').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
 
@@ -5183,7 +5187,7 @@ function usePoloData(polo){
     const toDelete = orcamentos.filter(o=>!nextIds.has(String(o.id))).map(o=>String(o.id));
     let error=null;
     if(toUpsert.length>0){ const r=await sb.from('orcamentos').upsert(toUpsert.map(o=>orcToDB(o,polo))); error=r.error; }
-    if(toDelete.length>0){ await sb.from('orcamentos').delete().eq('polo',polo).in('id',toDelete); }
+    if(toDelete.length>0){ await sb.from('orcamentos').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
 
