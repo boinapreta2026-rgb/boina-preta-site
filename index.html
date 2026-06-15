@@ -4370,12 +4370,14 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     setTModal(false); await load(); if(reloadProducts) reloadProducts();
   }
 
-  const totalUnidades = rows.reduce((a,r)=>a+(r.stock||0),0);
+  const totalUnidades = (poloFilter==='Todos' ? rows : rows.filter(r=>r.polo===poloFilter)).reduce((a,r)=>a+(r.stock||0),0);
+  const catalogoCount = poloFilter==='Todos' ? Object.keys(groupsMap).length : Object.values(groupsMap).filter(g=>g.polos[poloFilter]).length;
+  const poloSigla = (POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter;
 
   return <div>
     <div className="stats-grid">
-      <div className="stat-card"><div className="stat-icon">🏷️</div><div className="stat-label">Produtos no Catálogo</div><div className="stat-value">{Object.keys(groupsMap).length}</div></div>
-      <div className="stat-card blue"><div className="stat-icon">📦</div><div className="stat-label">Unidades (todos os polos)</div><div className="stat-value">{totalUnidades}</div></div>
+      <div className="stat-card"><div className="stat-icon">🏷️</div><div className="stat-label">{poloFilter==='Todos'?'Produtos no Catálogo':'Produtos em '+poloSigla}</div><div className="stat-value">{catalogoCount}</div></div>
+      <div className="stat-card blue"><div className="stat-icon">📦</div><div className="stat-label">{poloFilter==='Todos'?'Unidades (todos os polos)':'Unidades · '+poloSigla}</div><div className="stat-value">{totalUnidades}</div></div>
       <div className="stat-card gold"><div className="stat-icon">🏪</div><div className="stat-label">Polos</div><div className="stat-value">{Object.keys(POLOS).length}</div></div>
     </div>
 
@@ -4414,11 +4416,13 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     <div className="card">
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar produto, SKU ou categoria..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table>
-        <thead><tr>{["Foto","Produto","SKU","Categoria","Preço","Estoque por polo","Total","Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
+        <thead><tr>{["Foto","Produto","SKU","Categoria","Preço","Estoque por polo",(poloFilter==='Todos'?'Total (todos)':('Estoque '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter))),"Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>
           {!groups.length&&<tr><td colSpan={8} style={{textAlign:'center',padding:28,color:'#bbb'}}>Nenhum produto cadastrado</td></tr>}
           {groups.map(g=>{
             const total=Object.values(g.polos).reduce((a,r)=>a+(r.stock||0),0);
+            const displayQty = poloFilter==='Todos' ? total : (g.polos[poloFilter]?(g.polos[poloFilter].stock||0):0);
+            const polosToShow = Object.keys(POLOS).filter(pid=> (poloFilter==='Todos' || pid===poloFilter) && g.polos[pid]);
             return <tr key={g.key}>
               <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#ccc"}}>SEM FOTO</span>}</div></td>
               <td><strong>{g.name}</strong></td>
@@ -4427,15 +4431,15 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(g.price)}</td>
               <td>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                  {Object.keys(POLOS).map(pid=>{
-                    const r=g.polos[pid]; if(!r) return null;
+                  {polosToShow.map(pid=>{
+                    const r=g.polos[pid];
                     const low=r.stock<=(r.minStock||5);
                     return <span key={pid} className="kb-pill" style={{background:r.stock===0?'#fde8e8':low?'#fff4e0':'#eef7ee',color:r.stock===0?'#cc2222':low?'#9a6a00':'#1a6e2e',border:'1px solid '+(r.stock===0?'#f3c2c2':low?'#f0d9a8':'#bfe3c2')}}>{POLOS[pid].sigla} {r.stock}</span>;
                   })}
-                  {Object.keys(g.polos).length===0&&<span style={{color:'#bbb',fontSize:10}}>—</span>}
+                  {polosToShow.length===0&&<span style={{color:'#bbb',fontSize:10}}>—</span>}
                 </div>
               </td>
-              <td style={{fontFamily:'Bebas Neue',fontSize:16}}>{total}</td>
+              <td style={{fontFamily:'Bebas Neue',fontSize:16}}>{displayQty}</td>
               <td><div className="flex gap-2">
                 <button className="btn btn-sm" title="Editar / quantidades" onClick={()=>openEdit(g)}>✏</button>
                 <button className="btn btn-sm" title="Transferir" onClick={()=>openTransfer(g)}>🔄</button>
