@@ -4807,7 +4807,10 @@ const ADMIN_PAGES=[
 function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,customers,setCustomers,categories,setCategories,orcamentos,setOrcamentos,encomendas,setEncomendas,reloadProducts,onLogout,notify,operador}){
   const role = operador?.role||'vendedor';
   const pages = ADMIN_PAGES.filter(p=>p.roles.includes(role));
-  const [page,setPage]=useState("dashboard");
+  const [page,setPage]=useState(()=>{
+    try{ const sp=localStorage.getItem('bp_admpage'); return (sp && ADMIN_PAGES.some(p=>p.id===sp && p.roles.includes(role))) ? sp : 'dashboard'; }catch(e){ return 'dashboard'; }
+  });
+  useEffect(()=>{ try{ localStorage.setItem('bp_admpage',page); }catch(e){} },[page]);
   const [sideOpen,setSideOpen]=useState(false);
   const [senhaModal,setSenhaModal]=useState(false);
   const secs=[...new Set(pages.map(p=>p.section))];
@@ -5070,6 +5073,14 @@ async function seedIfEmpty(polo){
   }
 }
 
+// ── cache local por polo (carregamento instantâneo + revalidação em 2º plano) ──
+function bpReadCache(polo){ try{ return JSON.parse(localStorage.getItem('bp_cache_'+polo)||'null'); }catch(e){ return null; } }
+function bpWriteCache(polo,data){
+  try{ localStorage.setItem('bp_cache_'+polo, JSON.stringify(data)); return; }catch(e){}
+  // fallback leve se estourar a cota (sem fotos, vendas recentes)
+  try{ localStorage.setItem('bp_cache_'+polo, JSON.stringify({...data, products:(data.products||[]).map(p=>({...p,photo:''})), sales:(data.sales||[]).slice(0,300)})); }catch(e){}
+}
+
 // ── hook principal por polo ───────────────────────────────────────────────────
 function usePoloData(polo){
   const [products,  setProductsLocal]  = useState([]);
@@ -5083,9 +5094,23 @@ function usePoloData(polo){
 
   useEffect(()=>{
     if(!polo) return;
-    setLoading(true);
+    let alive=true;
+    // 1) pinta na hora com o cache local (reload instantâneo)
+    const cached=bpReadCache(polo);
+    if(cached){
+      setProductsLocal(cached.products||[]);
+      setSalesLocal(cached.sales||[]);
+      setCustomersLocal(cached.customers||[]);
+      setCategoriesLocal(cached.categories||[]);
+      setEncomendasLocal(cached.encomendas||[]);
+      setOrcamentosLocal(cached.orcamentos||[]);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+    // 2) revalida em segundo plano a partir do Supabase
     (async()=>{
-      await seedIfEmpty(polo);
+      if(!cached) await seedIfEmpty(polo);
       const [p,s,c,cat,enc,orc] = await Promise.all([
         sb.from('products'  ).select('*').eq('polo',polo),
         sb.from('sales'     ).select('*').eq('polo',polo).order('ts',{ascending:false}),
@@ -5094,14 +5119,23 @@ function usePoloData(polo){
         sb.from('encomendas').select('*').eq('polo',polo).order('created_at',{ascending:false}),
         sb.from('orcamentos').select('*').eq('polo',polo).order('created_at',{ascending:false}),
       ]);
-      setProductsLocal  ((p.data||[]).map(prodFromDB));
-      setSalesLocal     ((s.data||[]).map(saleFromDB));
-      setCustomersLocal ((c.data||[]).map(custFromDB));
-      setCategoriesLocal((cat.data||[]).map(r=>r.name));
-      setEncomendasLocal((enc.data||[]).map(encFromDB));
-      setOrcamentosLocal((orc.data||[]).map(orcFromDB));
+      if(!alive) return;
+      const nproducts=(p.data||[]).map(prodFromDB);
+      const nsales=(s.data||[]).map(saleFromDB);
+      const ncustomers=(c.data||[]).map(custFromDB);
+      const ncategories=(cat.data||[]).map(r=>r.name);
+      const nencomendas=(enc.data||[]).map(encFromDB);
+      const norcamentos=(orc.data||[]).map(orcFromDB);
+      setProductsLocal(nproducts);
+      setSalesLocal(nsales);
+      setCustomersLocal(ncustomers);
+      setCategoriesLocal(ncategories);
+      setEncomendasLocal(nencomendas);
+      setOrcamentosLocal(norcamentos);
       setLoading(false);
+      bpWriteCache(polo,{products:nproducts,sales:nsales,customers:ncustomers,categories:ncategories,encomendas:nencomendas,orcamentos:norcamentos});
     })();
+    return ()=>{ alive=false; };
   },[polo]);
 
   // ── setters que sincronizam com Supabase ─────────────────────────────────────
@@ -5229,13 +5263,24 @@ function LoadingScreen({polo}){
 
 // ====== ROOT APP ======
 function App(){
-  const [polo,setPolo]=useState(null);
+  const [polo,setPolo]=useState(()=>{ try{return localStorage.getItem('bp_polo')||null;}catch(e){return null;} });
   const [notif,setNotif]=useState(null);
-  const [mode,setMode]=useState("store");
-  const [currentUser,setCurrentUser]=useState(null);
-  const [operador,setOperador]=useState(null);
+  const [currentUser,setCurrentUser]=useState(()=>{ try{return JSON.parse(localStorage.getItem('bp_user')||'null');}catch(e){return null;} });
+  const [operador,setOperador]=useState(()=>{ try{return JSON.parse(localStorage.getItem('bp_operador')||'null');}catch(e){return null;} });
+  const [mode,setMode]=useState(()=>{
+    try{
+      const op=JSON.parse(localStorage.getItem('bp_operador')||'null');
+      return (op && localStorage.getItem('bp_mode')==='admin') ? 'admin' : 'store';
+    }catch(e){ return 'store'; }
+  });
 
   const poloHook = usePoloData(polo);
+
+  // mantém a sessão ao recarregar a página
+  useEffect(()=>{ try{ polo?localStorage.setItem('bp_polo',polo):localStorage.removeItem('bp_polo'); }catch(e){} },[polo]);
+  useEffect(()=>{ try{ localStorage.setItem('bp_mode',mode); }catch(e){} },[mode]);
+  useEffect(()=>{ try{ currentUser?localStorage.setItem('bp_user',JSON.stringify(currentUser)):localStorage.removeItem('bp_user'); }catch(e){} },[currentUser]);
+  useEffect(()=>{ try{ operador?localStorage.setItem('bp_operador',JSON.stringify(operador)):localStorage.removeItem('bp_operador'); }catch(e){} },[operador]);
 
   function notify(msg,type="success"){setNotif({msg,type,key:Date.now()});}
   function handleLogin(user){setCurrentUser(user);setMode("store");}
