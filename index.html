@@ -4036,12 +4036,18 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
   );
 }
 
-function Encomendas({customers, products, encomendas, setEncomendas, sales, setSales, notify}){
+function Encomendas({customers, products, encomendas, setEncomendas, sales, setSales, polo, notify}){
   const [modal, setModal] = useState(false);
   const [editEnc, setEditEnc] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [prioFilter, setPrioFilter] = useState('Todos');
+  const [showArchived, setShowArchived] = useState(false);
+
+  // marca quando uma encomenda chegou a um estado final (para arquivar depois de 2 dias úteis)
+  useEffect(()=>{ encomendas.forEach(e=>{ if(isStatusFinal(e.status) && !bpGetTermTs(polo,e.id)) bpSetTermTs(polo,e.id,Date.now()); }); }, [encomendas]);
+  const encArquivadas = encomendas.filter(e=>estaArquivado(polo,e.id,e.status));
+  const encAtivas = encomendas.filter(e=>!estaArquivado(polo,e.id,e.status));
 
   const filtered = encomendas.filter(e =>
     (statusFilter==='Todos' || e.status===statusFilter) &&
@@ -4073,6 +4079,7 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
   function moveEnc(enc, newStatus){
     if(enc.status===newStatus) return;
     setEncomendas(prev=>prev.map(e=>e.id===enc.id?{...e, status:newStatus, historico:[...(e.historico||[]),{status:newStatus, data:new Date().toLocaleString('pt-BR'), user:'Kanban'}]}:e));
+    if(isStatusFinal(newStatus)){ if(!bpGetTermTs(polo,enc.id)) bpSetTermTs(polo,enc.id,Date.now()); } else { bpSetTermTs(polo,enc.id,0); }
     notify(`${enc.numero||'Encomenda'} → ${newStatus}`,'success');
   }
 
@@ -4106,15 +4113,16 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
           {['Todos','Normal','Alta','Urgente'].map(p=><button key={p} className={`btn btn-sm ${prioFilter===p?'btn-primary':''}`} onClick={()=>setPrioFilter(p)}>{p}</button>)}
         </div>
         <div className="flex gap-2 items-center">
+          <button className={`btn btn-sm ${showArchived?'btn-primary':''}`} onClick={()=>setShowArchived(a=>!a)}>{showArchived?'← Voltar ao quadro':`📁 Arquivadas (${encArquivadas.length})`}</button>
           <div className="search-box" style={{maxWidth:240,margin:0}}><span className="search-icon">🔍</span><input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
           <button className="btn btn-primary" onClick={()=>{setEditEnc(null);setModal(true);}}>+ Nova Encomenda</button>
         </div>
       </div>
-      <div className="kb-hint">🖱️ Arraste os cartões entre as colunas para mudar o status · clique para abrir os detalhes</div>
+      <div className="kb-hint">{showArchived?'📁 Arquivadas — entregues/cancelados há mais de 2 dias úteis':'🖱️ Arraste os cartões entre as colunas · clique para abrir os detalhes'}</div>
 
       <KanbanBoard
-        columns={ENC_STATUS.map(s=>({key:s,label:s,color:({'Novo Pedido':'#1a4e8e','Em Produção':'#996622','Aguardando Peças':'#888','Pronto para Retirada':'#1a6e2e','Entregue':'#444','Cancelado':'#cc2222'})[s]||'#888'}))}
-        items={encomendas.filter(e=>
+        columns={(showArchived?['Entregue','Cancelado']:ENC_STATUS).map(s=>({key:s,label:s,color:({'Novo Pedido':'#1a4e8e','Em Produção':'#996622','Aguardando Peças':'#888','Pronto para Retirada':'#1a6e2e','Entregue':'#444','Cancelado':'#cc2222'})[s]||'#888'}))}
+        items={(showArchived?encArquivadas:encAtivas).filter(e=>
           (prioFilter==='Todos'||e.prioridade===prioFilter) &&
           ((e.numero||'').toLowerCase().includes(search.toLowerCase()) || (e.cliente||'').toLowerCase().includes(search.toLowerCase()) || (e.tipo||'').toLowerCase().includes(search.toLowerCase()))
         )}
@@ -4216,6 +4224,15 @@ function isPagoOnline(payment){
   const pagarNaLoja = ["Pagar na Retirada","Integra Card","pagar na loja","Pagar na loja"];
   return !pagarNaLoja.some(p=>payment.toLowerCase().includes(p.toLowerCase()));
 }
+
+// ── Arquivamento de cartões finalizados (Entregue/Cancelado) após 2 dias úteis ──
+const ARQUIV_DIAS_UTEIS = 2;
+function bpTermKey(polo,id){ return 'bp_term_'+(polo||'')+'_'+id; }
+function bpGetTermTs(polo,id){ try{ const v=localStorage.getItem(bpTermKey(polo,id)); return v?(parseInt(v)||0):0; }catch(e){ return 0; } }
+function bpSetTermTs(polo,id,ts){ try{ if(ts) localStorage.setItem(bpTermKey(polo,id),String(ts)); else localStorage.removeItem(bpTermKey(polo,id)); }catch(e){} }
+function isStatusFinal(s){ return s==='Entregue' || s==='Cancelado'; }
+function diasUteisDesde(ts){ if(!ts) return 0; let c=0; const a=new Date(ts); a.setHours(0,0,0,0); const b=new Date(); b.setHours(0,0,0,0); const d=new Date(a); while(d<b){ d.setDate(d.getDate()+1); const w=d.getDay(); if(w!==0&&w!==6) c++; } return c; }
+function estaArquivado(polo,id,status){ return isStatusFinal(status) && diasUteisDesde(bpGetTermTs(polo,id))>=ARQUIV_DIAS_UTEIS; }
 
 // ====== KANBAN REUTILIZÁVEL (estilo Trello, arrastar e soltar) ======
 function KanbanBoard({columns, items, itemKey, itemStatus, renderCard, onMove, onCardClick}){
@@ -4544,6 +4561,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
+  const [showArchived, setShowArchived] = useState(false);
 
   const pedidosMap = {};
   sales.filter(s => s.type === 'online').forEach(s => {
@@ -4574,6 +4592,10 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
   });
 
   const pedidos = Object.values(pedidosMap).sort((a,b) => b.ts - a.ts);
+  // marca quando um pedido chegou a um estado final (para arquivar depois de 2 dias úteis)
+  useEffect(()=>{ pedidos.forEach(p=>{ if(isStatusFinal(p.status) && !bpGetTermTs(polo,p.id)) bpSetTermTs(polo,p.id,Date.now()); }); }, [sales]);
+  const pedidosArquivados = pedidos.filter(p=>estaArquivado(polo,p.id,p.status));
+  const pedidosAtivos = pedidos.filter(p=>!estaArquivado(polo,p.id,p.status));
 
   const filtered = pedidos.filter(p =>
     (statusFilter === 'Todos' || p.status === statusFilter) &&
@@ -4620,6 +4642,8 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
       }
       return s;
     }));
+    if(isStatusFinal(newStatus)){ if(!bpGetTermTs(polo,pedido.id)) bpSetTermTs(polo,pedido.id,Date.now()); }
+    else { bpSetTermTs(polo,pedido.id,0); }
     if(selected && selected.id === pedido.id) setSelected({...selected, status: newStatus});
     const extra = (willCancel && !wasCancelled) ? ' · estoque devolvido' : '';
     notify(`Pedido de ${pedido.customer} → ${newStatus}${extra}`, 'success');
@@ -4654,13 +4678,16 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
 
       {/* Busca + Kanban */}
       <div className="flex justify-between items-center mb-3" style={{flexWrap:'wrap',gap:8}}>
-        <div className="kb-hint">🖱️ Arraste os cartões entre as colunas para mudar o status · clique para ver detalhes</div>
-        <div className="search-box" style={{maxWidth:280,margin:0}}><span className="search-icon">🔍</span><input placeholder="Buscar por cliente..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="kb-hint">{showArchived?'📁 Arquivadas — entregues/cancelados há mais de 2 dias úteis':'🖱️ Arraste os cartões entre as colunas · clique para ver detalhes'}</div>
+        <div className="flex gap-2 items-center">
+          <button className={`btn btn-sm ${showArchived?'btn-primary':''}`} onClick={()=>setShowArchived(a=>!a)}>{showArchived?'← Voltar ao quadro':`📁 Arquivadas (${pedidosArquivados.length})`}</button>
+          <div className="search-box" style={{maxWidth:240,margin:0}}><span className="search-icon">🔍</span><input placeholder="Buscar por cliente..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        </div>
       </div>
 
       <KanbanBoard
-        columns={PEDIDO_STATUS.map(s=>({key:s,label:s,color:pipelineColors[s]||'#888'}))}
-        items={pedidos.filter(p=>p.customer.toLowerCase().includes(search.toLowerCase()))}
+        columns={(showArchived?['Entregue','Cancelado']:PEDIDO_STATUS).map(s=>({key:s,label:s,color:pipelineColors[s]||'#888'}))}
+        items={(showArchived?pedidosArquivados:pedidosAtivos).filter(p=>p.customer.toLowerCase().includes(search.toLowerCase()))}
         itemKey={p=>p.id}
         itemStatus={p=>p.status}
         onMove={(p,to)=>updateStatus(p,to)}
@@ -4900,7 +4927,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
         {page==="fechamento"&&<Fechamento sales={sales} notify={notify}/>}
         {page==="clientes"&&<Clientes customers={customers} setCustomers={setCustomers} notify={notify}/>}
         {page==="orcamentos"&&<Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} notify={notify}/>}
-        {page==="encomendas"&&<Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} notify={notify}/>}
+        {page==="encomendas"&&<Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/>}
         {page==="pedidos"&&<PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} notify={notify} customers={customers} polo={polo.id}/>}
         {page==="config"&&role==='dono'&&<Configuracoes polo={polo.id} notify={notify}/>}
         {page==="config"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#bbb'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,marginTop:6}}>Apenas o administrador pode gerenciar usuários</div></div>}
