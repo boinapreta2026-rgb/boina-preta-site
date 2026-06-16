@@ -4350,11 +4350,24 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   }
 
   async function deleteGroup(g){
-    if(!confirm(`Excluir "${g.name}" de TODOS os polos? Esta ação não pode ser desfeita.`)) return;
-    for(const pid of Object.keys(g.polos)){
-      await sb.from('products').eq('polo',pid).in('id',[String(g.polos[pid].id)]).delete();
+    if(poloFilter==='Todos'){
+      if(!confirm(`Excluir "${g.name}" de TODOS os polos? Esta ação não pode ser desfeita.`)) return;
+      let err=null;
+      for(const pid of Object.keys(g.polos)){
+        const {error}=await sb.from('products').eq('polo',pid).in('id',[String(g.polos[pid].id)]).delete();
+        if(error) err=error;
+      }
+      if(err){ notify('Erro ao remover: '+err.message,'error'); return; }
+      notify('Produto removido de todos os polos','success');
+    } else {
+      const r=g.polos[poloFilter];
+      const sigla=(POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter;
+      if(!r){ notify('Este produto não está no polo '+sigla,'error'); return; }
+      if(!confirm(`Remover "${g.name}" apenas do polo ${sigla}? Ele continuará disponível nos demais polos.`)) return;
+      const {error}=await sb.from('products').eq('polo',poloFilter).in('id',[String(r.id)]).delete();
+      if(error){ notify('Erro ao remover do polo '+sigla+': '+error.message,'error'); return; }
+      notify('Produto removido do polo '+sigla,'success');
     }
-    notify('Produto removido','success');
     await load(); if(reloadProducts) reloadProducts();
   }
 
@@ -4452,7 +4465,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <td><div className="flex gap-2">
                 <button className="btn btn-sm" title="Editar / quantidades" onClick={()=>openEdit(g)}>✏</button>
                 <button className="btn btn-sm" title="Transferir" onClick={()=>openTransfer(g)}>🔄</button>
-                <button className="btn btn-sm btn-danger" title="Excluir" onClick={()=>deleteGroup(g)}>🗑</button>
+                <button className="btn btn-sm btn-danger" title={poloFilter==='Todos'?'Excluir de todos os polos':('Remover do polo '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter))} onClick={()=>deleteGroup(g)}>🗑</button>
               </div></td>
             </tr>;
           })}
