@@ -4304,6 +4304,9 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   });
   lowAlerts.sort((a,b)=>a.stock-b.stock);
 
+  // Lista de categorias: une as cadastradas + as já usadas em qualquer produto (todos os polos)
+  const catOptions = Array.from(new Set([...(categories||[]), ...rows.map(r=>r.category)].map(c=>(c||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+
   function openNew(){
     setForm({base:'P'+Date.now(), name:'', sku:'', category:categories[0]||'', price:'', cost:'', minStock:5, photo:'', description:'', polos:{}});
     const sel={},qty={}; Object.keys(POLOS).forEach(pid=>{sel[pid]=false;qty[pid]='';});
@@ -4336,6 +4339,11 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
       }
     }
     if(ups.length>0){ const {error}=await sb.from('products').upsert(ups); if(error){ notify('Erro ao salvar: '+error.message,'error'); return; } }
+    // Categoria nova: registra para aparecer na lista nos próximos cadastros
+    const catNova=(form.category||'').trim();
+    if(catNova && setCategories && !(categories||[]).includes(catNova)){
+      setCategories(prev=>Array.from(new Set([...(prev||[]), catNova])));
+    }
     notify('Produto salvo!','success');
     setModal(false); setForm(null);
     await load(); if(reloadProducts) reloadProducts();
@@ -4459,9 +4467,15 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         <div className="form-group full"><label>Foto do Produto</label><PhotoUpload value={form.photo||""} onChange={v=>setForm({...form,photo:v})}/></div>
         <div className="form-group"><label>Nome *</label><input value={form.name||""} onChange={e=>setForm({...form,name:e.target.value})}/></div>
         <div className="form-group"><label>SKU</label><input value={form.sku||""} placeholder="(gerado se vazio)" onChange={e=>setForm({...form,sku:e.target.value})}/></div>
-        <div className="form-group"><label>Categoria</label>
-          <input list="ge-cats" value={form.category||""} onChange={e=>setForm({...form,category:e.target.value})}/>
-          <datalist id="ge-cats">{(categories||[]).map(c=><option key={c} value={c}/>)}</datalist>
+        <div className="form-group full"><label>Categoria</label>
+          <input list="ge-cats" placeholder="Escolha abaixo ou digite uma categoria nova" value={form.category||""} onChange={e=>setForm({...form,category:e.target.value})}/>
+          <datalist id="ge-cats">{catOptions.map(c=><option key={c} value={c}/>)}</datalist>
+          {catOptions.length>0 && <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
+            {catOptions.map(c=>(
+              <span key={c} onClick={()=>setForm({...form,category:c})} className={`ge-polochip ${form.category===c?'on':''}`}>{c}</span>
+            ))}
+          </div>}
+          {form.category && form.category.trim() && !catOptions.includes(form.category.trim()) && <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#1a6e2e',marginTop:6}}>+ Nova categoria "{form.category.trim()}" será criada ao salvar</div>}
         </div>
         <div className="form-group"><label>Preço Venda *</label><input type="number" step="0.01" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></div>
         <div className="form-group"><label>Custo</label><input type="number" step="0.01" value={form.cost} onChange={e=>setForm({...form,cost:e.target.value})}/></div>
