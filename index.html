@@ -529,6 +529,16 @@ const ADMIN_PASS = "admin123";
 
 function getWeekNum(d){const s=new Date(d.getFullYear(),0,1);return Math.ceil(((d-s)/86400000+s.getDay()+1)/7);}
 function fmt(v){return "R$"+parseFloat(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
+// ====== ANO / PERÍODO ======
+// Extrai o ano de uma venda a partir do timestamp ou da data DD/MM/AAAA
+function saleYear(s){
+  if(!s) return null;
+  if(s.ts){ const d=new Date(Number(s.ts)); if(!isNaN(d.getTime())) return d.getFullYear(); }
+  if(s.date && /\d{2}\/\d{2}\/\d{4}/.test(s.date)) return parseInt(String(s.date).slice(6,10));
+  return null;
+}
+// Venda pertence ao ano informado? (registros antigos sem data entram como do ano corrente)
+function isSaleOfYear(s, year){ const y=saleYear(s); return y===null ? true : y===year; }
 function genSales(){
   const s=[];let id=1;
   for(let m=0;m<12;m++){const n=Math.floor(Math.random()*12)+4;for(let i=0;i<n;i++){const p=INIT_PRODS[Math.floor(Math.random()*INIT_PRODS.length)];const qty=Math.floor(Math.random()*3)+1;const day=Math.floor(Math.random()*28)+1;const dt=new Date(2025,m,day);s.push({id:id++,productId:p.id,productName:p.name,qty,unitPrice:p.price,total:parseFloat((p.price*qty).toFixed(2)),cost:parseFloat((p.cost*qty).toFixed(2)),month:m,week:getWeekNum(dt),date:`${String(day).padStart(2,"0")}/${String(m+1).padStart(2,"0")}/2025`,ts:dt.getTime(),payment:PMTS[Math.floor(Math.random()*PMTS.length)],type:Math.random()>.3?"loja":"online",status:Math.random()>.1?"Concluído":"Pendente",customer:["Ana Lima","Carlos Souza","Marina Costa","Pedro Alves"][Math.floor(Math.random()*4)]});}}
@@ -536,6 +546,250 @@ function genSales(){
 }
 
 // ====== SHARED UTILS ======
+// Busca cliente por id de forma segura (os ids vêm do banco como TEXTO)
+function findCustomerById(customers, id){
+  if(id===null||id===undefined||id==='') return null;
+  return (customers||[]).find(c=>String(c.id)===String(id)) || null;
+}
+// Busca cliente pelo nome exato (case-insensitive)
+function findCustomerByName(customers, nome){
+  const n=String(nome||'').trim().toLowerCase();
+  if(!n) return null;
+  return (customers||[]).find(c=>String(c.name||'').trim().toLowerCase()===n) || null;
+}
+// Telefone só com dígitos, com DDI 55
+function waPhone(phone){
+  const d=String(phone||'').replace(/\D/g,'');
+  if(!d) return '';
+  return d.startsWith('55') ? d : '55'+d;
+}
+
+// ====== SELETOR DE CLIENTE (reutilizável) ======
+// Combina digitação livre com seleção de cliente já cadastrado.
+function ClientePicker({customers, value, onChange, onPick, label='Cliente', placeholder='Digite ou selecione um cliente', allowFree=true, required=false}){
+  const listId = useRef('cli-dl-'+Math.random().toString(36).slice(2,9)).current;
+  const [q,setQ]=useState(value||'');
+  useEffect(()=>{ setQ(value||''); },[value]);
+  const matched = findCustomerByName(customers, q);
+  const ordenados = [...(customers||[])].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+  function handle(v){
+    setQ(v);
+    const c = findCustomerByName(customers, v);
+    if(onChange) onChange(v, c);
+    if(c && onPick) onPick(c);
+  }
+  return <div className="form-group">
+    <label>{label}{required?' *':''}</label>
+    <input list={listId} value={q} placeholder={placeholder}
+      onChange={e=>handle(e.target.value)}
+      style={matched?{borderColor:'#1a6e2e'}:{}}/>
+    <datalist id={listId}>
+      {ordenados.map(c=>(
+        <option key={c.id} value={c.name}>
+          {[c.phone, c.school].filter(Boolean).join(' · ')}
+        </option>
+      ))}
+    </datalist>
+    {matched ? (
+      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5,flexWrap:'wrap'}}>
+        <span style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #bfe3c2',borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1}}>✓ CLIENTE CADASTRADO</span>
+        <span style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#888',letterSpacing:1}}>
+          {[matched.phone, matched.school].filter(Boolean).join(' · ')||'sem telefone'}
+        </span>
+        <button type="button" onClick={()=>handle('')} style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,cursor:'pointer',padding:0}}>limpar</button>
+      </div>
+    ) : (q.trim() && allowFree ? (
+      <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:5}}>Cliente avulso (não cadastrado)</div>
+    ) : null)}
+  </div>;
+}
+
+// ====== PAGAMENTO MÚLTIPLO (split) ======
+const PGTO_MULTIPLO = 'Múltiplo';
+function r2(v){ return Math.round((parseFloat(v)||0)*100)/100; }
+// Remove linhas vazias e normaliza valores
+function splitsLimpos(splits){
+  return (splits||[]).filter(s=>s&&s.tipo&&r2(s.valor)>0).map(s=>({tipo:s.tipo, valor:r2(s.valor)}));
+}
+function somaSplits(splits){ return r2((splits||[]).reduce((a,s)=>a+(parseFloat(s.valor)||0),0)); }
+// Valida o rateio contra o total da venda. Retorna mensagem de erro ou null.
+function validarSplits(total, splits){
+  const lim=splitsLimpos(splits);
+  if(lim.length===0) return 'Informe ao menos uma forma de pagamento com valor';
+  const soma=somaSplits(lim), t=r2(total);
+  const temDinheiro=lim.some(s=>s.tipo==='Dinheiro');
+  if(soma<t-0.005) return `Faltam ${fmt(t-soma)} para fechar o total de ${fmt(t)}`;
+  // sobra só é aceita em dinheiro (vira troco)
+  if(soma>t+0.005 && !temDinheiro) return `Valor informado (${fmt(soma)}) excede o total (${fmt(t)})`;
+  return null;
+}
+// Troco quando o excedente é em dinheiro
+function trocoSplits(total, splits){
+  const s=somaSplits(splitsLimpos(splits)), t=r2(total);
+  return s>t ? r2(s-t) : 0;
+}
+// Distribui o valor de cada forma de pagamento entre os itens da venda,
+// para que o relatório por forma de pagamento continue somando corretamente.
+function ratearPagamentos(payments, itemTotals){
+  const n=(itemTotals||[]).length;
+  const out=Array.from({length:n},()=>[]);
+  const totalGeral=r2((itemTotals||[]).reduce((a,b)=>a+(parseFloat(b)||0),0));
+  if(!payments||!payments.length||n===0||totalGeral<=0) return out;
+  payments.forEach(p=>{
+    const v=r2(p.valor); let acc=0;
+    itemTotals.forEach((it,i)=>{
+      const parte = (i===n-1) ? r2(v-acc) : r2(v*(parseFloat(it)||0)/totalGeral);
+      if(i<n-1) acc=r2(acc+parte);
+      if(parte!==0) out[i].push({tipo:p.tipo, valor:parte});
+    });
+  });
+  return out;
+}
+// Normaliza o campo payments para gravar/ler do banco (jsonb) — sempre array ou null
+function normPayments(p){
+  if(!p) return null;
+  let arr=p;
+  if(typeof p==='string'){ try{ arr=JSON.parse(p); }catch(e){ return null; } }
+  if(!Array.isArray(arr)||arr.length===0) return null;
+  const out=arr.filter(x=>x&&x.tipo).map(x=>({tipo:String(x.tipo), valor:r2(x.valor)}));
+  return out.length?out:null;
+}
+// Retorna as parcelas de pagamento de uma venda (ou null se pagamento único)
+function salePayments(s){
+  if(!s) return null;
+  const p=s.payments;
+  if(Array.isArray(p)&&p.length) return p;
+  if(typeof p==='string'&&p.trim()){ try{ const j=JSON.parse(p); return Array.isArray(j)&&j.length?j:null; }catch(e){ return null; } }
+  return null;
+}
+// Descrição do pagamento pronta para exibir
+function paymentLabel(s){
+  const ps=salePayments(s);
+  if(ps) return ps.map(x=>`${x.tipo} ${fmt(x.valor)}`).join(' + ');
+  return s?.payment||'—';
+}
+
+function PagamentoMultiplo({total, payment, setPayment, splits, setSplits, multi, setMulti, label='Pagamento'}){
+  const lim=splitsLimpos(splits);
+  const soma=somaSplits(splits), t=r2(total);
+  const falta=r2(t-soma), troco=soma>t?r2(soma-t):0;
+  function setLinha(i,campo,valor){ setSplits(splits.map((s,idx)=>idx===i?{...s,[campo]:valor}:s)); }
+  function addLinha(){
+    const usados=splits.map(s=>s.tipo);
+    const proximo=PMTS.find(p=>!usados.includes(p))||PMTS[0];
+    const resto=r2(t-soma);
+    setSplits([...splits,{tipo:proximo, valor: resto>0?String(resto.toFixed(2)):''}]);
+  }
+  function delLinha(i){ setSplits(splits.filter((_,idx)=>idx!==i)); }
+  function ligarMulti(){
+    setMulti(true);
+    if(!splits||splits.length===0) setSplits([{tipo:payment||PMTS[0], valor: t>0?String(t.toFixed(2)):''}]);
+  }
+  return <div className="mb-2">
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
+      <label style={{margin:0}}>{label}</label>
+      <button type="button" onClick={()=>multi?setMulti(false):ligarMulti()}
+        style={{background:'none',border:'1px solid '+(multi?'#1a6e2e':'#ccc'),borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:multi?'#1a6e2e':'#777',cursor:'pointer',textTransform:'uppercase'}}>
+        {multi?'✓ Dividido':'⊞ Dividir pagamento'}
+      </button>
+    </div>
+    {!multi ? (
+      <select value={payment} onChange={e=>setPayment(e.target.value)}>{PMTS.map(p=><option key={p}>{p}</option>)}</select>
+    ) : (
+      <div style={{border:'1px solid #e0e0e0',borderRadius:4,padding:10,background:'#fafafa'}}>
+        {splits.map((s,i)=>(
+          <div key={i} style={{display:'flex',gap:6,alignItems:'center',marginBottom:6}}>
+            <select value={s.tipo} onChange={e=>setLinha(i,'tipo',e.target.value)} style={{flex:1,minWidth:0}}>
+              {PMTS.map(p=><option key={p}>{p}</option>)}
+            </select>
+            <input type="number" step="0.01" min="0" placeholder="0,00" value={s.valor}
+              onChange={e=>setLinha(i,'valor',e.target.value)} style={{width:96}}/>
+            <button type="button" onClick={()=>delLinha(i)} title="Remover"
+              style={{background:'none',border:'1px solid #e0c0c0',color:'#cc2222',borderRadius:3,width:28,height:28,cursor:'pointer',flexShrink:0}}>✕</button>
+          </div>
+        ))}
+        <button type="button" onClick={addLinha}
+          style={{background:'none',border:'1px dashed #bbb',borderRadius:3,padding:'5px 10px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#666',cursor:'pointer',width:'100%',textTransform:'uppercase'}}>
+          + Adicionar forma de pagamento
+        </button>
+        <div style={{marginTop:9,paddingTop:8,borderTop:'1px solid #e8e8e8',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1}}>
+          <div style={{display:'flex',justifyContent:'space-between',color:'#666'}}><span>TOTAL DA VENDA</span><span>{fmt(t)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',color:'#666'}}><span>INFORMADO</span><span>{fmt(soma)}</span></div>
+          {falta>0.005 && <div style={{display:'flex',justifyContent:'space-between',color:'#cc2222',fontWeight:700}}><span>FALTA</span><span>{fmt(falta)}</span></div>}
+          {troco>0.005 && <div style={{display:'flex',justifyContent:'space-between',color:'#1a6e2e',fontWeight:700}}><span>TROCO</span><span>{fmt(troco)}</span></div>}
+          {Math.abs(falta)<=0.005 && <div style={{color:'#1a6e2e',fontWeight:700,textAlign:'right'}}>✓ PAGAMENTO FECHADO</div>}
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+// ====== COMPROVANTE POR WHATSAPP ======
+// Monta o texto do comprovante da venda finalizada
+function montarComprovanteWA(venda, poloId){
+  const loja = (POLOS[poloId] && POLOS[poloId].nome) || '';
+  const linhas = (venda.cart||[]).map(i=>`• ${i.name} — ${i.qty}x ${fmt(i.price)} = ${fmt(i.price*i.qty)}`).join('\n');
+  const pgto = (venda.payments&&venda.payments.length)
+    ? venda.payments.map(p=>`   ${p.tipo}: ${fmt(p.valor)}`).join('\n')
+    : `   ${venda.payment}`;
+  return [
+    '*BOINA PRETA* — Comprovante de Compra',
+    loja?`_${loja}_`:'',
+    '',
+    venda.orderNum?`*Pedido:* ${venda.orderNum}`:'',
+    `*Data:* ${venda.date}`,
+    `*Cliente:* ${venda.customer}`,
+    '',
+    '*Itens:*',
+    linhas,
+    '',
+    `*TOTAL: ${fmt(venda.total)}*`,
+    '',
+    '*Pagamento:*',
+    pgto,
+    venda.troco>0?`*Troco:* ${fmt(venda.troco)}`:'',
+    '',
+    'Obrigado pela preferência! 🙏',
+    '_Boina Preta — Shopping Tático Militar_'
+  ].filter(l=>l!=='').join('\n');
+}
+
+function EnviarComprovanteWA({venda, polo, onClose, notify}){
+  const sugerido = venda?.customerObj?.phone || venda?.customerObj?.parentPhone || '';
+  const [phone,setPhone]=useState(sugerido);
+  const texto = montarComprovanteWA(venda, polo);
+  function enviar(){
+    const p = waPhone(phone);
+    if(p.length < 12){ notify('Informe um telefone válido com DDD','error'); return; }
+    window.open(`https://wa.me/${p}?text=${encodeURIComponent(texto)}`,'_blank');
+    notify('WhatsApp aberto com o comprovante','success');
+    onClose();
+  }
+  function copiar(){
+    try{
+      navigator.clipboard.writeText(texto);
+      notify('Comprovante copiado','success');
+    }catch(e){ notify('Não foi possível copiar','error'); }
+  }
+  return <Modal title="📱 Enviar comprovante por WhatsApp" onClose={onClose}
+    actions={[
+      <button key="c" className="btn" onClick={onClose}>Cancelar</button>,
+      <button key="cp" className="btn" onClick={copiar}>📋 Copiar texto</button>,
+      <button key="s" className="btn btn-primary" onClick={enviar}>Abrir WhatsApp →</button>
+    ]}>
+    <div className="form-group mb-2">
+      <label>Telefone do cliente (com DDD) *</label>
+      <input placeholder="(00) 00000-0000" value={phone} onChange={e=>setPhone(e.target.value)}
+        onKeyDown={e=>e.key==='Enter'&&enviar()}/>
+      {sugerido
+        ? <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#1a6e2e',letterSpacing:1,marginTop:4}}>✓ Telefone do cadastro de {String(venda.customer||'').split(' ')[0]}</div>
+        : <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:4}}>Cliente avulso — digite o número para enviar</div>}
+    </div>
+    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:5}}>Prévia da mensagem</div>
+    <pre style={{background:'#f7f7f7',border:'1px solid #e5e5e5',borderRadius:4,padding:'12px 14px',fontSize:11,lineHeight:1.55,whiteSpace:'pre-wrap',fontFamily:'Share Tech Mono',color:'#333',maxHeight:260,overflowY:'auto',margin:0}}>{texto}</pre>
+  </Modal>;
+}
+
 function Notif({msg,type,onClose}){useEffect(()=>{const t=setTimeout(onClose,3200);return()=>clearTimeout(t);},[]);return <div className={`notif ${type}`}>{msg}</div>;}
 function Modal({title,children,onClose,actions,wide}){
   return <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -696,9 +950,10 @@ function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, 
   const [qty, setQty] = React.useState(initialQty || 1);
   const [obs, setObs] = React.useState('');
 
+  const [clienteEmail, setClienteEmail] = React.useState(currentUser ? (currentUser.email||'') : '');
   function puxarCliente(id){
-    const cu = (customers||[]).find(x=>String(x.id)===String(id));
-    if(cu){ setCliente(cu.name); setClientePhone(cu.phone||''); setEscola(cu.school||''); }
+    const cu = findCustomerById(customers, id);
+    if(cu){ setCliente(cu.name||''); setClientePhone(cu.phone||cu.parentPhone||''); setEscola(cu.school||''); setClienteEmail(cu.email||cu.parentEmail||''); }
   }
 
   function save(){
@@ -710,7 +965,7 @@ function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, 
       tipo: 'Encomenda de Produto',
       status: 'Novo Pedido',
       prioridade: 'Normal',
-      cliente, clientePhone, clienteEmail: '', escola,
+      cliente, clientePhone, clienteEmail, escola,
       descricao: `Encomenda de ${qty}x ${product.name} (SKU: ${product.sku||'—'})`,
       medidas: {},
       items: [{ productId: product.id, name: product.name, sku: product.sku||'', price: product.price, qty }],
@@ -905,7 +1160,7 @@ function SaleDetailModal({sale, allSales, onClose}){
                     <td style={{fontSize:12}}><strong>{s.productName}</strong></td>
                     <td className="text-mono">{s.qty}</td>
                     <td style={{fontFamily:'Bebas Neue', fontSize:14, letterSpacing:1}}>R${s.total.toFixed(2)}</td>
-                    <td className="text-mono" style={{fontSize:9}}>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:s.payment}</td>
+                    <td className="text-mono" style={{fontSize:9}}>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:(salePayments(s)?<span title={paymentLabel(s)}>MÚLTIPLO</span>:s.payment)}</td>
                     <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
                     <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
                   </tr>
@@ -922,13 +1177,14 @@ function SaleDetailModal({sale, allSales, onClose}){
 // ====== ADMIN COMPONENTS ======
 function Dashboard({products,sales,role}){
   const [selectedSale,setSelectedSale]=useState(null);
-  const now=new Date(),cm=now.getMonth();
+  const now=new Date(),cm=now.getMonth(),ano=now.getFullYear();
   const PAID_ST=["Concluído","Pago — Separar","Em Separação","Pronto p/ Retirada","Entregue"];
-  const ms=MONTHS.map((_,i)=>{const s=sales.filter(x=>x.month===i&&PAID_ST.includes(x.status));return{total:s.reduce((a,b)=>a+b.total,0),count:s.length,profit:s.reduce((a,b)=>a+(b.total-b.cost),0)};});
+  const ms=MONTHS.map((_,i)=>{const s=sales.filter(x=>x.month===i&&isSaleOfYear(x,ano)&&PAID_ST.includes(x.status));return{total:s.reduce((a,b)=>a+b.total,0),count:s.length,profit:s.reduce((a,b)=>a+(b.total-b.cost),0)};});
   const tm=ms[cm],low=products.filter(p=>p.stock<=p.minStock),rev=sales.reduce((a,b)=>a+b.total,0),mx=Math.max(...ms.map(m=>m.total),1);
   const recent=[...sales].sort((a,b)=>b.id-a.id).slice(0,8);
   return <div>
-    {(role==='dono'||role==='gerente') && <CrossPoloStockAlert/>}
+    {/* Alerta multi-polo: só o administrador enxerga o estoque dos outros polos */}
+    {role==='dono' && <CrossPoloStockAlert/>}
     <StockAlertBanner products={products}/>
     <div className="stats-grid">
       <div className="stat-card green"><div className="stat-icon">💰</div><div className="stat-label">Vendas Este Mês</div><div className="stat-value">{fmt(tm.total)}</div><div className="stat-change">{tm.count} transações</div></div>
@@ -937,7 +1193,7 @@ function Dashboard({products,sales,role}){
       <div className="stat-card"><div className="stat-icon">📈</div><div className="stat-label">Receita Total</div><div className="stat-value">{fmt(rev)}</div><div className="stat-change">{sales.length} vendas</div></div>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 280px",gap:16}}>
-      <div className="card"><div className="card-title">Vendas 2025</div>
+      <div className="card"><div className="card-title">Vendas {ano}</div>
         <div className="chart-bar-wrap">{ms.map((m,i)=><div className="chart-bar-col" key={i}><div className="chart-val">{m.total>=1000?(m.total/1000).toFixed(1)+"k":m.total.toFixed(0)}</div><div className={`chart-bar${i===cm?" hi":""}`} style={{height:(m.total/mx*100)+"%"}}/><div className="chart-label">{MONTHS[i]}</div></div>)}</div>
       </div>
       <div className="card"><div className="card-title">⚠ Estoque Baixo</div>
@@ -956,7 +1212,7 @@ function Dashboard({products,sales,role}){
           <td style={{fontSize:11}}>{s.productName}</td>
           <td className="text-mono">{s.qty}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}}>{s.payment}</span>}</td>
+          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
           <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
           <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
         </tr>)}</tbody>
@@ -1596,10 +1852,19 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
   // calcula totais
   const vendas = salesHoje.filter(s=>s.type==='loja'&&s.status==='Concluído');
   const totalVendas = vendas.reduce((a,b)=>a+b.total,0);
-  const totalDinheiro = vendas.filter(s=>s.payment==='Dinheiro').reduce((a,b)=>a+b.total,0);
-  const totalPix = vendas.filter(s=>s.payment==='Pix').reduce((a,b)=>a+b.total,0);
-  const totalCartao = vendas.filter(s=>['Cartão Crédito','Cartão Débito'].includes(s.payment)).reduce((a,b)=>a+b.total,0);
-  const totalIntegra = vendas.filter(s=>s.payment==='Integra Card — Bolsa Uniforme').reduce((a,b)=>a+b.total,0);
+  // Soma por forma de pagamento — considera vendas com pagamento dividido
+  function totalPorForma(tipos){
+    const lista=Array.isArray(tipos)?tipos:[tipos];
+    return r2(vendas.reduce((a,s)=>{
+      const ps=salePayments(s);
+      if(ps) return a + ps.filter(p=>lista.includes(p.tipo)).reduce((x,p)=>x+(parseFloat(p.valor)||0),0);
+      return a + (lista.includes(s.payment) ? s.total : 0);
+    },0));
+  }
+  const totalDinheiro = totalPorForma('Dinheiro');
+  const totalPix = totalPorForma('Pix');
+  const totalCartao = totalPorForma(['Cartão Crédito','Cartão Débito']);
+  const totalIntegra = totalPorForma('Integra Card — Bolsa Uniforme');
   const sangrias = (caixa.movimentos||[]).filter(m=>m.tipo==='sangria').reduce((a,b)=>a+b.valor,0);
   const suprimentos = (caixa.movimentos||[]).filter(m=>m.tipo==='suprimento').reduce((a,b)=>a+b.valor,0);
   const saldoFinal = (caixa.abertura?.valor||0) + totalDinheiro + suprimentos - sangrias;
@@ -1675,7 +1940,7 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
 }
 
 // Gera um registro de venda a partir de uma encomenda paga (entra no caixa e no relatório do dia)
-function encSaleRecord({numero, customer, total, payment}){
+function encSaleRecord({numero, customer, total, payment, payments}){
   const now=new Date();
   return {
     id: Date.now()+Math.random(),
@@ -1690,6 +1955,7 @@ function encSaleRecord({numero, customer, total, payment}){
     date: now.toLocaleDateString('pt-BR'),
     ts: now.getTime(),
     payment: payment||'Dinheiro',
+    payments: normPayments(payments),
     type: 'loja',
     status: 'Concluído',
     customer: customer||'Consumidor Final',
@@ -1707,9 +1973,19 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
   const [quickEncModal,setQuickEncModal]=useState(null);
   const [postSaleEncItems,setPostSaleEncItems]=useState([]);
   const [confirmVenda,setConfirmVenda]=useState(false);
+  // cliente cadastrado selecionado (usado no envio do comprovante por WhatsApp)
+  const [customerObj,setCustomerObj]=useState(null);
+  // pagamento dividido em várias formas
+  const [multiPay,setMultiPay]=useState(false);
+  const [splits,setSplits]=useState([]);
+  // envio do comprovante por WhatsApp
+  const [waModal,setWaModal]=useState(false);
   const filtered=products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
   const total=cart.reduce((a,b)=>a+b.price*b.qty,0);
-  const troco=payment==="Dinheiro"&&paid?Math.max(0,parseFloat(paid)-total):0;
+  const troco=multiPay ? trocoSplits(total,splits) : (payment==="Dinheiro"&&paid?Math.max(0,parseFloat(paid)-total):0);
+  // Descrição e parcelas do pagamento conforme o modo escolhido
+  const pagamentoDesc = multiPay ? PGTO_MULTIPLO : payment;
+  const pagamentoParcelas = multiPay ? splitsLimpos(splits) : null;
   function add(p){
     if(p.stock===0){setOutOfStockModal(p);return;}
     const ex=cart.find(x=>x.id===p.id&&!x.isEncomenda);
@@ -1757,7 +2033,10 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
       if(p) setOutOfStockModal({...p,_overQty:stockErr.qty});
       return;
     }
-    if(payment==="Dinheiro" && paid && parseFloat(paid)<total){ notify("Valor recebido menor que o total","error"); return; }
+    if(multiPay){
+      const err=validarSplits(total,splits);
+      if(err){ notify(err,"error"); return; }
+    } else if(payment==="Dinheiro" && paid && parseFloat(paid)<total){ notify("Valor recebido menor que o total","error"); return; }
     setConfirmVenda(true);
   }
   function fin(){
@@ -1765,7 +2044,10 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     const regularItems = cart.filter(x=>!x.isEncomenda);
     const now=new Date(),date=now.toLocaleDateString("pt-BR");
     const caixaOrderNum="PDV-"+String(Date.now()).slice(-6);
-    const ns=regularItems.map(item=>({id:Date.now()+Math.random(),productId:item.id.toString().replace('enc_',''),productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment,type:"loja",status:"Concluído",customer:customer||"Consumidor Final",orderNum:caixaOrderNum,orderTs:now.getTime()}));
+    // Pagamento dividido: rateia cada forma entre os itens para o relatório fechar certo
+    const itemTotals=regularItems.map(item=>parseFloat((item.price*item.qty).toFixed(2)));
+    const rateio = pagamentoParcelas ? ratearPagamentos(pagamentoParcelas, itemTotals) : null;
+    const ns=regularItems.map((item,i)=>({id:Date.now()+Math.random(),productId:item.id.toString().replace('enc_',''),productName:item.name,qty:item.qty,unitPrice:item.price,total:itemTotals[i],cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:pagamentoDesc,payments:rateio?rateio[i]:null,type:"loja",status:"Concluído",customer:customer||"Consumidor Final",orderNum:caixaOrderNum,orderTs:now.getTime()}));
     setSales(prev=>[...prev,...ns]);
     setProducts(prev=>prev.map(p=>{const ci=regularItems.find(x=>x.id===p.id);return ci?{...p,stock:Math.max(0,p.stock-ci.qty)}:p;}));
     // registra movimentação de cada item vendido
@@ -1787,14 +2069,14 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
       const encSales=[];
       encCartItems.forEach(x=>{
         if(!sales.some(s=>s.orderNum===x.encNumero) && !encSales.some(s=>s.orderNum===x.encNumero)){
-          encSales.push(encSaleRecord({numero:x.encNumero, customer:customer||'Consumidor Final', total:parseFloat((x.price*x.qty).toFixed(2)), payment}));
+          encSales.push(encSaleRecord({numero:x.encNumero, customer:customer||'Consumidor Final', total:parseFloat((x.price*x.qty).toFixed(2)), payment:pagamentoDesc}));
         }
       });
       if(encSales.length>0) setSales(prev=>[...prev,...encSales]);
       notify(encNums.size+' encomenda(s) paga(s) e lançada(s) nas vendas','success');
     }
-    setDone({cart,total,payment,troco,customer:customer||"Consumidor Final",date});
-    setCart([]);setCustomer("");setPaid("");
+    setDone({cart,total,payment:pagamentoDesc,payments:pagamentoParcelas,troco,customer:customer||"Consumidor Final",customerObj,date,orderNum:caixaOrderNum,paid:multiPay?null:paid});
+    setCart([]);setCustomer("");setCustomerObj(null);setPaid("");setMultiPay(false);setSplits([]);
     if(outOfStockAfter.length>0){
       setPostSaleEncItems(outOfStockAfter);
     } else {
@@ -1826,16 +2108,25 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     <div className="receipt">
       <div style={{textAlign:"center",fontFamily:"Bebas Neue",fontSize:15,letterSpacing:4,marginBottom:4}}>BOINA PRETA</div>
       <div className="receipt-sep"/>
-      {[["Data",done.date],["Cliente",done.customer],["Pagamento",done.payment]].map(([l,v])=><div key={l} className="receipt-line"><span>{l}:</span><span>{v}</span></div>)}
+      {[["Data",done.date],["Cliente",done.customer],["Pagamento",done.payments&&done.payments.length?"Múltiplo":done.payment]].map(([l,v])=><div key={l} className="receipt-line"><span>{l}:</span><span>{v}</span></div>)}
       <div className="receipt-sep"/>
       {done.cart.map(item=><div key={item.id} className="receipt-line"><span>{item.name.substring(0,20)}</span><span>{item.qty}x {fmt(item.price)}</span></div>)}
       <div className="receipt-sep"/>
       <div className="receipt-line receipt-total"><span>TOTAL</span><span>{fmt(done.total)}</span></div>
+      {done.payments&&done.payments.length>0&&<>
+        <div className="receipt-sep"/>
+        {done.payments.map((p,i)=><div key={i} className="receipt-line"><span>{p.tipo}</span><span>{fmt(p.valor)}</span></div>)}
+      </>}
       {done.payment==="Integra Card — Bolsa Uniforme"&&<div className="receipt-line"><span>🟢 Integra Card</span><span>Bolsa Uniforme</span></div>}
       {done.troco>0&&<div className="receipt-line"><span>Troco:</span><span>{fmt(done.troco)}</span></div>}
     </div>
-    <div style={{textAlign:"center",marginTop:14}}><button className="btn btn-primary" onClick={()=>{setDone(null);setPostSaleEncItems([]);}}>Nova Venda</button></div>
-  </div></div>;
+    <div style={{display:'flex',gap:8,marginTop:14,flexWrap:'wrap',justifyContent:'center'}}>
+      <button className="btn" style={{color:'#1a6e2e',borderColor:'#1a6e2e'}} onClick={()=>setWaModal(true)}>📱 Enviar por WhatsApp</button>
+      <button className="btn btn-primary" onClick={()=>{setDone(null);setPostSaleEncItems([]);}}>Nova Venda</button>
+    </div>
+  </div>
+  {waModal&&<EnviarComprovanteWA venda={done} polo={polo} onClose={()=>setWaModal(false)} notify={notify}/>}
+  </div>;
 
   // Se caixa fechado, mostra tela de abertura
   if(caixa.status==='fechado') return <AberturaCaixaScreen polo={polo} operador={operador} onAbrir={(v,obs)=>{abrir(v,obs);notify('Caixa aberto com fundo de '+fmt(parseFloat(v)),'success');}}/>;
@@ -1843,7 +2134,12 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
   // Vendas em dinheiro do dia para calcular saldo
   const today=new Date().toLocaleDateString('pt-BR');
   const salesHoje=sales.filter(s=>s.date===today&&s.type==='loja'&&s.status==='Concluído');
-  const dinhHoje=salesHoje.filter(s=>s.payment==='Dinheiro').reduce((a,b)=>a+b.total,0);
+  // considera também a parcela em dinheiro das vendas com pagamento dividido
+  const dinhHoje=salesHoje.reduce((a,s)=>{
+    const ps=salePayments(s);
+    if(ps) return a + ps.filter(p=>p.tipo==='Dinheiro').reduce((x,p)=>x+(parseFloat(p.valor)||0),0);
+    return a + (s.payment==='Dinheiro' ? s.total : 0);
+  },0);
   const saldoCaixa=totalCaixa(dinhHoje);
 
   return <div>
@@ -1901,10 +2197,16 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
         </table></div>
       </div>
       <div style={{background:'#f9f9f9',border:'1px solid #e8e8e8',borderRadius:6,padding:'14px 18px'}}>
-        {[['Cliente',customer||'Consumidor Final'],['Pagamento',payment]].map(([l,v])=>(
+        {[['Cliente',customer||'Consumidor Final'],['Pagamento',multiPay?'Múltiplo ('+splitsLimpos(splits).length+' formas)':payment]].map(([l,v])=>(
           <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>{l}</span><span style={{fontWeight:600}}>{v}</span></div>
         ))}
-        {payment==="Dinheiro"&&paid&&<>
+        {multiPay&&splitsLimpos(splits).map((p,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0 3px 14px',fontSize:12}}><span style={{color:'#888'}}>↳ {p.tipo}</span><span style={{fontWeight:600}}>{fmt(p.valor)}</span></div>
+        ))}
+        {multiPay&&trocoSplits(total,splits)>0&&(
+          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(trocoSplits(total,splits))}</span></div>
+        )}
+        {!multiPay&&payment==="Dinheiro"&&paid&&<>
           <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Recebido</span><span style={{fontWeight:600}}>{fmt(parseFloat(paid)||0)}</span></div>
           <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(troco)}</span></div>
         </>}
@@ -1979,10 +2281,16 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
         </div>
       </div>)}
       <hr className="divider"/>
-      <div className="form-group mb-2"><label>Cliente</label><input placeholder="Nome (opcional)" value={customer} onChange={e=>setCustomer(e.target.value)}/></div>
-      <div className="form-group mb-2"><label>Pagamento</label><select value={payment} onChange={e=>setPayment(e.target.value)}>{PMTS.map(p=><option key={p}>{p}</option>)}</select></div>
-      {payment==="Integra Card — Bolsa Uniforme"&&<div className="integra-pill mb-2"><div style={{fontSize:22}}>🟢</div><div><div className="integra-pill-title">Integra Card</div><div className="integra-pill-sub">Bolsa Uniforme • Governo MG</div></div></div>}
-      {payment==="Dinheiro"&&<div className="form-group mb-2"><label>Valor Recebido</label><input type="number" step="0.01" value={paid} onChange={e=>setPaid(e.target.value)} placeholder="0,00"/>{paid&&<div className="text-mono" style={{fontSize:10,color:"#aaa",marginTop:3}}>Troco: {fmt(troco)}</div>}</div>}
+      {/* Cliente: digitação livre OU seleção de cliente já cadastrado */}
+      <div className="mb-2">
+        <ClientePicker customers={customers} value={customer}
+          label="Cliente" placeholder="Nome (opcional) ou selecione um cadastrado"
+          onChange={(v,c)=>{ setCustomer(v); setCustomerObj(c||null); }}/>
+      </div>
+      <PagamentoMultiplo total={total} payment={payment} setPayment={setPayment}
+        splits={splits} setSplits={setSplits} multi={multiPay} setMulti={setMultiPay}/>
+      {!multiPay&&payment==="Integra Card — Bolsa Uniforme"&&<div className="integra-pill mb-2"><div style={{fontSize:22}}>🟢</div><div><div className="integra-pill-title">Integra Card</div><div className="integra-pill-sub">Bolsa Uniforme • Governo MG</div></div></div>}
+      {!multiPay&&payment==="Dinheiro"&&<div className="form-group mb-2"><label>Valor Recebido</label><input type="number" step="0.01" value={paid} onChange={e=>setPaid(e.target.value)} placeholder="0,00"/>{paid&&<div className="text-mono" style={{fontSize:10,color:"#aaa",marginTop:3}}>Troco: {fmt(troco)}</div>}</div>}
       <hr className="divider"/>
       <div className="cart-total-row"><span className="cart-total-lbl">Total</span><span className="cart-total-val">{fmt(total)}</span></div>
       <button className="btn btn-primary w-full" style={{justifyContent:"center"}} onClick={abrirConfirmacao}>✓ Finalizar Venda</button>
@@ -2067,7 +2375,7 @@ function exportPDFVendas(sales, label, polo){
     <tbody>${sales.map(s=>`<tr>
       <td>${s.date}</td><td>${s.customer}</td><td>${s.productName}</td>
       <td style="text-align:center">${s.qty}</td><td><strong>R$${s.total.toFixed(2)}</strong></td>
-      <td style="font-size:9px">${s.payment==='Integra Card — Bolsa Uniforme'?'Integra Card':s.payment}</td>
+      <td style="font-size:9px">${s.payment==='Integra Card — Bolsa Uniforme'?'Integra Card':paymentLabel(s)}</td>
       <td><span class="tag ${saleCanal(s).cls}">${saleCanal(s).label}</span></td>
       <td><span class="tag ${s.status==='Concluído'?'tag-done':'tag-pend'}">${s.status}</span></td>
     </tr>`).join('')}</tbody></table>
@@ -2124,11 +2432,11 @@ function BtnExport({sales, label, polo}){
 function Vendas({sales, polo}){
   const [selectedSale,setSelectedSale]=useState(null);
   const [tab,setTab]=useState("mensal"),[month,setMonth]=useState(new Date().getMonth()),[search,setSearch]=useState(""),[type,setType]=useState("Todos");
-  const now=new Date(),todayStr=now.toLocaleDateString("pt-BR"),thisWeek=getWeekNum(now);
-  function get(){let s=sales;if(tab==="diario")s=s.filter(x=>x.date===todayStr);else if(tab==="semanal")s=s.filter(x=>x.week===thisWeek&&x.month===now.getMonth());else s=s.filter(x=>x.month===month);if(type!=="Todos")s=s.filter(x=>x.type===type);if(search)s=s.filter(x=>x.customer.toLowerCase().includes(search.toLowerCase())||x.productName.toLowerCase().includes(search.toLowerCase()));return s;}
+  const now=new Date(),todayStr=now.toLocaleDateString("pt-BR"),thisWeek=getWeekNum(now),ano=now.getFullYear();
+  function get(){let s=sales;if(tab==="diario")s=s.filter(x=>x.date===todayStr);else if(tab==="semanal")s=s.filter(x=>x.week===thisWeek&&x.month===now.getMonth()&&isSaleOfYear(x,ano));else s=s.filter(x=>x.month===month&&isSaleOfYear(x,ano));if(type!=="Todos")s=s.filter(x=>x.type===type);if(search)s=s.filter(x=>x.customer.toLowerCase().includes(search.toLowerCase())||x.productName.toLowerCase().includes(search.toLowerCase()));return s;}
   const f=get(),rev=f.reduce((a,b)=>a+b.total,0),profit=f.reduce((a,b)=>a+(b.total-b.cost),0);
   const top=Object.values(f.reduce((acc,s)=>{if(!acc[s.productName])acc[s.productName]={name:s.productName,qty:0,total:0};acc[s.productName].qty+=s.qty;acc[s.productName].total+=s.total;return acc;},{})).sort((a,b)=>b.total-a.total).slice(0,5);
-  const lbl=tab==="diario"?"Diário — "+todayStr:tab==="semanal"?"Semana "+thisWeek+" — "+MONTHS[now.getMonth()]+"/2025":MONTHS[month]+"/2025";
+  const lbl=tab==="diario"?"Diário — "+todayStr:tab==="semanal"?"Semana "+thisWeek+" — "+MONTHS[now.getMonth()]+"/"+ano:MONTHS[month]+"/"+ano;
   return <div>
     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'2px solid var(--border)',marginBottom:0}}>
       <div className="tabs" style={{border:'none',marginBottom:0,flex:1}}>{["diario","semanal","mensal"].map(t=><div key={t} className={`tab ${tab===t?"active":""}`} onClick={()=>setTab(t)}>{t==="diario"?"📅 Diário":t==="semanal"?"📆 Semanal":"📊 Mensal"}</div>)}</div>
@@ -2155,7 +2463,7 @@ function Vendas({sales, polo}){
             <td style={{fontSize:11}}>{s.productName}</td>
             <td className="text-mono">{s.qty}</td>
             <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-            <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}}>{s.payment}</span>}</td>
+            <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
             <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
             <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
           </tr>)}</tbody>
@@ -2178,13 +2486,13 @@ function Vendas({sales, polo}){
 function Fechamento({sales,notify}){
   const [selectedSale,setSelectedSale]=useState(null);
   const [tab,setTab]=useState("diario"),[month,setMonth]=useState(new Date().getMonth());
-  const now=new Date(),todayStr=now.toLocaleDateString("pt-BR"),thisWeek=getWeekNum(now);
+  const now=new Date(),todayStr=now.toLocaleDateString("pt-BR"),thisWeek=getWeekNum(now),ano=now.getFullYear();
   const PAID_STATUSES = ["Concluído","Pago — Separar","Em Separação","Pronto p/ Retirada","Entregue"];
   function get(){
     let s;
     if(tab==="diario") s=sales.filter(x=>x.date===todayStr);
-    else if(tab==="semanal") s=sales.filter(x=>x.week===thisWeek&&x.month===now.getMonth());
-    else s=sales.filter(x=>x.month===month);
+    else if(tab==="semanal") s=sales.filter(x=>x.week===thisWeek&&x.month===now.getMonth()&&isSaleOfYear(x,ano));
+    else s=sales.filter(x=>x.month===month&&isSaleOfYear(x,ano));
     return s;
   }
   function getPaid(){return get().filter(s=>PAID_STATUSES.includes(s.status));}
@@ -2193,10 +2501,16 @@ function Fechamento({sales,notify}){
   const msPending=ms.filter(s=>s.status==="Aguardando Pagamento");
   const pendingRevenue=msPending.reduce((a,b)=>a+b.total,0);
   const revenue=msPaid.reduce((a,b)=>a+b.total,0),cost=msPaid.reduce((a,b)=>a+b.cost,0),profit=revenue-cost;
-  const byPay=msPaid.reduce((acc,s)=>{acc[s.payment]=(acc[s.payment]||0)+s.total;return acc;},{});
+  // Pagamento dividido: soma cada forma separadamente no relatório
+  const byPay=msPaid.reduce((acc,s)=>{
+    const ps=salePayments(s);
+    if(ps){ ps.forEach(p=>{ acc[p.tipo]=r2((acc[p.tipo]||0)+(parseFloat(p.valor)||0)); }); }
+    else acc[s.payment]=r2((acc[s.payment]||0)+s.total);
+    return acc;
+  },{});
   const byT={loja:msPaid.filter(s=>s.type==="loja"&&!isEncSale(s)).reduce((a,b)=>a+b.total,0),online:msPaid.filter(s=>s.type==="online").reduce((a,b)=>a+b.total,0),encomenda:msPaid.filter(s=>isEncSale(s)).reduce((a,b)=>a+b.total,0)};
-  const lbl=tab==="diario"?"Hoje — "+todayStr:tab==="semanal"?"Semana "+thisWeek+" — "+MONTHS[now.getMonth()]+"/2025":MONTHS[month]+"/2025";
-  function print(){const w=window.open("","_blank");w.document.write(`<html><head><title>Fechamento ${lbl}</title><style>body{font-family:monospace;padding:40px;color:#000}h1{font-size:18px;margin-bottom:18px}h2{font-size:13px;margin:16px 0 8px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:7px;font-size:11px}</style></head><body><h1>🪖 BOINA PRETA — FECHAMENTO</h1><p><b>Período:</b> ${lbl}</p><p><b>Receita:</b> R$${revenue.toFixed(2)}</p><p><b>Custo:</b> R$${cost.toFixed(2)}</p><p><b>Lucro:</b> R$${profit.toFixed(2)}</p><p><b>Transações:</b> ${ms.length}</p><h2>Por Pagamento</h2><table><tr><th>Forma</th><th>Total</th><th>%</th></tr>${Object.entries(byPay).map(([k,v])=>`<tr><td>${k}</td><td>R$${v.toFixed(2)}</td><td>${revenue>0?Math.round(v/revenue*100):0}%</td></tr>`).join("")}</table><h2>Operações</h2><table><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Pgto</th><th>Canal</th><th>Status</th></tr>${ms.map(s=>`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.productName}</td><td>${s.qty}</td><td>R$${s.total.toFixed(2)}</td><td>${s.payment}</td><td>${saleCanal(s).label}</td><td>${s.status}</td></tr>`).join("")}</table></body></html>`);w.print();notify("Relatório gerado!","success");}
+  const lbl=tab==="diario"?"Hoje — "+todayStr:tab==="semanal"?"Semana "+thisWeek+" — "+MONTHS[now.getMonth()]+"/"+ano:MONTHS[month]+"/"+ano;
+  function print(){const w=window.open("","_blank");w.document.write(`<html><head><title>Fechamento ${lbl}</title><style>body{font-family:monospace;padding:40px;color:#000}h1{font-size:18px;margin-bottom:18px}h2{font-size:13px;margin:16px 0 8px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:7px;font-size:11px}</style></head><body><h1>🪖 BOINA PRETA — FECHAMENTO</h1><p><b>Período:</b> ${lbl}</p><p><b>Receita:</b> R$${revenue.toFixed(2)}</p><p><b>Custo:</b> R$${cost.toFixed(2)}</p><p><b>Lucro:</b> R$${profit.toFixed(2)}</p><p><b>Transações:</b> ${ms.length}</p><h2>Por Pagamento</h2><table><tr><th>Forma</th><th>Total</th><th>%</th></tr>${Object.entries(byPay).map(([k,v])=>`<tr><td>${k}</td><td>R$${v.toFixed(2)}</td><td>${revenue>0?Math.round(v/revenue*100):0}%</td></tr>`).join("")}</table><h2>Operações</h2><table><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Pgto</th><th>Canal</th><th>Status</th></tr>${ms.map(s=>`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.productName}</td><td>${s.qty}</td><td>R$${s.total.toFixed(2)}</td><td>${paymentLabel(s)}</td><td>${saleCanal(s).label}</td><td>${s.status}</td></tr>`).join("")}</table></body></html>`);w.print();notify("Relatório gerado!","success");}
   return <div>
     <div className="tabs">{["diario","semanal","mensal"].map(t=><div key={t} className={`tab ${tab===t?"active":""}`} onClick={()=>setTab(t)}>{t==="diario"?"📅 Diário":t==="semanal"?"📆 Semanal":"📊 Mensal"}</div>)}</div>
     {tab==="mensal"&&<div className="flex gap-2 mb-3" style={{flexWrap:"wrap"}}>{MONTHS.map((m,i)=><button key={i} className={`btn btn-sm ${month===i?"btn-primary":""}`} onClick={()=>setMonth(i)}>{m}</button>)}</div>}
@@ -2241,7 +2555,7 @@ function Fechamento({sales,notify}){
           <td style={{fontSize:11}}>{s.productName}</td>
           <td className="text-mono">{s.qty}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}}>{s.payment}</span>}</td>
+          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
           <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
           <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
         </tr>)}</tbody>
@@ -2252,8 +2566,89 @@ function Fechamento({sales,notify}){
   </div>;
 }
 
-function Clientes({customers,setCustomers,notify}){
-  const [modal,setModal]=useState(false),[form,setForm]=useState({}),[search,setSearch]=useState(""),[view,setView]=useState(null);
+// ====== HISTÓRICO DE COMPRAS DO CLIENTE ======
+function HistoricoComprasModal({cliente, sales, encomendas, onClose}){
+  const nome=String(cliente?.name||'').trim().toLowerCase();
+  const minhasVendas=(sales||[]).filter(s=>String(s.customer||'').trim().toLowerCase()===nome);
+  const minhasEnc=(encomendas||[]).filter(e=>String(e.cliente||'').trim().toLowerCase()===nome);
+
+  // Agrupa os itens por pedido (uma venda no PDV gera um registro por item)
+  const pedidosMap={};
+  minhasVendas.forEach(s=>{
+    const k=s.orderNum||('AVULSO-'+s.id);
+    if(!pedidosMap[k]) pedidosMap[k]={num:k, date:s.date, ts:s.ts||0, canal:saleCanal(s), status:s.status, payment:s.payment, payments:salePayments(s), itens:[], total:0};
+    pedidosMap[k].itens.push(s);
+    pedidosMap[k].total=r2(pedidosMap[k].total+(parseFloat(s.total)||0));
+    // consolida as parcelas de pagamento do pedido
+    const ps=salePayments(s);
+    if(ps){
+      const acc={}; (pedidosMap[k].payments||[]).forEach(p=>{acc[p.tipo]=(acc[p.tipo]||0)+p.valor;});
+      ps.forEach(p=>{acc[p.tipo]=(acc[p.tipo]||0)+p.valor;});
+      pedidosMap[k].payments=Object.entries(acc).map(([tipo,valor])=>({tipo,valor:r2(valor)}));
+    }
+  });
+  const pedidos=Object.values(pedidosMap).sort((a,b)=>(b.ts||0)-(a.ts||0));
+
+  const PAGOS=["Concluído","Pago — Separar","Em Separação","Pronto p/ Retirada","Entregue"];
+  const totalGasto=r2(minhasVendas.filter(s=>PAGOS.includes(s.status)).reduce((a,b)=>a+(parseFloat(b.total)||0),0));
+  const nPedidos=pedidos.length;
+  const ticket=nPedidos>0?r2(totalGasto/nPedidos):0;
+  const ultima=pedidos.length?pedidos[0].date:'—';
+
+  return <Modal title={`🧾 Histórico de Compras — ${cliente?.name||''}`} onClose={onClose} wide
+    actions={[<button key="c" className="btn btn-primary" onClick={onClose}>Fechar</button>]}>
+    <div className="stats-grid" style={{marginBottom:16}}>
+      <div className="stat-card green"><div className="stat-icon">💰</div><div className="stat-label">Total Gasto</div><div className="stat-value">{fmt(totalGasto)}</div></div>
+      <div className="stat-card blue"><div className="stat-icon">🧾</div><div className="stat-label">Pedidos</div><div className="stat-value">{nPedidos}</div></div>
+      <div className="stat-card gold"><div className="stat-icon">📊</div><div className="stat-label">Ticket Médio</div><div className="stat-value">{fmt(ticket)}</div></div>
+      <div className="stat-card"><div className="stat-icon">📅</div><div className="stat-label">Última Compra</div><div className="stat-value" style={{fontSize:20}}>{ultima}</div></div>
+    </div>
+
+    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Vendas e pedidos online</div>
+    {pedidos.length===0
+      ? <div style={{textAlign:'center',padding:24,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma compra registrada</div>
+      : <div className="table-wrap" style={{marginBottom:18}}><table>
+          <thead><tr>{['Pedido','Data','Itens','Canal','Pagamento','Status','Total'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+          <tbody>{pedidos.map(p=>(
+            <tr key={p.num}>
+              <td className="text-mono" style={{fontSize:10}}>{String(p.num).startsWith('AVULSO-')?'—':p.num}</td>
+              <td className="text-mono" style={{fontSize:10}}>{p.date}</td>
+              <td style={{fontSize:11}}>{p.itens.map((it,i)=><div key={i}>{it.qty}x {it.productName}</div>)}</td>
+              <td><span className={`tag ${p.canal.cls}`}>{p.canal.label}</span></td>
+              <td className="text-mono" style={{fontSize:9}}>
+                {p.payments && p.payments.length
+                  ? p.payments.map((x,i)=><div key={i}>{x.tipo}: {fmt(x.valor)}</div>)
+                  : p.payment}
+              </td>
+              <td><span className={`tag ${p.status==='Concluído'?'tag-done':'tag-pending'}`}>{p.status}</span></td>
+              <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(p.total)}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>}
+
+    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Encomendas</div>
+    {minhasEnc.length===0
+      ? <div style={{textAlign:'center',padding:18,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma encomenda registrada</div>
+      : <div className="table-wrap"><table>
+          <thead><tr>{['Número','Tipo','Descrição','Pedido em','Prazo','Status','Pgto','Valor'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+          <tbody>{minhasEnc.map(e=>(
+            <tr key={e.id}>
+              <td className="text-mono" style={{fontSize:10}}>{e.numero}</td>
+              <td style={{fontSize:11}}>{e.tipo}</td>
+              <td style={{fontSize:11,maxWidth:220}}>{e.descricao||'—'}</td>
+              <td className="text-mono" style={{fontSize:10}}>{e.dataPedido||'—'}</td>
+              <td className="text-mono" style={{fontSize:10}}>{e.prazoEntrega||'—'}</td>
+              <td><span className={`tag ${e.status==='Entregue'?'tag-done':'tag-pending'}`}>{e.status}</span></td>
+              <td><span className={`tag ${e.sinalPago?'tag-done':'tag-pending'}`}>{e.sinalPago?'PAGO':'EM ABERTO'}</span></td>
+              <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{e.precoTotal?fmt(e.precoTotal):'—'}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>}
+  </Modal>;
+}
+
+function Clientes({customers,setCustomers,notify,sales,encomendas}){
+  const [modal,setModal]=useState(false),[form,setForm]=useState({}),[search,setSearch]=useState(""),[view,setView]=useState(null),[histCliente,setHistCliente]=useState(null);
   const filtered=customers.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())||(c.school||"").toLowerCase().includes(search.toLowerCase()));
   function save(){if(!form.name||!form.phone){notify("Preencha nome e telefone","error");return;}if(form.id)setCustomers(prev=>prev.map(c=>c.id===form.id?form:c));else setCustomers(prev=>[...prev,{...form,id:String(Date.now()),totalPurchases:0,createdAt:new Date().toLocaleDateString("pt-BR"),password:form.password||"123456"}]);notify("Cliente salvo!","success");setModal(false);}
   function fg(name,label,type="text",ph="",opts=null){return <div key={name} className="form-group">{opts?<><label>{label}</label><select value={form[name]||""} onChange={e=>setForm({...form,[name]:e.target.value})}>{opts.map(o=><option key={o}>{o}</option>)}</select></>:<><label>{label}</label><input type={type} placeholder={ph} value={form[name]||""} onChange={e=>setForm({...form,[name]:e.target.value})}/></>}</div>;}
@@ -2268,7 +2663,7 @@ function Clientes({customers,setCustomers,notify}){
           <td className="text-mono" style={{fontSize:11}}>{c.phone}</td>
           <td style={{fontSize:12}}>{c.parentName||"—"}</td>
           <td className="text-mono" style={{fontSize:10}}>{c.createdAt}</td>
-          <td><div className="flex gap-2"><button className="btn btn-sm" onClick={()=>setView(c)}>👁</button><button className="btn btn-sm" onClick={()=>{setForm({...c});setModal(true);}}>✏</button><button className="btn btn-sm btn-danger" onClick={()=>{if(confirm("Excluir?"))setCustomers(prev=>prev.filter(x=>x.id!==c.id));notify("Removido","success");}}>🗑</button></div></td>
+          <td><div className="flex gap-2"><button className="btn btn-sm" title="Ver ficha" onClick={()=>setView(c)}>👁</button><button className="btn btn-sm" title="Histórico de compras" onClick={()=>setHistCliente(c)}>🧾</button><button className="btn btn-sm" title="Editar" onClick={()=>{setForm({...c});setModal(true);}}>✏</button><button className="btn btn-sm btn-danger" title="Excluir" onClick={()=>{if(confirm("Excluir?"))setCustomers(prev=>prev.filter(x=>x.id!==c.id));notify("Removido","success");}}>🗑</button></div></td>
         </tr>)}</tbody>
       </table></div>
     </div>
@@ -2285,7 +2680,11 @@ function Clientes({customers,setCustomers,notify}){
         {fg("parentName","Nome do Responsável")}{fg("parentPhone","Telefone","text","(00) 00000-0000")}{fg("parentEmail","E-mail","email")}{fg("parentCpf","CPF do Responsável","text","000.000.000-00")}
       </div>
     </Modal>}
-    {view&&<Modal title="Ficha do Aluno" onClose={()=>setView(null)}>
+    {view&&<Modal title="Ficha do Aluno" onClose={()=>setView(null)}
+      actions={[
+        <button key="h" className="btn" onClick={()=>{const c=view;setView(null);setHistCliente(c);}}>🧾 Histórico de compras</button>,
+        <button key="c" className="btn btn-primary" onClick={()=>setView(null)}>Fechar</button>
+      ]}>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <div className="section-divider">📋 Dados do Aluno</div>
         {[["Nome",view.name],["CPF",view.cpf],["RG",view.rg],["Nascimento",view.birthdate],["Telefone",view.phone],["Email",view.email],["Escola",view.school],["Turma",view.grade],["Matrícula",view.enrollment]].map(([l,v])=><div key={l}><div className="text-mono" style={{fontSize:8,color:"#aaa",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
@@ -2295,6 +2694,7 @@ function Clientes({customers,setCustomers,notify}){
         {[["Nome",view.parentName],["Telefone",view.parentPhone],["Email",view.parentEmail],["CPF",view.parentCpf]].map(([l,v])=><div key={"p"+l}><div className="text-mono" style={{fontSize:8,color:"#aaa",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
       </div>
     </Modal>}
+    {histCliente&&<HistoricoComprasModal cliente={histCliente} sales={sales} encomendas={encomendas} onClose={()=>setHistCliente(null)}/>}
   </div>;
 }
 
@@ -2726,7 +3126,7 @@ function StoreFooter(){
   return <div className="store-footer">
     <div className="store-footer-inner">
       <div className="store-footer-logo"><img src={LOGO} alt="Boina Preta"/></div>
-      <div className="store-footer-text">© 2025 Boina Preta Ltda.<br/>Shopping Tático Militar · @boina.preta</div>
+      <div className="store-footer-text">© {new Date().getFullYear()} Boina Preta Ltda.<br/>Shopping Tático Militar · @boina.preta</div>
     </div>
   </div>;
 }
@@ -3393,6 +3793,9 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [convertModal, setConvertModal] = useState(null);
   const [convertPayment, setConvertPayment] = useState('Dinheiro');
+  // pagamento dividido na conversão do orçamento em venda
+  const [convertMulti, setConvertMulti] = useState(false);
+  const [convertSplits, setConvertSplits] = useState([]);
 
   const filtered = orcamentos.filter(o =>
     (statusFilter === 'Todos' || o.status === statusFilter) &&
@@ -3425,15 +3828,26 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
     const descVal = orc.desconto > 0 ? subtotal * (orc.desconto/100) : 0;
     const total = subtotal - descVal;
 
-    const newSales = orc.items.map(item => ({
+    // Pagamento dividido: valida e rateia entre os itens
+    if(convertMulti){
+      const err=validarSplits(total, convertSplits);
+      if(err){ notify(err,'error'); return; }
+    }
+    const parcelas = convertMulti ? splitsLimpos(convertSplits) : null;
+    const itemTotals = orc.items.map(item=>parseFloat((item.price*item.qty).toFixed(2)));
+    const rateio = parcelas ? ratearPagamentos(parcelas, itemTotals) : null;
+
+    const newSales = orc.items.map((item,i) => ({
       id: Date.now() + Math.random(),
       productId: item.productId, productName: item.name, qty: item.qty,
       unitPrice: item.price,
-      total: parseFloat((item.price * item.qty).toFixed(2)),
+      total: itemTotals[i],
       cost: 0,
       month: now.getMonth(), week: getWeekNum(now),
       date, ts: now.getTime(),
-      payment: convertPayment, type: 'loja', status: 'Concluído',
+      payment: convertMulti?PGTO_MULTIPLO:convertPayment,
+      payments: rateio?rateio[i]:null,
+      type: 'loja', status: 'Concluído',
       customer: orc.cliente,
     }));
     setSales(prev => [...prev, ...newSales]);
@@ -3446,8 +3860,8 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
       const p=products.find(x=>x.id===item.productId);
       if(p) registrarMov(p.polo||'',p,'saida_orcamento',p.stock,-item.qty,orc.numero,orc.cliente,'Admin');
     });
-    setOrcamentos(prev => prev.map(o => o.id === orc.id ? {...o, status:'Convertido em Venda'} : o));
-    setConvertModal(null);
+    setOrcamentos(prev => prev.map(o => o.id === orc.id ? {...o, status:'Convertido em Venda', pagamento:(convertMulti?PGTO_MULTIPLO:convertPayment), payments:parcelas} : o));
+    setConvertModal(null); setConvertMulti(false); setConvertSplits([]);
     notify(`Orçamento ${orc.numero} convertido em venda!`, 'success');
   }
 
@@ -3550,12 +3964,12 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
               <span>{fmt(convertModal.items.reduce((a,b)=>a+b.price*b.qty,0) * (1-(convertModal.desconto||0)/100))}</span>
             </div>
           </div>
-          <div className="form-group">
-            <label>Forma de Pagamento</label>
-            <select value={convertPayment} onChange={e=>setConvertPayment(e.target.value)}>
-              {PMTS.map(p=><option key={p}>{p}</option>)}
-            </select>
-          </div>
+          <PagamentoMultiplo
+            label="Forma de Pagamento"
+            total={convertModal.items.reduce((a,b)=>a+b.price*b.qty,0) * (1-(convertModal.desconto||0)/100)}
+            payment={convertPayment} setPayment={setConvertPayment}
+            splits={convertSplits} setSplits={setConvertSplits}
+            multi={convertMulti} setMulti={setConvertMulti}/>
           <div style={{background:'rgba(26,110,46,.06)',border:'1px solid rgba(26,110,46,.2)',borderRadius:3,padding:'10px 14px',marginTop:12,fontSize:12,color:'#1a6e2e'}}>
             ✅ Esta ação irá registrar a venda no sistema, baixar o estoque e marcar o orçamento como "Convertido em Venda".
           </div>
@@ -3701,9 +4115,18 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
     notify('Observação registrada!','success');
   }
 
+  // CORREÇÃO: os ids de cliente vêm do banco como TEXTO — parseInt fazia a busca falhar
+  // e por isso os dados do cliente não eram puxados na tela de Encomendas.
   function puxarCliente(id){
-    const cu = customers.find(x=>x.id===parseInt(id));
-    if(cu) setForm(f=>({...f, cliente:cu.name, clientePhone:cu.phone||'', clienteEmail:cu.email||'', escola:cu.school||''}));
+    const cu = findCustomerById(customers, id);
+    if(!cu){ if(notify) notify('Cliente não encontrado','error'); return; }
+    setForm(f=>({...f,
+      cliente: cu.name||'',
+      clientePhone: cu.phone||cu.parentPhone||'',
+      clienteEmail: cu.email||cu.parentEmail||'',
+      escola: cu.school||''
+    }));
+    if(notify) notify('Dados de '+String(cu.name||'').split(' ')[0]+' carregados','success');
   }
 
   function printFicha(){
@@ -3814,10 +4237,11 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
           <div className="section-divider">👤 Cliente</div>
           <div className="form-group full">
             <label>Puxar cliente cadastrado</label>
-            <select defaultValue="" onChange={e=>puxarCliente(e.target.value)}>
+            <select value="" onChange={e=>puxarCliente(e.target.value)}>
               <option value="">Selecionar cliente cadastrado...</option>
-              {(customers||[]).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}</option>)}
+              {[...(customers||[])].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}{cu.phone?' · '+cu.phone:''}</option>)}
             </select>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:4}}>Ao selecionar, nome, telefone, e-mail e escola são preenchidos abaixo.</div>
           </div>
           <div className="form-group"><label>Nome do Cliente *</label><input placeholder="Nome completo" value={form.cliente} onChange={e=>setForm({...form,cliente:e.target.value})}/></div>
           <div className="form-group"><label>Telefone / WhatsApp</label><input placeholder="(00) 00000-0000" value={form.clientePhone} onChange={e=>setForm({...form,clientePhone:e.target.value})}/></div>
@@ -3992,10 +4416,15 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
           </div>
           {form.sinalPago && (
             <div className="form-group full">
-              <label>Forma de Pagamento (lançada no caixa/vendas do dia)</label>
-              <select value={form.pagamento||'Dinheiro'} onChange={e=>setForm({...form,pagamento:e.target.value})}>
-                {['Dinheiro','Pix','Cartão Crédito','Cartão Débito','Integra Card — Bolsa Uniforme'].map(p=><option key={p}>{p}</option>)}
-              </select>
+              <PagamentoMultiplo
+                label="Forma de Pagamento (lançada no caixa/vendas do dia)"
+                total={parseFloat(form.precoTotal)||0}
+                payment={form.pagamento||'Dinheiro'}
+                setPayment={v=>setForm(f=>({...f,pagamento:v}))}
+                splits={form.splits||[]}
+                setSplits={v=>setForm(f=>({...f,splits:v}))}
+                multi={!!form.multiPay}
+                setMulti={v=>setForm(f=>({...f,multiPay:v}))}/>
             </div>
           )}
           {form.precoTotal && (
@@ -4059,6 +4488,14 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
 
   function saveEnc(form){
     if(!form.cliente){ notify('Informe o cliente','error'); return; }
+    // Valida o rateio quando o pagamento foi dividido em várias formas
+    if(form.sinalPago && form.multiPay){
+      const err=validarSplits(parseFloat(form.precoTotal)||0, form.splits);
+      if(err){ notify(err,'error'); return; }
+      form={...form, pagamento:PGTO_MULTIPLO, payments:splitsLimpos(form.splits)};
+    } else if(form.sinalPago){
+      form={...form, payments:null};
+    }
     if(editEnc){
       setEncomendas(prev => prev.map(e => e.id===form.id ? {...form} : e));
       notify('Encomenda atualizada!','success');
@@ -4068,7 +4505,7 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
     }
     // Se a encomenda está paga e ainda não foi lançada nas vendas, registra a venda do dia
     if(form.sinalPago && setSales && !(sales||[]).some(s=>s.orderNum===form.numero)){
-      setSales(prev=>[...prev, encSaleRecord({numero:form.numero, customer:form.cliente, total:parseFloat(form.precoTotal)||0, payment:form.pagamento||'Dinheiro'})]);
+      setSales(prev=>[...prev, encSaleRecord({numero:form.numero, customer:form.cliente, total:parseFloat(form.precoTotal)||0, payment:form.pagamento||'Dinheiro', payments:form.payments||null})]);
       notify('Encomenda paga lançada no caixa/vendas de hoje','success');
     }
     setModal(false); setEditEnc(null);
@@ -4276,32 +4713,53 @@ function KanbanBoard({columns, items, itemKey, itemStatus, renderCard, onMove, o
 }
 
 // ====== GESTÃO DE ESTOQUE (catálogo único, quantidade por polo) ======
-function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, notify}){
+function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, notify, operador}){
+  // ===== PERMISSÕES POR PERFIL =====
+  // Gerente: enxerga e movimenta apenas o polo em que está cadastrado.
+  // Administrador (dono): mantém acesso total a todos os polos.
+  const role = operador?.role || 'vendedor';
+  const isGerente = role === 'gerente';
+  const poloGerente = isGerente
+    ? ((operador?.polo && operador.polo !== 'ambos' && POLOS[operador.polo]) ? operador.polo : activePolo)
+    : null;
+  const polosPermitidos = isGerente ? [poloGerente] : Object.keys(POLOS);
+  const podePolo = (pid) => !isGerente || pid === poloGerente;
+
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState("");
-  const [poloFilter,setPoloFilter]=useState('Todos');
+  const [poloFilter,setPoloFilter]=useState(isGerente ? poloGerente : 'Todos');
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState(null);
   const [pSel,setPSel]=useState({});
   const [pQty,setPQty]=useState({});
   const [tModal,setTModal]=useState(false);
-  const [tForm,setTForm]=useState({key:'',from:activePolo,to:'',qty:''});
+  const [tForm,setTForm]=useState({key:'',from:(isGerente?poloGerente:activePolo),to:'',qty:''});
 
   useEffect(()=>{ load(); },[]);
   async function load(){
     setLoading(true);
     const {data}=await sb.from('products').select('*');
+    // Carrega tudo (necessário para transferências não duplicarem registros no destino),
+    // mas o que é EXIBIDO/EDITADO é filtrado abaixo conforme o perfil.
     setRows((data||[]).map(prodFromDB));
     setLoading(false);
   }
 
   function groupKey(r){ return (r.sku&&String(r.sku).trim())? 'sku:'+String(r.sku).trim().toLowerCase() : 'nm:'+String(r.name||'').trim().toLowerCase(); }
-  const groupsMap={};
+  // groupsMapFull = todos os polos (uso interno: transferências)
+  const groupsMapFull={};
   rows.forEach(r=>{
     const k=groupKey(r);
-    if(!groupsMap[k]) groupsMap[k]={key:k, sku:r.sku, name:r.name, category:r.category, price:r.price, cost:r.cost, photo:r.photo, description:r.description, minStock:r.minStock, polos:{}};
-    groupsMap[k].polos[r.polo]=r;
+    if(!groupsMapFull[k]) groupsMapFull[k]={key:k, sku:r.sku, name:r.name, category:r.category, price:r.price, cost:r.cost, photo:r.photo, description:r.description, minStock:r.minStock, polos:{}};
+    groupsMapFull[k].polos[r.polo]=r;
+  });
+  // groupsMap = o que o operador pode ver/editar (gerente: só o polo dele)
+  const groupsMap={};
+  Object.values(groupsMapFull).forEach(g=>{
+    const polosVis={};
+    Object.keys(g.polos).forEach(pid=>{ if(podePolo(pid)) polosVis[pid]=g.polos[pid]; });
+    if(Object.keys(polosVis).length>0) groupsMap[g.key]={...g, polos:polosVis};
   });
   const groups=Object.values(groupsMap).filter(g=>{
     const s=search.toLowerCase();
@@ -4309,6 +4767,9 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     const matchPolo=poloFilter==='Todos' || !!g.polos[poloFilter];
     return matchText && matchPolo;
   }).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+
+  // Linhas visíveis (para os totalizadores)
+  const visibleRows = rows.filter(r=>podePolo(r.polo));
 
   // Alertas de estoque baixo — somente nos polos habilitados a vender o item
   const lowAlerts=[];
@@ -4327,6 +4788,8 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   function openNew(){
     setForm({base:'P'+Date.now(), name:'', sku:'', category:categories[0]||'', price:'', cost:'', minStock:5, photo:'', description:'', polos:{}});
     const sel={},qty={}; Object.keys(POLOS).forEach(pid=>{sel[pid]=false;qty[pid]='';});
+    // Gerente: produto já nasce vinculado ao polo dele, sem opção de escolher outros
+    if(isGerente) sel[poloGerente]=true;
     setPSel(sel); setPQty(qty); setModal(true);
   }
   function openEdit(g){
@@ -4338,11 +4801,13 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   async function saveGroup(){
     if(!form.name||!form.name.trim()){ notify('Informe o nome do produto','error'); return; }
     if(form.price===''||isNaN(parseFloat(form.price))){ notify('Informe o preço de venda','error'); return; }
-    const selected=Object.keys(POLOS).filter(pid=>pSel[pid]);
-    if(selected.length===0){ notify('Selecione ao menos um polo onde o produto é vendido','error'); return; }
+    // Gerente só grava no próprio polo — nunca toca no estoque dos demais
+    const polosEditaveis = polosPermitidos;
+    const selected=polosEditaveis.filter(pid=>pSel[pid]);
+    if(selected.length===0){ notify(isGerente?'Informe a quantidade do produto para o seu polo':'Selecione ao menos um polo onde o produto é vendido','error'); return; }
     const sku=(form.sku&&form.sku.trim())|| ('SKU'+String(Date.now()).slice(-6));
     const ups=[];
-    for(const pid of Object.keys(POLOS)){
+    for(const pid of polosEditaveis){
       const existing=form.polos&&form.polos[pid];
       if(pSel[pid]){
         const id = existing? existing.id : `${form.base}_${pid}`;
@@ -4367,6 +4832,18 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   }
 
   async function deleteGroup(g){
+    // Gerente: exclusão sempre restrita ao próprio polo
+    if(isGerente){
+      const r=g.polos[poloGerente];
+      const sigla=(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente;
+      if(!r){ notify('Este produto não está no polo '+sigla,'error'); return; }
+      if(!confirm(`Remover "${g.name}" do polo ${sigla}?`)) return;
+      const {error}=await sb.from('products').eq('polo',poloGerente).in('id',[String(r.id)]).delete();
+      if(error){ notify('Erro ao remover do polo '+sigla+': '+error.message,'error'); return; }
+      notify('Produto removido do polo '+sigla,'success');
+      await load(); if(reloadProducts) reloadProducts();
+      return;
+    }
     if(poloFilter==='Todos'){
       if(!confirm(`Excluir "${g.name}" de TODOS os polos? Esta ação não pode ser desfeita.`)) return;
       let err=null;
@@ -4388,11 +4865,15 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     await load(); if(reloadProducts) reloadProducts();
   }
 
-  function openTransfer(g){ setTForm({key:g?g.key:'', from:activePolo, to:'', qty:''}); setTModal(true); }
+  function openTransfer(g){ setTForm({key:g?g.key:'', from:(isGerente?poloGerente:activePolo), to:'', qty:''}); setTModal(true); }
   async function doTransfer(){
-    const g=groups.find(x=>x.key===tForm.key) || Object.values(groupsMap).find(x=>x.key===tForm.key);
+    // usa o mapa completo: o destino pode ser um polo que o gerente não enxerga
+    const g=groupsMapFull[tForm.key];
     if(!g){ notify('Selecione o produto','error'); return; }
-    const {from,to}=tForm; const q=parseInt(tForm.qty)||0;
+    const {to}=tForm;
+    // Gerente: origem sempre travada no polo dele
+    const from = isGerente ? poloGerente : tForm.from;
+    const q=parseInt(tForm.qty)||0;
     if(!from||!to||from===to){ notify('Escolha polos de origem e destino diferentes','error'); return; }
     if(q<=0){ notify('Quantidade inválida','error'); return; }
     const fromRow=g.polos[from];
@@ -4409,7 +4890,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     setTModal(false); await load(); if(reloadProducts) reloadProducts();
   }
 
-  const totalUnidades = (poloFilter==='Todos' ? rows : rows.filter(r=>r.polo===poloFilter)).reduce((a,r)=>a+(r.stock||0),0);
+  const totalUnidades = (poloFilter==='Todos' ? visibleRows : visibleRows.filter(r=>r.polo===poloFilter)).reduce((a,r)=>a+(r.stock||0),0);
   const catalogoCount = poloFilter==='Todos' ? Object.keys(groupsMap).length : Object.values(groupsMap).filter(g=>g.polos[poloFilter]).length;
   const poloSigla = (POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter;
 
@@ -4417,23 +4898,29 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     <div className="stats-grid">
       <div className="stat-card"><div className="stat-icon">🏷️</div><div className="stat-label">{poloFilter==='Todos'?'Produtos no Catálogo':'Produtos em '+poloSigla}</div><div className="stat-value">{catalogoCount}</div></div>
       <div className="stat-card blue"><div className="stat-icon">📦</div><div className="stat-label">{poloFilter==='Todos'?'Unidades (todos os polos)':'Unidades · '+poloSigla}</div><div className="stat-value">{totalUnidades}</div></div>
-      <div className="stat-card gold"><div className="stat-icon">🏪</div><div className="stat-label">Polos</div><div className="stat-value">{Object.keys(POLOS).length}</div></div>
+      <div className="stat-card gold"><div className="stat-icon">🏪</div><div className="stat-label">{isGerente?'Seu Polo':'Polos'}</div><div className="stat-value">{isGerente?((POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente):Object.keys(POLOS).length}</div></div>
     </div>
+
+    {isGerente && (
+      <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:12,fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,color:'#1a4e8e'}}>
+        🧑‍💼 Perfil <b>Gerente</b> — você gerencia o estoque apenas do polo <b>{(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}</b> ({(POLOS[poloGerente]&&POLOS[poloGerente].nome)||''}).
+      </div>
+    )}
 
     <div className="flex justify-between items-center mb-3" style={{flexWrap:'wrap',gap:8}}>
       <div className="kb-hint">Estoque único · a quantidade de cada polo só é alterada aqui</div>
       <div className="flex gap-2">
-        <button className="btn btn-sm" onClick={()=>openTransfer(null)}>🔄 Transferir entre polos</button>
+        <button className="btn btn-sm" onClick={()=>openTransfer(null)}>🔄 {isGerente?'Enviar para outro polo':'Transferir entre polos'}</button>
         <button className="btn btn-primary btn-sm" onClick={openNew}>+ Novo Produto</button>
       </div>
     </div>
 
-    {/* Filtro por polo */}
-    <div className="flex gap-2 mb-3" style={{flexWrap:'wrap',alignItems:'center'}}>
+    {/* Filtro por polo — oculto para gerente (acesso restrito a um único polo) */}
+    {!isGerente && <div className="flex gap-2 mb-3" style={{flexWrap:'wrap',alignItems:'center'}}>
       <span className="kb-hint" style={{marginBottom:0}}>Polo:</span>
       <button className={`btn btn-sm ${poloFilter==='Todos'?'btn-primary':''}`} onClick={()=>setPoloFilter('Todos')}>Todos os polos</button>
       {Object.values(POLOS).map(p=><button key={p.id} className={`btn btn-sm ${poloFilter===p.id?'btn-primary':''}`} onClick={()=>setPoloFilter(p.id)}>{p.sigla}</button>)}
-    </div>
+    </div>}
 
     {/* Alerta de estoque baixo (apenas polos habilitados) */}
     {lowAlerts.length>0 && (
@@ -4461,7 +4948,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
           {groups.map(g=>{
             const total=Object.values(g.polos).reduce((a,r)=>a+(r.stock||0),0);
             const displayQty = poloFilter==='Todos' ? total : (g.polos[poloFilter]?(g.polos[poloFilter].stock||0):0);
-            const polosToShow = Object.keys(POLOS).filter(pid=> (poloFilter==='Todos' || pid===poloFilter) && g.polos[pid]);
+            const polosToShow = polosPermitidos.filter(pid=> (poloFilter==='Todos' || pid===poloFilter) && g.polos[pid]);
             return <tr key={g.key}>
               <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#ccc"}}>SEM FOTO</span>}</div></td>
               <td><strong>{g.name}</strong></td>
@@ -4482,7 +4969,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <td><div className="flex gap-2">
                 <button className="btn btn-sm" title="Editar / quantidades" onClick={()=>openEdit(g)}>✏</button>
                 <button className="btn btn-sm" title="Transferir" onClick={()=>openTransfer(g)}>🔄</button>
-                <button className="btn btn-sm btn-danger" title={poloFilter==='Todos'?'Excluir de todos os polos':('Remover do polo '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter))} onClick={()=>deleteGroup(g)}>🗑</button>
+                <button className="btn btn-sm btn-danger" title={isGerente?('Remover do polo '+((POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente)):(poloFilter==='Todos'?'Excluir de todos os polos':('Remover do polo '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter)))} onClick={()=>deleteGroup(g)}>🗑</button>
               </div></td>
             </tr>;
           })}
@@ -4512,26 +4999,38 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         <div className="form-group"><label>Estoque Mínimo (alerta)</label><input type="number" value={form.minStock} onChange={e=>setForm({...form,minStock:e.target.value})}/></div>
         <div className="form-group full"><label>Descrição</label><textarea value={form.description||""} onChange={e=>setForm({...form,description:e.target.value})}/></div>
       </div>
-      <div className="section-divider">🏪 Polos onde é vendido · quantidade em cada</div>
-      <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:12}}>
-        {Object.values(POLOS).map(p=>(
-          <span key={p.id} className={`ge-polochip ${pSel[p.id]?'on':''}`} onClick={()=>setPSel({...pSel,[p.id]:!pSel[p.id]})}>
-            {pSel[p.id]?'✓':'＋'} {p.sigla} — {p.nome.split(' ').slice(0,2).join(' ')}
-          </span>
-        ))}
-      </div>
-      <div>
-        {Object.values(POLOS).filter(p=>pSel[p.id]).map(p=>(
-          <div key={p.id} className="ge-polo-qty">
-            <div style={{fontFamily:'Oswald',fontSize:12,letterSpacing:1,textTransform:'uppercase',color:'#333'}}>{p.sigla} — {p.nome}</div>
-            <input type="number" min="0" placeholder="Qtd" value={pQty[p.id]} onChange={e=>setPQty({...pQty,[p.id]:e.target.value})}/>
-          </div>
-        ))}
-        {Object.values(POLOS).filter(p=>pSel[p.id]).length===0&&<div style={{textAlign:'center',padding:'12px',color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Selecione acima os polos onde o produto será vendido</div>}
-      </div>
+      {/* Gerente: produto entra automaticamente apenas no polo dele */}
+      {isGerente ? <>
+        <div className="section-divider">🏪 Polo · quantidade inicial</div>
+        <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:10,fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,color:'#1a4e8e'}}>
+          O produto será cadastrado automaticamente no polo <b>{(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}</b>.
+        </div>
+        <div className="ge-polo-qty">
+          <div style={{fontFamily:'Oswald',fontSize:12,letterSpacing:1,textTransform:'uppercase',color:'#333'}}>{(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente} — {(POLOS[poloGerente]&&POLOS[poloGerente].nome)||''}</div>
+          <input type="number" min="0" placeholder="Qtd" value={pQty[poloGerente]||''} onChange={e=>setPQty({...pQty,[poloGerente]:e.target.value})}/>
+        </div>
+      </> : <>
+        <div className="section-divider">🏪 Polos onde é vendido · quantidade em cada</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:12}}>
+          {Object.values(POLOS).map(p=>(
+            <span key={p.id} className={`ge-polochip ${pSel[p.id]?'on':''}`} onClick={()=>setPSel({...pSel,[p.id]:!pSel[p.id]})}>
+              {pSel[p.id]?'✓':'＋'} {p.sigla} — {p.nome.split(' ').slice(0,2).join(' ')}
+            </span>
+          ))}
+        </div>
+        <div>
+          {Object.values(POLOS).filter(p=>pSel[p.id]).map(p=>(
+            <div key={p.id} className="ge-polo-qty">
+              <div style={{fontFamily:'Oswald',fontSize:12,letterSpacing:1,textTransform:'uppercase',color:'#333'}}>{p.sigla} — {p.nome}</div>
+              <input type="number" min="0" placeholder="Qtd" value={pQty[p.id]} onChange={e=>setPQty({...pQty,[p.id]:e.target.value})}/>
+            </div>
+          ))}
+          {Object.values(POLOS).filter(p=>pSel[p.id]).length===0&&<div style={{textAlign:'center',padding:'12px',color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Selecione acima os polos onde o produto será vendido</div>}
+        </div>
+      </>}
     </Modal>}
 
-    {tModal&&<Modal title="Transferir entre polos" onClose={()=>setTModal(false)}
+    {tModal&&<Modal title={isGerente?'Enviar mercadoria para outro polo':'Transferir entre polos'} onClose={()=>setTModal(false)}
       actions={[<button key="c" className="btn" onClick={()=>setTModal(false)}>Cancelar</button>,<button key="s" className="btn btn-primary" onClick={doTransfer}>Transferir</button>]}>
       <div className="form-grid">
         <div className="form-group full"><label>Produto</label>
@@ -4541,14 +5040,22 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
           </select>
         </div>
         <div className="form-group"><label>De (origem)</label>
-          <select value={tForm.from} onChange={e=>setTForm({...tForm,from:e.target.value})}>
-            {Object.values(POLOS).map(p=>{const g=groupsMap[tForm.key]; const r=g&&g.polos[p.id]; return <option key={p.id} value={p.id}>{p.sigla}{r?' — '+r.stock+' un.':' — 0 un.'}</option>;})}
-          </select>
+          {isGerente ? (() => {
+            const g=groupsMap[tForm.key]; const r=g&&g.polos[poloGerente];
+            return <>
+              <input readOnly disabled value={`${(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}${r?' — '+r.stock+' un.':' — 0 un.'}`} style={{background:'#f2f2f2',color:'#555',cursor:'not-allowed'}}/>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#888',marginTop:4}}>🔒 Origem fixa no seu polo</div>
+            </>;
+          })() : (
+            <select value={tForm.from} onChange={e=>setTForm({...tForm,from:e.target.value})}>
+              {Object.values(POLOS).map(p=>{const g=groupsMapFull[tForm.key]; const r=g&&g.polos[p.id]; return <option key={p.id} value={p.id}>{p.sigla}{r?' — '+r.stock+' un.':' — 0 un.'}</option>;})}
+            </select>
+          )}
         </div>
         <div className="form-group"><label>Para (destino)</label>
           <select value={tForm.to} onChange={e=>setTForm({...tForm,to:e.target.value})}>
             <option value="">Selecionar...</option>
-            {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome.split(' ').slice(0,2).join(' ')}</option>)}
+            {Object.values(POLOS).filter(p=>!isGerente || p.id!==poloGerente).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome.split(' ').slice(0,2).join(' ')}</option>)}
           </select>
         </div>
         <div className="form-group"><label>Quantidade</label><input type="number" min="1" value={tForm.qty} onChange={e=>setTForm({...tForm,qty:e.target.value})}/></div>
@@ -4895,7 +5402,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
           <div className="nav-item" onClick={onLogout} style={{color:"#cc4444"}}><span className="nav-icon">🔓</span><span>Sair do Admin</span></div>
         </div>
       </nav>
-      <div className="sidebar-footer">v2.0 · 2025<br/>Boina Preta Ltda.</div>
+      <div className="sidebar-footer">v2.0 · {new Date().getFullYear()}<br/>Boina Preta Ltda.</div>
     </div>
     {senhaModal&&operador&&<AlterarSenhaOperadorModal
       operador={operador}
@@ -4922,10 +5429,10 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
         {page==="dashboard"&&<Dashboard products={products} sales={sales} role={role}/>}
         {page==="caixa"&&<Caixa products={products} setProducts={setProducts} sales={sales} setSales={setSales} encomendas={encomendas} setEncomendas={setEncomendas} customers={customers} notify={notify} polo={polo.id} operador={operador}/>}
         {page==="estoque"&&<Estoque products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} notify={notify} polo={polo.id} poloInfo={polo}/>}
-        {page==="gestao"&&(role==='dono'||role==='gerente')&&<GestaoEstoque activePolo={polo.id} categories={categories} setCategories={setCategories} reloadProducts={reloadProducts} notify={notify}/>}
+        {page==="gestao"&&(role==='dono'||role==='gerente')&&<GestaoEstoque activePolo={polo.id} categories={categories} setCategories={setCategories} reloadProducts={reloadProducts} notify={notify} operador={operador}/>}
         {page==="vendas"&&<Vendas sales={sales} polo={polo.id}/>}
         {page==="fechamento"&&<Fechamento sales={sales} notify={notify}/>}
-        {page==="clientes"&&<Clientes customers={customers} setCustomers={setCustomers} notify={notify}/>}
+        {page==="clientes"&&<Clientes customers={customers} setCustomers={setCustomers} notify={notify} sales={sales} encomendas={encomendas}/>}
         {page==="orcamentos"&&<Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} notify={notify}/>}
         {page==="encomendas"&&<Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/>}
         {page==="pedidos"&&<PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} notify={notify} customers={customers} polo={polo.id}/>}
@@ -4944,7 +5451,7 @@ const POLOS = {
     cidade: "Santo Antônio\ndo Descoberto",
     estado: "Goiás · GO",
     icone: "🏛️",
-    sigla: "SAD"
+    sigla: "SADE"
   },
   alg: {
     id: "alg",
@@ -5011,7 +5518,7 @@ function PoloSelector({onSelect}){
           ))}
         </div>
 
-        <div className="polo-footer">Boina Preta Ltda. · Uniformes &amp; Equipamentos · 2025</div>
+        <div className="polo-footer">Boina Preta Ltda. · Uniformes &amp; Equipamentos · {new Date().getFullYear()}</div>
       </div>
     </div>
   );
@@ -5097,17 +5604,50 @@ const sb = {
   }
 };
 
+// ── COMPATIBILIDADE: colunas novas (payments / pagamento) ────────────────────
+// Se o ALTER TABLE ainda não foi executado no Supabase, o sistema continua
+// funcionando: detectamos o erro de "coluna inexistente" e reenviamos sem ela.
+const COLUNAS_NOVAS = ['payments','pagamento'];
+const colunasAusentes = {}; // { 'sales': ['payments'], ... }
+function colunaAusente(msg){
+  const m = String(msg||'');
+  if(!/does not exist|Could not find|PGRST204|42703/i.test(m)) return null;
+  for(const c of COLUNAS_NOVAS){ if(m.includes("'"+c+"'")||m.includes('"'+c+'"')||m.includes(' '+c+' ')) return c; }
+  return null;
+}
+function limparColunas(rows, tabela){
+  const rem = colunasAusentes[tabela];
+  if(!rem||!rem.length) return rows;
+  return rows.map(r=>{ const o={...r}; rem.forEach(c=>{ delete o[c]; }); return o; });
+}
+// Upsert tolerante a colunas que ainda não existem no banco
+async function upsertSafe(tabela, rows, opts){
+  let body = limparColunas(rows, tabela);
+  let res = await sb.from(tabela).upsert(body, opts);
+  let tentativas = 0;
+  while(res.error && tentativas < COLUNAS_NOVAS.length){
+    const col = colunaAusente(res.error.message);
+    if(!col) break;
+    colunasAusentes[tabela] = Array.from(new Set([...(colunasAusentes[tabela]||[]), col]));
+    console.warn(`[Boina Preta] Coluna "${col}" não existe em "${tabela}". Rode o ALTER TABLE para habilitar o pagamento múltiplo. Salvando sem ela por enquanto.`);
+    body = limparColunas(rows, tabela);
+    res = await sb.from(tabela).upsert(body, opts);
+    tentativas++;
+  }
+  return res;
+}
+
 // ── helpers de conversão snake_case ↔ camelCase ──────────────────────────────
 function prodFromDB(r){return{id:r.id,polo:r.polo,name:r.name,category:r.category,price:parseFloat(r.price),cost:parseFloat(r.cost),stock:r.stock,minStock:r.min_stock,sku:r.sku,photo:r.photo,description:r.description};}
 function prodToDB(p,polo){return{id:String(p.id),polo,name:p.name,category:p.category||'',price:parseFloat(p.price)||0,cost:parseFloat(p.cost)||0,stock:parseInt(p.stock)||0,min_stock:parseInt(p.minStock)||5,sku:p.sku||'',photo:p.photo||'',description:p.description||''};}
 function custFromDB(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone,cpf:r.cpf,rg:r.rg,birthdate:r.birthdate,school:r.school,grade:r.grade,enrollment:r.enrollment,address:r.address,neighborhood:r.neighborhood,city:r.city,state:r.state,cep:r.cep,parentName:r.parent_name,parentPhone:r.parent_phone,parentEmail:r.parent_email,parentCpf:r.parent_cpf,password:r.password,totalPurchases:r.total_purchases,createdAt:r.created_at};}
 function custToDB(c,polo){return{id:String(c.id),polo,name:c.name||'',email:c.email||'',phone:c.phone||'',cpf:c.cpf||'',rg:c.rg||'',birthdate:c.birthdate||'',school:c.school||'',grade:c.grade||'',enrollment:c.enrollment||'',address:c.address||'',neighborhood:c.neighborhood||'',city:c.city||'',state:c.state||'',cep:c.cep||'',parent_name:c.parentName||'',parent_phone:c.parentPhone||'',parent_email:c.parentEmail||'',parent_cpf:c.parentCpf||'',password:c.password||'123456',total_purchases:c.totalPurchases||0,created_at:c.createdAt||''};}
-function saleFromDB(r){return{id:r.id,productId:r.product_id,productName:r.product_name,qty:r.qty,unitPrice:parseFloat(r.unit_price),total:parseFloat(r.total),cost:parseFloat(r.cost),month:r.month,week:r.week,date:r.date,ts:r.ts,payment:r.payment,type:r.type,status:r.status,customer:r.customer,orderNum:r.order_num,orderTs:r.order_ts,pedidoStatus:r.pedido_status};}
-function saleToDB(s,polo){return{id:String(s.id),polo,product_id:String(s.productId||''),product_name:s.productName||'',qty:s.qty||1,unit_price:parseFloat(s.unitPrice||s.total/s.qty)||0,total:parseFloat(s.total)||0,cost:parseFloat(s.cost)||0,month:s.month||0,week:s.week||0,date:s.date||'',ts:s.ts||0,payment:s.payment||'',type:s.type||'loja',status:s.status||'Concluído',customer:s.customer||'',order_num:s.orderNum||'',order_ts:s.orderTs||0,pedido_status:s.pedidoStatus||''};}
-function encFromDB(r){return{...r,clientePhone:r.cliente_phone,clienteEmail:r.cliente_email,precoTotal:r.preco_total,sinalPago:r.sinal_pago,prazoEntrega:r.prazo_entrega,dataPedido:r.data_pedido};}
-function encToDB(e,polo){return{id:String(e.id),polo,numero:e.numero||'',tipo:e.tipo||'',status:e.status||'Novo Pedido',prioridade:e.prioridade||'Normal',cliente:e.cliente||'',cliente_phone:e.clientePhone||'',cliente_email:e.clienteEmail||'',escola:e.escola||'',descricao:e.descricao||'',items:e.items||[],medidas:e.medidas||{},preco_total:e.precoTotal||'',sinal:e.sinal||'',sinal_pago:e.sinalPago||false,prazo_entrega:e.prazoEntrega||'',data_pedido:e.dataPedido||'',obs:e.obs||'',historico:e.historico||[]};}
-function orcFromDB(r){return{...r,clienteId:r.cliente_id};}
-function orcToDB(o,polo){return{id:String(o.id),polo,numero:o.numero||'',cliente:o.cliente||'',cliente_id:String(o.clienteId||o.cliente_id||''),items:o.items||[],total:parseFloat(o.total)||0,status:o.status||'Aberto',obs:o.obs||''};}
+function saleFromDB(r){return{id:r.id,productId:r.product_id,productName:r.product_name,qty:r.qty,unitPrice:parseFloat(r.unit_price),total:parseFloat(r.total),cost:parseFloat(r.cost),month:r.month,week:r.week,date:r.date,ts:r.ts,payment:r.payment,payments:normPayments(r.payments),type:r.type,status:r.status,customer:r.customer,orderNum:r.order_num,orderTs:r.order_ts,pedidoStatus:r.pedido_status};}
+function saleToDB(s,polo){return{id:String(s.id),polo,product_id:String(s.productId||''),product_name:s.productName||'',qty:s.qty||1,unit_price:parseFloat(s.unitPrice||s.total/s.qty)||0,total:parseFloat(s.total)||0,cost:parseFloat(s.cost)||0,month:s.month||0,week:s.week||0,date:s.date||'',ts:s.ts||0,payment:s.payment||'',payments:normPayments(s.payments),type:s.type||'loja',status:s.status||'Concluído',customer:s.customer||'',order_num:s.orderNum||'',order_ts:s.orderTs||0,pedido_status:s.pedidoStatus||''};}
+function encFromDB(r){return{...r,clientePhone:r.cliente_phone,clienteEmail:r.cliente_email,precoTotal:r.preco_total,sinalPago:r.sinal_pago,payments:normPayments(r.payments),prazoEntrega:r.prazo_entrega,dataPedido:r.data_pedido};}
+function encToDB(e,polo){return{id:String(e.id),polo,numero:e.numero||'',tipo:e.tipo||'',status:e.status||'Novo Pedido',prioridade:e.prioridade||'Normal',cliente:e.cliente||'',cliente_phone:e.clientePhone||'',cliente_email:e.clienteEmail||'',escola:e.escola||'',descricao:e.descricao||'',items:e.items||[],medidas:e.medidas||{},preco_total:e.precoTotal||'',sinal:e.sinal||'',sinal_pago:e.sinalPago||false,pagamento:e.pagamento||'',payments:normPayments(e.payments),prazo_entrega:e.prazoEntrega||'',data_pedido:e.dataPedido||'',obs:e.obs||'',historico:e.historico||[]};}
+function orcFromDB(r){return{...r,clienteId:r.cliente_id,payments:normPayments(r.payments)};}
+function orcToDB(o,polo){return{id:String(o.id),polo,numero:o.numero||'',cliente:o.cliente||'',cliente_id:String(o.clienteId||o.cliente_id||''),items:o.items||[],total:parseFloat(o.total)||0,status:o.status||'Aberto',pagamento:o.pagamento||'',payments:normPayments(o.payments),obs:o.obs||''};}
 
 // ── seed inicial (só roda se o banco estiver vazio) ───────────────────────────
 async function seedIfEmpty(polo){
@@ -5222,7 +5762,7 @@ function usePoloData(polo){
     const toUpsert = next.filter(s=>!existingIds.has(String(s.id)));
     const changed = next.filter(s=>{ const o=sales.find(x=>String(x.id)===String(s.id)); return o&&(o.status!==s.status||o.pedidoStatus!==s.pedidoStatus||o.stock!==s.stock); });
     const all=[...toUpsert,...changed];
-    if(all.length>0){ const {error}=await sb.from('sales').upsert(all.map(s=>saleToDB(s,polo))); flash(!error); }
+    if(all.length>0){ const {error}=await upsertSafe('sales', all.map(s=>saleToDB(s,polo))); flash(!error); }
     else flash(true);
   }
 
@@ -5260,7 +5800,7 @@ function usePoloData(polo){
     const nextIds = new Set(next.map(e=>String(e.id)));
     const toDelete = encomendas.filter(e=>!nextIds.has(String(e.id))).map(e=>String(e.id));
     let error=null;
-    if(toUpsert.length>0){ const r=await sb.from('encomendas').upsert(toUpsert.map(e=>encToDB(e,polo))); error=r.error; }
+    if(toUpsert.length>0){ const r=await upsertSafe('encomendas', toUpsert.map(e=>encToDB(e,polo))); error=r.error; }
     if(toDelete.length>0){ await sb.from('encomendas').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
@@ -5274,7 +5814,7 @@ function usePoloData(polo){
     const nextIds = new Set(next.map(o=>String(o.id)));
     const toDelete = orcamentos.filter(o=>!nextIds.has(String(o.id))).map(o=>String(o.id));
     let error=null;
-    if(toUpsert.length>0){ const r=await sb.from('orcamentos').upsert(toUpsert.map(o=>orcToDB(o,polo))); error=r.error; }
+    if(toUpsert.length>0){ const r=await upsertSafe('orcamentos', toUpsert.map(o=>orcToDB(o,polo))); error=r.error; }
     if(toDelete.length>0){ await sb.from('orcamentos').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
