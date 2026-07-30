@@ -21,58 +21,58 @@
 .polo-logo{height:100px;object-fit:contain;filter:brightness(1.1);}
 .polo-headline{font-family:"Bebas Neue",sans-serif;font-size:14px;letter-spacing:8px;color:#444;text-transform:uppercase;margin-bottom:8px;}
 .polo-title{font-family:"Bebas Neue",sans-serif;font-size:38px;letter-spacing:6px;color:#fff;line-height:1;margin-bottom:6px;}
-.polo-sub{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:4px;color:#555;margin-bottom:48px;text-transform:uppercase;}
+.polo-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:4px;color:#555;margin-bottom:48px;text-transform:uppercase;}
 .polo-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px;}
 .polo-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:32px 24px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;text-align:left;}
 .polo-card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 60%);opacity:0;transition:opacity .25s;}
 .polo-card:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.06);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.5);}
 .polo-card:hover::before{opacity:1;}
 .polo-card-icon{font-size:36px;margin-bottom:16px;display:block;}
-.polo-card-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:6px;}
+.polo-card-label{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#8a8a8a;text-transform:uppercase;margin-bottom:6px;}
 .polo-card-city{font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:3px;color:#fff;line-height:1;margin-bottom:4px;}
 .polo-card-state{font-family:"Oswald",sans-serif;font-size:13px;font-weight:400;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:16px;}
-.polo-card-enter{display:inline-flex;align-items:center;gap:6px;font-family:"Oswald",sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;transition:color .2s;}
+.polo-card-enter{display:inline-flex;align-items:center;gap:6px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#525252;transition:color .2s;}
 .polo-card:hover .polo-card-enter{color:#fff;}
 .polo-card-arrow{font-size:14px;transition:transform .2s;}
 .polo-card:hover .polo-card-arrow{transform:translateX(5px);}
 .polo-card-accent{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:scaleX(0);transition:transform .3s;}
 .polo-card:hover .polo-card-accent{transform:scaleX(1);}
-.polo-footer{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:3px;color:#333;text-transform:uppercase;}
+.polo-footer{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#333;text-transform:uppercase;}
 @keyframes polofadein{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .polo-container{animation:polofadein .6s ease both;}
 .polo-cards .polo-card:nth-child(1){animation:polofadein .6s .1s ease both;}
 .polo-cards .polo-card:nth-child(2){animation:polofadein .6s .2s ease both;}
 
 /* ===== POLO BADGE IN ADMIN ===== */
-.polo-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:4px 10px;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:#aaa;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.polo-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:4px 10px;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;cursor:pointer;transition:all .15s;}
 .polo-badge:hover{background:rgba(255,255,255,.15);color:#fff;}
 .polo-badge-dot{width:6px;height:6px;border-radius:50%;background:#4caf50;flex-shrink:0;}
 
 /* ===== POLO BADGE IN STORE ===== */
 .store-polo-bar{background:#111;border-bottom:1px solid #222;padding:6px 24px;display:flex;align-items:center;justify-content:space-between;}
 .store-polo-bar-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
-.store-polo-name{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#555;text-transform:uppercase;}
-.store-polo-switch{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:#444;cursor:pointer;transition:color .15s;background:none;border:none;padding:0;text-transform:uppercase;}
-.store-polo-switch:hover{color:#aaa;}
+.store-polo-name{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#555;text-transform:uppercase;}
+.store-polo-switch{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#444;cursor:pointer;transition:color .15s;background:none;border:none;padding:0;text-transform:uppercase;}
+.store-polo-switch:hover{color:#5f6368;}
 
 /* ===== MEUS PEDIDOS (cliente) ===== */
 .mp-root{max-width:700px;margin:0 auto;padding:28px 20px;}
 .mp-header{margin-bottom:28px;}
-.mp-back{background:none;border:none;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px;margin-bottom:16px;transition:color .15s;}
+.mp-back{background:none;border:none;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#525252;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px;margin-bottom:16px;transition:color .15s;}
 .mp-back:hover{color:#111;}
 .mp-title{font-family:"Bebas Neue",sans-serif;font-size:32px;letter-spacing:5px;color:#111;line-height:1;}
-.mp-subtitle{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#bbb;margin-top:4px;text-transform:uppercase;}
+.mp-subtitle{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#6b6b6b;margin-top:4px;text-transform:uppercase;}
 .mp-empty{text-align:center;padding:60px 20px;}
 .mp-empty-icon{font-size:52px;margin-bottom:12px;}
-.mp-empty-text{font-family:"Oswald",sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#bbb;margin-bottom:6px;}
-.mp-empty-sub{font-family:"Share Tech Mono",monospace;font-size:10px;color:#ccc;letter-spacing:1px;}
+.mp-empty-text{font-family:"Oswald",sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#6b6b6b;margin-bottom:6px;}
+.mp-empty-sub{font-family:"Share Tech Mono",monospace;font-size:11px;color:#8a8a8a;letter-spacing:1px;}
 .mp-order{background:#fff;border:1px solid #e8e8e8;border-radius:8px;margin-bottom:16px;overflow:hidden;transition:box-shadow .2s;}
 .mp-order:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);}
 .mp-order-head{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12;border-bottom:1px solid #f5f5f5;cursor:pointer;user-select:none;}
 .mp-order-num{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:3px;color:#111;}
-.mp-order-date{font-family:"Share Tech Mono",monospace;font-size:9px;color:#bbb;letter-spacing:2px;margin-top:2px;text-transform:uppercase;}
+.mp-order-date{font-family:"Share Tech Mono",monospace;font-size:11px;color:#6b6b6b;letter-spacing:2px;margin-top:2px;text-transform:uppercase;}
 .mp-order-total{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:2px;color:#111;text-align:right;}
-.mp-order-total-lbl{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:2px;color:#bbb;text-align:right;text-transform:uppercase;}
+.mp-order-total-lbl{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#6b6b6b;text-align:right;text-transform:uppercase;}
 .mp-order-body{padding:0 20px 20px;}
 /* Timeline */
 .mp-timeline{display:flex;align-items:flex-start;gap:0;padding:20px 0 16px;overflow-x:auto;}
@@ -84,14 +84,14 @@
 .mp-step-dot.done{border-color:#111;background:#111;color:#fff;}
 .mp-step-dot.active{border-color:#111;background:#fff;box-shadow:0 0 0 3px rgba(17,17,17,.12);}
 .mp-step-dot.cancelled{border-color:#cc2222;background:#cc2222;color:#fff;}
-.mp-step-label{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px;color:#bbb;text-transform:uppercase;margin-top:7px;text-align:center;line-height:1.3;}
+.mp-step-label{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.8px;color:#5f6368;text-transform:uppercase;margin-top:7px;text-align:center;line-height:1.3;}
 .mp-step-label.done{color:#111;font-weight:600;}
 .mp-step-label.active{color:#111;}
 .mp-items-list{border-top:1px solid #f0f0f0;padding-top:14px;}
 .mp-item-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f9f9f9;}
 .mp-item-row:last-child{border-bottom:none;}
 .mp-item-name{flex:1;font-family:"Oswald",sans-serif;font-size:13px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:#333;}
-.mp-item-qty{font-family:"Share Tech Mono",monospace;font-size:10px;color:#aaa;white-space:nowrap;}
+.mp-item-qty{font-family:"Share Tech Mono",monospace;font-size:11px;color:#5f6368;white-space:nowrap;}
 .mp-item-price{font-family:"Bebas Neue",sans-serif;font-size:16px;letter-spacing:1px;color:#111;white-space:nowrap;}
 .mp-status-banner{border-radius:4px;padding:12px 14px;margin-bottom:14px;font-size:12px;display:flex;align-items:center;gap:10px;}
 .mp-status-banner.aguardando{background:#fff8e8;border:1px solid #e6a800;color:#7a5500;}
@@ -99,7 +99,7 @@
 .mp-status-banner.pronto{background:#e8f9ee;border:1px solid #1a6e2e;color:#1a6e2e;}
 .mp-status-banner.entregue{background:#f0f0f0;border:1px solid #ccc;color:#555;}
 .mp-status-banner.cancelado{background:#fde8e8;border:1px solid #cc2222;color:#a01010;}
-.mp-chevron{font-size:12px;transition:transform .2s;color:#ccc;flex-shrink:0;}
+.mp-chevron{font-size:12px;transition:transform .2s;color:#8a8a8a;flex-shrink:0;}
 .mp-chevron.open{transform:rotate(180deg);}
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px;}
 .hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;transition:all .25s;}
@@ -145,16 +145,16 @@
   .store-hero-inner{padding:24px 16px;gap:18px;flex-wrap:wrap;}
   .store-hero-logo{height:72px;}
   .store-hero-title{font-size:36px;letter-spacing:4px;}
-  .store-hero-slogan{font-size:9px;letter-spacing:3px;}
+  .store-hero-slogan{font-size:11px;letter-spacing:3px;}
   .store-hero-sub{font-size:12px;}
 
   /* Store nav */
   .store-nav-inner{padding:0 12px;height:auto;flex-wrap:wrap;gap:0;}
   .store-nav-cats{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;width:100%;padding-bottom:2px;}
-  .store-nav-cat{padding:0 10px;font-size:10px;white-space:nowrap;height:46px;}
+  .store-nav-cat{padding:0 10px;font-size:11px;white-space:nowrap;height:46px;}
   .store-nav-right{padding:6px 0;gap:6px;}
-  .login-btn-nav{padding:6px 10px;font-size:10px;}
-  .cart-btn{padding:6px 10px;font-size:10px;}
+  .login-btn-nav{padding:6px 10px;font-size:11px;}
+  .cart-btn{padding:6px 10px;font-size:11px;}
 
   /* Store body */
   .store-body{padding:16px 14px;}
@@ -203,7 +203,7 @@
   .product-name{font-size:12px;}
   .product-price{font-size:20px;}
   .product-img{height:140px;}
-  .product-add-btn{font-size:9px;padding:7px;}
+  .product-add-btn{font-size:11px;padding:7px;}
 
   /* Polo selector */
   .polo-title{font-size:22px;letter-spacing:3px;}
@@ -233,33 +233,33 @@
 /* ===== TOKENS ===== */
 :root{
   --black:#111;--dark:#1a1a1a;--bg:#f0f0f0;--card:#fff;--border:#e0e0e0;
-  --t1:#111;--t2:#555;--t3:#999;
+  --t1:#111;--t2:#3d3d3d;--t3:#5f6368;
   --success:#1a6e2e;--danger:#cc2222;--warning:#996622;--info:#1a4e8e;
-  --sidebar:#111;--sb-text:#bbb;--sb-active:#fff;--sb-border:#2a2a2a;
+  --sidebar:#111;--sb-text:#d8d8d8;--sb-active:#fff;--sb-border:#2a2a2a;
 }
 
 /* ===== SHARED ===== */
 body{background:var(--bg);color:var(--t1);font-family:"Barlow",sans-serif;min-height:100vh;}
 .card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .card+.card,.card{margin-bottom:16px;}
-.card-title{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;display:block;margin-bottom:4px;}
-input,select,textarea{background:#fafafa;border:1px solid #ccc;color:var(--t1);padding:8px 11px;font-family:"Barlow",sans-serif;font-size:13px;border-radius:3px;outline:none;transition:border .15s;width:100%;}
-input:focus,select:focus,textarea:focus{border-color:#888;background:#fff;}
+.card-title{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+label{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;display:block;margin-bottom:4px;}
+input,select,textarea{background:#fafafa;border:1px solid #b4b4b4;color:var(--t1);padding:9px 11px;font-family:"Barlow",sans-serif;font-size:14px;border-radius:3px;outline:none;transition:border .15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:#525252;background:#fff;}
 select option{background:#fff;color:#111;}
 textarea{resize:vertical;min-height:70px;}
 .form-group{display:flex;flex-direction:column;gap:4px;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
 .form-group.full,.section-divider{grid-column:1/-1;}
-.section-divider{font-family:"Oswald",sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t2);padding:12px 0 6px;border-bottom:1px solid var(--border);}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #ccc;background:#f5f5f5;color:var(--t1);font-family:"Oswald",sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px;transition:all .15s;}
-.btn:hover{background:#e8e8e8;border-color:#aaa;}
+.section-divider{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t2);padding:12px 0 6px;border-bottom:1px solid var(--border);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #b4b4b4;background:#f5f5f5;color:var(--t1);font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px;transition:all .15s;}
+.btn:hover{background:#e8e8e8;border-color:#5f6368;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
 .btn-primary{background:var(--black);color:#fff;border-color:var(--black);}
 .btn-primary:hover{background:#333;}
 .btn-danger{background:transparent;color:var(--danger);border-color:var(--danger);}
 .btn-danger:hover{background:var(--danger);color:#fff;}
-.btn-sm{padding:5px 10px;font-size:10px;}
+.btn-sm{padding:6px 11px;font-size:11px;}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--t2);}
 .btn-ghost:hover{background:#f0f0f0;border-color:#ddd;}
 .w-full{width:100%;}
@@ -270,22 +270,22 @@ textarea{resize:vertical;min-height:70px;}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
 .text-mono{font-family:"Share Tech Mono",monospace;}
 .text-faint{color:var(--t3);}
-.text-sm{font-size:12px;}
-.tag{display:inline-block;padding:2px 7px;border-radius:2px;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;}
+.text-sm{font-size:13px;}
+.tag{display:inline-block;padding:3px 8px;border-radius:2px;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.8px;text-transform:uppercase;}
 .tag-ok{background:rgba(26,110,46,.1);color:#1a6e2e;border:1px solid rgba(26,110,46,.25);}
 .tag-low{background:rgba(153,102,34,.1);color:#996622;border:1px solid rgba(153,102,34,.25);}
 .tag-out{background:rgba(204,34,34,.1);color:#cc2222;border:1px solid rgba(204,34,34,.25);}
 .tag-done{background:rgba(26,110,46,.1);color:#1a6e2e;border:1px solid rgba(26,110,46,.25);}
-.tag-pending{background:rgba(120,120,120,.1);color:#666;border:1px solid rgba(120,120,120,.2);}
+.tag-pending{background:rgba(120,120,120,.12);color:#4a4a4a;border:1px solid rgba(120,120,120,.2);}
 .tag-online{background:rgba(26,60,150,.1);color:#1a3c96;border:1px solid rgba(26,60,150,.2);}
 .tag-loja{background:rgba(90,30,150,.1);color:#5a1e96;border:1px solid rgba(90,30,150,.2);}
 .tag-integra{background:rgba(0,100,60,.1);color:#00643c;border:1px solid rgba(0,100,60,.2);}
 .table-wrap{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-thead th{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding:9px 11px;text-align:left;border-bottom:2px solid var(--border);background:#fafafa;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:9px 11px;text-align:left;border-bottom:2px solid var(--border);background:#fafafa;}
 tbody tr{border-bottom:1px solid #f5f5f5;transition:background .1s;}
 tbody tr:hover{background:#fafafa;}
-tbody td{padding:9px 11px;color:#444;vertical-align:middle;}
+tbody td{padding:10px 11px;color:#2b2b2b;vertical-align:middle;}
 td strong{color:var(--t1);font-weight:600;}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
@@ -294,9 +294,9 @@ td strong{color:var(--t1);font-weight:600;}
 .stat-card.red::before{background:var(--danger);}
 .stat-card.gold::before{background:var(--warning);}
 .stat-card.blue::before{background:var(--info);}
-.stat-label{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;}
-.stat-value{font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:2px;color:var(--t1);line-height:1;}
-.stat-change{font-family:"Share Tech Mono",monospace;font-size:9px;margin-top:4px;color:var(--t3);}
+.stat-label{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:2px;color:var(--t1);line-height:1;}
+.stat-change{font-family:"Share Tech Mono",monospace;font-size:11px;margin-top:5px;color:var(--t3);}
 .stat-icon{position:absolute;right:14px;top:12px;font-size:22px;opacity:.1;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal{background:#fff;border:1px solid #ccc;border-radius:4px;padding:24px;width:100%;max-width:720px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15);}
@@ -321,50 +321,50 @@ td strong{color:var(--t1);font-weight:600;}
 .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;}
 .chart-bar{width:100%;background:#ddd;border-radius:2px 2px 0 0;min-height:3px;transition:height .5s;}
 .chart-bar.hi{background:var(--black);}
-.chart-label{font-family:"Share Tech Mono",monospace;font-size:8px;color:var(--t3);}
-.chart-val{font-family:"Share Tech Mono",monospace;font-size:7px;color:var(--t2);}
+.chart-label{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--t3);}
+.chart-val{font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--t2);}
 .integra-pill{background:linear-gradient(135deg,#00643c,#004428);color:#fff;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin:8px 0;}
 .integra-pill-title{font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;}
-.integra-pill-sub{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;opacity:.8;}
+.integra-pill-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;opacity:.8;}
 .img-upload{width:100%;height:110px;border:2px dashed #ccc;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;transition:border-color .2s;}
-.img-upload:hover{border-color:#888;}
+.img-upload:hover{border-color:#525252;}
 .img-preview{width:100%;height:110px;object-fit:cover;border-radius:3px;}
 /* ===== ADMIN LAYOUT ===== */
 .sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--sidebar);border-right:1px solid var(--sb-border);display:flex;flex-direction:column;z-index:100;}
 .sidebar-logo{padding:16px;border-bottom:1px solid var(--sb-border);}
 .sidebar-logo img{width:100%;max-height:82px;object-fit:contain;}
 .sidebar-nav{flex:1;padding:8px 0;overflow-y:auto;}
-.nav-section{padding:12px 16px 4px;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#444;text-transform:uppercase;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1px;color:var(--sb-text);border-left:2px solid transparent;text-transform:uppercase;}
+.nav-section{padding:12px 16px 4px;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#444;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;transition:all .15s;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:1px;color:var(--sb-text);border-left:2px solid transparent;text-transform:uppercase;}
 .nav-item:hover{color:var(--sb-active);background:#1e1e1e;}
 .nav-item.active{color:var(--sb-active);background:#1e1e1e;border-left-color:#fff;}
 .nav-icon{font-size:15px;width:18px;text-align:center;}
-.sidebar-footer{padding:12px 16px;border-top:1px solid var(--sb-border);font-family:"Share Tech Mono",monospace;font-size:9px;color:#444;}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--sb-border);font-family:"Share Tech Mono",monospace;font-size:11px;color:#444;}
 .admin-main{margin-left:220px;min-height:100vh;}
 .topbar{background:#fff;border-bottom:1px solid var(--border);padding:13px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .page-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:3px;}
-.page-sub{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:var(--t3);margin-top:1px;}
-.topbar-badge{background:#f5f5f5;color:#666;padding:3px 10px;border-radius:2px;font-family:"Share Tech Mono",monospace;font-size:10px;border:1px solid #e0e0e0;}
+.page-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1.5px;color:var(--t3);margin-top:1px;}
+.topbar-badge{background:#f5f5f5;color:#666;padding:3px 10px;border-radius:2px;font-family:"Share Tech Mono",monospace;font-size:11px;border:1px solid #e0e0e0;}
 .admin-content{padding:22px 26px;}
 .caixa-grid{display:grid;grid-template-columns:1fr 310px;gap:16px;}
 .pdv-item{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .15s;background:#fff;margin-bottom:7px;}
-.pdv-item:hover{border-color:#888;background:#fafafa;}
+.pdv-item:hover{border-color:#525252;background:#fafafa;}
 .pdv-thumb{width:40px;height:40px;background:#f5f5f5;border-radius:2px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .pdv-thumb img{width:100%;height:100%;object-fit:cover;}
-.pdv-name{font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:1px;flex:1;}
-.pdv-price{font-family:"Bebas Neue",sans-serif;font-size:16px;letter-spacing:1px;}
-.receipt{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:3px;padding:14px;font-family:"Share Tech Mono",monospace;font-size:11px;color:#444;}
+.pdv-name{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:1px;flex:1;}
+.pdv-price{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:1px;}
+.receipt{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:3px;padding:16px;font-family:"Share Tech Mono",monospace;font-size:13px;color:#2b2b2b;}
 .receipt-line{display:flex;justify-content:space-between;padding:2px 0;}
 .receipt-sep{border-top:1px dashed #ccc;margin:6px 0;}
 .receipt-total{font-size:13px;font-weight:bold;color:var(--t1);}
 .cart-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0;}
 .cart-thumb{width:44px;height:44px;background:#f5f5f5;border-radius:2px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .cart-thumb img{width:100%;height:100%;object-fit:cover;}
-.cart-name{font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;color:var(--t1);text-transform:uppercase;letter-spacing:1px;}
-.cart-price{font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--t3);}
+.cart-name{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;color:var(--t1);text-transform:uppercase;letter-spacing:1px;}
+.cart-price{font-family:"Share Tech Mono",monospace;font-size:12px;color:var(--t3);}
 .qty-row{display:flex;align-items:center;gap:6px;margin-top:3px;}
 .qty-btn{width:20px;height:20px;background:#f0f0f0;border:1px solid #ccc;color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:2px;}
-.qty-n{font-family:"Share Tech Mono",monospace;font-size:11px;min-width:18px;text-align:center;}
+.qty-n{font-family:"Share Tech Mono",monospace;font-size:13px;min-width:18px;text-align:center;}
 /* ===== CUSTOMER STORE ===== */
 .store-root{min-height:100vh;background:#fff;}
 /* HERO */
@@ -373,8 +373,8 @@ td strong{color:var(--t1);font-weight:600;}
 .store-hero-logo{height:120px;object-fit:contain;filter:brightness(1);}
 .store-hero-text{}
 .store-hero-title{font-family:"Bebas Neue",sans-serif;font-size:52px;letter-spacing:8px;color:#fff;line-height:1;}
-.store-hero-slogan{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:5px;color:#888;text-transform:uppercase;margin-top:6px;}
-.store-hero-sub{font-family:"Barlow",sans-serif;font-size:14px;color:#aaa;margin-top:10px;}
+.store-hero-slogan{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:5px;color:#525252;text-transform:uppercase;margin-top:6px;}
+.store-hero-sub{font-family:"Barlow",sans-serif;font-size:14px;color:#5f6368;margin-top:10px;}
 /* NAV */
 .store-nav{background:#fff;border-bottom:2px solid #111;position:sticky;top:0;z-index:80;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 .store-nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px;}
@@ -385,30 +385,30 @@ td strong{color:var(--t1);font-weight:600;}
 .store-nav-right{display:flex;align-items:center;gap:10px;}
 .cart-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s;position:relative;}
 .cart-btn:hover{background:#333;}
-.cart-count{background:#fff;color:#111;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:"Share Tech Mono",monospace;}
+.cart-count{background:#fff;color:#111;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:"Share Tech Mono",monospace;}
 .login-btn-nav{display:flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;color:#111;border:1px solid #111;border-radius:3px;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;}
 .login-btn-nav:hover{background:#111;color:#fff;}
 /* CATALOG */
 .store-body{max-width:1100px;margin:0 auto;padding:28px 24px;}
 .store-section-title{font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:4px;color:#111;margin-bottom:4px;}
-.store-section-sub{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#999;margin-bottom:20px;}
+.store-section-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#5f6368;margin-bottom:20px;}
 .store-search{position:relative;max-width:360px;margin-bottom:24px;}
 .store-search input{border:2px solid #111;border-radius:3px;padding:10px 14px 10px 38px;font-size:13px;background:#fff;}
 .store-search input:focus{outline:none;border-color:#555;}
-.store-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#999;}
+.store-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;}
 .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;}
 .product-card{background:#fff;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;transition:box-shadow .2s,transform .2s;cursor:pointer;}
 .product-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);transform:translateY(-3px);}
 .product-img{height:180px;background:#f5f5f5;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;}
 .product-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
 .product-card:hover .product-img img{transform:scale(1.04);}
-.product-img-ph{font-family:"Share Tech Mono",monospace;font-size:11px;color:#bbb;letter-spacing:1px;}
-.product-badge{position:absolute;top:8px;left:8px;background:#111;color:#fff;font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px;padding:3px 7px;border-radius:2px;}
+.product-img-ph{font-family:"Share Tech Mono",monospace;font-size:11px;color:#6b6b6b;letter-spacing:1px;}
+.product-badge{position:absolute;top:8px;left:8px;background:#111;color:#fff;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;padding:3px 7px;border-radius:2px;}
 .product-body{padding:14px;}
-.product-cat{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:2px;color:#999;text-transform:uppercase;margin-bottom:4px;}
+.product-cat{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;margin-bottom:4px;}
 .product-name{font-family:"Oswald",sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#111;margin-bottom:8px;line-height:1.2;}
 .product-price{font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:2px;color:#111;}
-.product-stock{font-family:"Share Tech Mono",monospace;font-size:9px;color:#aaa;margin-top:2px;}
+.product-stock{font-family:"Share Tech Mono",monospace;font-size:11px;color:#5f6368;margin-top:2px;}
 .product-add-btn{width:100%;margin-top:12px;padding:9px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
 .product-add-btn:hover{background:#333;}
 /* CART DRAWER */
@@ -416,20 +416,20 @@ td strong{color:var(--t1);font-weight:600;}
 .cart-drawer.open{transform:translateX(0);}
 .cart-drawer-header{padding:18px 20px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;}
 .cart-drawer-title{font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:3px;}
-.cart-drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#999;padding:2px;}
+.cart-drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#5f6368;padding:2px;}
 .cart-drawer-close:hover{color:#111;}
 .cart-drawer-items{flex:1;overflow-y:auto;padding:14px 18px;}
 .cart-drawer-footer{padding:16px 20px;border-top:1px solid #e8e8e8;}
 .cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.cart-total-lbl{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;color:#999;}
+.cart-total-lbl{font-family:"Share Tech Mono",monospace;font-size:12px;letter-spacing:1.5px;color:#5f6368;}
 .cart-total-val{font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:2px;}
-.store-empty{text-align:center;padding:48px 20px;color:#bbb;}
+.store-empty{text-align:center;padding:48px 20px;color:#6b6b6b;}
 .store-empty-icon{font-size:48px;margin-bottom:10px;}
 .store-empty-text{font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;}
 /* CHECKOUT */
 .checkout-wrap{max-width:640px;margin:0 auto;padding:28px 24px;}
 .checkout-steps{display:flex;align-items:center;gap:0;margin-bottom:28px;}
-.checkout-step{display:flex;align-items:center;gap:8px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#bbb;}
+.checkout-step{display:flex;align-items:center;gap:8px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6b6b6b;}
 .checkout-step.done{color:var(--success);}
 .checkout-step.active{color:#111;}
 .checkout-step-num{width:26px;height:26px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:"Share Tech Mono",monospace;flex-shrink:0;}
@@ -438,11 +438,11 @@ td strong{color:var(--t1);font-weight:600;}
 .checkout-sep{flex:1;height:1px;background:#e0e0e0;margin:0 8px;}
 .delivery-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
 .delivery-opt{border:2px solid #e0e0e0;border-radius:4px;padding:14px;cursor:pointer;transition:all .15s;background:#fff;}
-.delivery-opt:hover{border-color:#888;}
+.delivery-opt:hover{border-color:#525252;}
 .delivery-opt.selected{border-color:#111;background:#fafafa;}
 .delivery-opt-icon{font-size:26px;margin-bottom:6px;}
 .delivery-opt-title{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
-.delivery-opt-sub{font-size:11px;color:#888;margin-top:2px;}
+.delivery-opt-sub{font-size:11px;color:#525252;margin-top:2px;}
 .order-summary-box{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:4px;padding:16px;margin-bottom:16px;}
 /* LOGIN / REGISTER */
 .auth-screen{min-height:100vh;background:#f0f0f0;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -450,31 +450,31 @@ td strong{color:var(--t1);font-weight:600;}
 .auth-logo{text-align:center;margin-bottom:24px;}
 .auth-logo img{height:80px;object-fit:contain;}
 .auth-title{font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:4px;text-align:center;margin-bottom:4px;}
-.auth-sub{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:3px;color:#999;text-align:center;margin-bottom:24px;}
+.auth-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#5f6368;text-align:center;margin-bottom:24px;}
 .auth-tabs{display:flex;border:1px solid #e0e0e0;border-radius:3px;margin-bottom:20px;overflow:hidden;}
-.auth-tab{flex:1;padding:9px;text-align:center;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .15s;color:#888;background:#fff;}
+.auth-tab{flex:1;padding:9px;text-align:center;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .15s;color:#525252;background:#fff;}
 .auth-tab.active{background:#111;color:#fff;}
-.auth-divider{text-align:center;color:#bbb;font-size:11px;margin:14px 0;position:relative;}
+.auth-divider{text-align:center;color:#6b6b6b;font-size:11px;margin:14px 0;position:relative;}
 .auth-divider::before,.auth-divider::after{content:"";position:absolute;top:50%;width:38%;height:1px;background:#e0e0e0;}
 .auth-divider::before{left:0;}
 .auth-divider::after{right:0;}
-.admin-link{text-align:center;margin-top:18px;font-size:12px;color:#aaa;font-family:"Share Tech Mono",monospace;letter-spacing:1px;}
+.admin-link{text-align:center;margin-top:18px;font-size:12px;color:#5f6368;font-family:"Share Tech Mono",monospace;letter-spacing:1px;}
 .admin-link span{cursor:pointer;color:#666;text-decoration:underline;}
 .admin-link span:hover{color:#111;}
 /* ORDER CONFIRMED */
 .order-confirmed{text-align:center;padding:40px 20px;}
 .order-confirmed-icon{font-size:60px;margin-bottom:14px;}
 .order-confirmed-title{font-family:"Bebas Neue",sans-serif;font-size:32px;letter-spacing:5px;margin-bottom:6px;}
-.order-number{font-family:"Share Tech Mono",monospace;font-size:12px;letter-spacing:3px;color:#999;margin-bottom:24px;}
+.order-number{font-family:"Share Tech Mono",monospace;font-size:12px;letter-spacing:3px;color:#5f6368;margin-bottom:24px;}
 /* ACCOUNT */
 .account-header{background:#111;padding:28px 24px;max-width:1100px;margin:0 auto;}
 .account-header-name{font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:4px;color:#fff;}
-.account-header-email{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;color:#888;}
+.account-header-email{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#525252;}
 /* FOOTER */
 .store-footer{background:#111;padding:28px 24px;margin-top:40px;}
 .store-footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
 .store-footer-logo img{height:50px;object-fit:contain;opacity:.8;}
-.store-footer-text{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:#555;text-align:right;}
+.store-footer-text{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#555;text-align:right;}
 /* ===== KANBAN (Trello-style) ===== */
 .kb-board{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 14px;align-items:flex-start;}
 .kb-col{flex:0 0 240px;min-width:240px;background:#f4f4f5;border:1px solid #e6e6e8;border-radius:8px;display:flex;flex-direction:column;max-height:72vh;transition:background .15s,box-shadow .15s;}
@@ -484,15 +484,15 @@ td strong{color:var(--t1);font-weight:600;}
 .kb-col-count{font-family:"Bebas Neue",sans-serif;font-size:16px;letter-spacing:1px;color:#fff;background:#888;border-radius:10px;min-width:22px;text-align:center;padding:0 7px;}
 .kb-col-body{padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:60px;}
 .kb-card{background:#fff;border:1px solid #e2e2e4;border-radius:6px;padding:10px 11px;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:box-shadow .15s,transform .1s,border-color .15s;}
-.kb-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);border-color:#bbb;}
+.kb-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);border-color:#6b6b6b;}
 .kb-card:active{cursor:grabbing;transform:scale(.99);}
 .kb-card-title{font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;letter-spacing:.3px;color:#111;margin-bottom:3px;}
-.kb-card-sub{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;color:#999;text-transform:uppercase;}
+.kb-card-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;color:#5f6368;text-transform:uppercase;}
 .kb-card-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px;gap:6px;flex-wrap:wrap;}
 .kb-card-total{font-family:"Bebas Neue",sans-serif;font-size:17px;letter-spacing:1px;color:#111;}
-.kb-empty{font-family:"Share Tech Mono",monospace;font-size:10px;color:#c4c4c8;text-align:center;padding:14px 0;}
-.kb-pill{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;border-radius:3px;}
-.kb-hint{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;color:#aaa;text-transform:uppercase;margin-bottom:8px;}
+.kb-empty{font-family:"Share Tech Mono",monospace;font-size:11px;color:#c4c4c8;text-align:center;padding:14px 0;}
+.kb-pill{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:2px 6px;border-radius:3px;}
+.kb-hint{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.8px;color:#6b6b6b;text-transform:uppercase;margin-bottom:8px;}
 /* ===== GESTÃO DE ESTOQUE ===== */
 .ge-polochip{display:inline-flex;align-items:center;gap:5px;border:1px solid #d8d8dc;border-radius:14px;padding:4px 10px;cursor:pointer;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#555;user-select:none;transition:all .12s;}
 .ge-polochip.on{background:#111;color:#fff;border-color:#111;}
@@ -539,6 +539,46 @@ function saleYear(s){
 }
 // Venda pertence ao ano informado? (registros antigos sem data entram como do ano corrente)
 function isSaleOfYear(s, year){ const y=saleYear(s); return y===null ? true : y===year; }
+
+// ====== ORDENAÇÃO DE PRODUTOS POR TAMANHO ======
+// Os produtos são cadastrados com o tamanho no nome (ex.: "Camisa Camuflada G").
+// Sem tratamento, a ordem alfabética coloca G antes de M e de P. Aqui separamos
+// o nome-base do tamanho para listar na sequência real: PP, P, M, G, GG, XG...
+const ORDEM_TAM = ['PP','P','M','G','GG','XG','XGG','XXG','EG','EGG'];
+// alternativas mais longas primeiro para "GG" não ser lido como "G"
+const RE_TAM_LETRA = /^(.*?)[\s\-–,]+(?:tam(?:anho)?\.?\s*)?(PP|XGG|XXG|XG|EGG|EG|GG|G|M|P)\s*$/i;
+const RE_TAM_NUM   = /^(.*?)[\s\-–,]+(?:n[ºo°]?\.?\s*|tam(?:anho)?\.?\s*)?(\d{1,3})\s*$/i;
+const RE_TAM_IDADE = /^(.*?)[\s\-–,]+(?:tam(?:anho)?\.?\s*)?(\d{1,2})\s*anos?\s*$/i;
+
+// Separa "Camisa Camuflada GG" em { base:"Camisa Camuflada", tam:"GG", rank:4 }
+function parseTamanho(nome){
+  const n = String(nome||'').trim();
+  let m = n.match(RE_TAM_IDADE);
+  if(m) return {base:m[1].trim(), rank:1000+parseInt(m[2]), tam:m[2]+' anos'};
+  m = n.match(RE_TAM_LETRA);
+  if(m){
+    const t = m[2].toUpperCase();
+    const i = ORDEM_TAM.indexOf(t);
+    if(i>=0) return {base:m[1].trim(), rank:i, tam:t};
+  }
+  m = n.match(RE_TAM_NUM);
+  if(m) return {base:m[1].trim(), rank:2000+parseInt(m[2]), tam:m[2]};
+  return {base:n, rank:9999, tam:''};   // produto sem tamanho no nome
+}
+
+// Compara dois produtos: primeiro pelo nome-base, depois pela sequência de tamanhos
+function cmpProdutoTamanho(nomeA, nomeB){
+  const A = parseTamanho(nomeA), B = parseTamanho(nomeB);
+  const c = A.base.localeCompare(B.base, 'pt-BR', {sensitivity:'base'});
+  if(c!==0) return c;
+  if(A.rank!==B.rank) return A.rank - B.rank;
+  return String(nomeA||'').localeCompare(String(nomeB||''), 'pt-BR');
+}
+
+// Ordena uma lista de produtos (objetos com .name) agrupando por produto e tamanho
+function ordenarProdutos(lista){
+  return [...(lista||[])].sort((a,b)=>cmpProdutoTamanho(a&&a.name, b&&b.name));
+}
 function genSales(){
   const s=[];let id=1;
   for(let m=0;m<12;m++){const n=Math.floor(Math.random()*12)+4;for(let i=0;i<n;i++){const p=INIT_PRODS[Math.floor(Math.random()*INIT_PRODS.length)];const qty=Math.floor(Math.random()*3)+1;const day=Math.floor(Math.random()*28)+1;const dt=new Date(2025,m,day);s.push({id:id++,productId:p.id,productName:p.name,qty,unitPrice:p.price,total:parseFloat((p.price*qty).toFixed(2)),cost:parseFloat((p.cost*qty).toFixed(2)),month:m,week:getWeekNum(dt),date:`${String(day).padStart(2,"0")}/${String(m+1).padStart(2,"0")}/2025`,ts:dt.getTime(),payment:PMTS[Math.floor(Math.random()*PMTS.length)],type:Math.random()>.3?"loja":"online",status:Math.random()>.1?"Concluído":"Pendente",customer:["Ana Lima","Carlos Souza","Marina Costa","Pedro Alves"][Math.floor(Math.random()*4)]});}}
@@ -592,14 +632,14 @@ function ClientePicker({customers, value, onChange, onPick, label='Cliente', pla
     </datalist>
     {matched ? (
       <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5,flexWrap:'wrap'}}>
-        <span style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #bfe3c2',borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1}}>✓ CLIENTE CADASTRADO</span>
-        <span style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#888',letterSpacing:1}}>
+        <span style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #bfe3c2',borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>✓ CLIENTE CADASTRADO</span>
+        <span style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#525252',letterSpacing:1}}>
           {[matched.phone, matched.school].filter(Boolean).join(' · ')||'sem telefone'}
         </span>
-        <button type="button" onClick={()=>handle('')} style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,cursor:'pointer',padding:0}}>limpar</button>
+        <button type="button" onClick={()=>handle('')} style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,cursor:'pointer',padding:0}}>limpar</button>
       </div>
     ) : (q.trim() && allowFree ? (
-      <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:5}}>Cliente avulso (não cadastrado)</div>
+      <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:5}}>Cliente avulso (não cadastrado)</div>
     ) : null)}
   </div>;
 }
@@ -689,7 +729,7 @@ function PagamentoMultiplo({total, payment, setPayment, splits, setSplits, multi
     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:5}}>
       <label style={{margin:0}}>{label}</label>
       <button type="button" onClick={()=>multi?setMulti(false):ligarMulti()}
-        style={{background:'none',border:'1px solid '+(multi?'#1a6e2e':'#ccc'),borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:multi?'#1a6e2e':'#777',cursor:'pointer',textTransform:'uppercase'}}>
+        style={{background:'none',border:'1px solid '+(multi?'#1a6e2e':'#ccc'),borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:multi?'#1a6e2e':'#777',cursor:'pointer',textTransform:'uppercase'}}>
         {multi?'✓ Dividido':'⊞ Dividir pagamento'}
       </button>
     </div>
@@ -709,10 +749,10 @@ function PagamentoMultiplo({total, payment, setPayment, splits, setSplits, multi
           </div>
         ))}
         <button type="button" onClick={addLinha}
-          style={{background:'none',border:'1px dashed #bbb',borderRadius:3,padding:'5px 10px',fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#666',cursor:'pointer',width:'100%',textTransform:'uppercase'}}>
+          style={{background:'none',border:'1px dashed #bbb',borderRadius:3,padding:'5px 10px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#666',cursor:'pointer',width:'100%',textTransform:'uppercase'}}>
           + Adicionar forma de pagamento
         </button>
-        <div style={{marginTop:9,paddingTop:8,borderTop:'1px solid #e8e8e8',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1}}>
+        <div style={{marginTop:9,paddingTop:8,borderTop:'1px solid #e8e8e8',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>
           <div style={{display:'flex',justifyContent:'space-between',color:'#666'}}><span>TOTAL DA VENDA</span><span>{fmt(t)}</span></div>
           <div style={{display:'flex',justifyContent:'space-between',color:'#666'}}><span>INFORMADO</span><span>{fmt(soma)}</span></div>
           {falta>0.005 && <div style={{display:'flex',justifyContent:'space-between',color:'#cc2222',fontWeight:700}}><span>FALTA</span><span>{fmt(falta)}</span></div>}
@@ -782,10 +822,10 @@ function EnviarComprovanteWA({venda, polo, onClose, notify}){
       <input placeholder="(00) 00000-0000" value={phone} onChange={e=>setPhone(e.target.value)}
         onKeyDown={e=>e.key==='Enter'&&enviar()}/>
       {sugerido
-        ? <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#1a6e2e',letterSpacing:1,marginTop:4}}>✓ Telefone do cadastro de {String(venda.customer||'').split(' ')[0]}</div>
-        : <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:4}}>Cliente avulso — digite o número para enviar</div>}
+        ? <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#1a6e2e',letterSpacing:1,marginTop:4}}>✓ Telefone do cadastro de {String(venda.customer||'').split(' ')[0]}</div>
+        : <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:4}}>Cliente avulso — digite o número para enviar</div>}
     </div>
-    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:5}}>Prévia da mensagem</div>
+    <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:5}}>Prévia da mensagem</div>
     <pre style={{background:'#f7f7f7',border:'1px solid #e5e5e5',borderRadius:4,padding:'12px 14px',fontSize:11,lineHeight:1.55,whiteSpace:'pre-wrap',fontFamily:'Share Tech Mono',color:'#333',maxHeight:260,overflowY:'auto',margin:0}}>{texto}</pre>
   </Modal>;
 }
@@ -810,7 +850,7 @@ function PhotoUpload({value,onChange}){
   return <div className="img-upload" onClick={()=>ref.current.click()}>
     <input type="file" accept="image/*" ref={ref} style={{display:"none"}} onChange={handle}/>
     <div style={{fontSize:28,marginBottom:6}}>📷</div>
-    <div style={{fontFamily:"Share Tech Mono",fontSize:9,letterSpacing:2,color:"#bbb"}}>CLIQUE PARA ADICIONAR FOTO</div>
+    <div style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:2,color:"#6b6b6b"}}>CLIQUE PARA ADICIONAR FOTO</div>
   </div>;
 }
 
@@ -835,9 +875,9 @@ function StockAlertBanner({products}){
           <span style={{fontSize:20}}>🚫</span>
           <div style={{flex:1}}>
             <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#a01010',marginBottom:4}}>SEM ESTOQUE — {out.length} produto{out.length>1?'s':''}</div>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:10,color:'#cc2222',letterSpacing:1}}>{out.map(p=>p.name).join(' · ')}</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#cc2222',letterSpacing:1}}>{out.map(p=>p.name).join(' · ')}</div>
           </div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#a01010',letterSpacing:1,textAlign:'right'}}>PEDIR<br/>REPOSIÇÃO</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#a01010',letterSpacing:1,textAlign:'right'}}>PEDIR<br/>REPOSIÇÃO</div>
         </div>
       )}
       {low.length > 0 && (
@@ -845,9 +885,9 @@ function StockAlertBanner({products}){
           <span style={{fontSize:20}}>⚠️</span>
           <div style={{flex:1}}>
             <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#bf360c',marginBottom:4}}>ESTOQUE BAIXO — {low.length} produto{low.length>1?'s':''}</div>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:10,color:'#e65100',letterSpacing:1}}>{low.map(p=>`${p.name} (${p.stock} un.)`).join(' · ')}</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#e65100',letterSpacing:1}}>{low.map(p=>`${p.name} (${p.stock} un.)`).join(' · ')}</div>
           </div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#bf360c',letterSpacing:1,textAlign:'right'}}>QUASE<br/>ACABANDO</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#bf360c',letterSpacing:1,textAlign:'right'}}>QUASE<br/>ACABANDO</div>
         </div>
       )}
     </div>
@@ -888,7 +928,7 @@ function OutOfStockModal({product, onClose, onEncomenda}){
         <div style={{textAlign:'center',padding:'8px 0 18px'}}>
           <div style={{fontSize:48,marginBottom:12}}>📦</div>
           <div style={{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:3,marginBottom:6}}>Produto Sem Estoque</div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2,color:'#aaa',marginBottom:16}}>{product.name}</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',marginBottom:16}}>{product.name}</div>
           <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:'12px 14px',fontSize:12,color:'#bf360c',marginBottom:20,textAlign:'left'}}>
             Este produto está <strong>indisponível</strong> no momento. Você pode fazer uma <strong>encomenda personalizada</strong> e avisaremos quando estiver pronto!
           </div>
@@ -908,7 +948,7 @@ function PartialStockModal({product, requested, available, onClose, onBuyAvailab
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:460}}>
         <div style={{fontFamily:'Bebas Neue',fontSize:20,letterSpacing:3,marginBottom:4}}>Estoque Insuficiente</div>
-        <div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2,color:'#aaa',marginBottom:16}}>{product.name}</div>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',marginBottom:16}}>{product.name}</div>
         <div style={{background:'#fde8e8',border:'1px solid #cc2222',borderRadius:4,padding:'12px 14px',marginBottom:18,fontSize:13}}>
           Você pediu <strong>{requested} unidades</strong>, mas só temos <strong style={{color:'#cc2222'}}>{available} em estoque</strong>.
         </div>
@@ -923,7 +963,7 @@ function PartialStockModal({product, requested, available, onClose, onBuyAvailab
               <span style={{fontSize:22,lineHeight:1}}>{opt.icon}</span>
               <div>
                 <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:1,marginBottom:3}}>{opt.title}</div>
-                <div style={{fontSize:12,color:'#888'}}>{opt.sub}</div>
+                <div style={{fontSize:12,color:'#525252'}}>{opt.sub}</div>
               </div>
             </div>
           ))}
@@ -1086,13 +1126,13 @@ function SaleDetailModal({sale, allSales, onClose}){
               ['Status', sale.status],
             ].map(([label, value]) => (
               <div key={label}>
-                <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:3}}>{label}</div>
+                <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:3}}>{label}</div>
                 <div style={{fontSize:13, fontWeight:500, color:'#111'}}>{value||'—'}</div>
               </div>
             ))}
           </div>
 
-          <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:8}}>Itens do Pedido</div>
+          <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:8}}>Itens do Pedido</div>
           <div className="table-wrap" style={{marginBottom:14}}>
             <table>
               <thead><tr>{['Produto','SKU','Qtd','Preço Unit.','Total'].map(h=><th key={h}>{h}</th>)}</tr></thead>
@@ -1100,7 +1140,7 @@ function SaleDetailModal({sale, allSales, onClose}){
                 {orderItems.map((item,i)=>(
                   <tr key={i} style={{background: item.id===sale.id ? '#f0f7e8' : ''}}>
                     <td><strong>{item.productName}</strong></td>
-                    <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{item.productId||'—'}</td>
+                    <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{item.productId||'—'}</td>
                     <td className="text-mono">{item.qty}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>R${(item.unitPrice||0).toFixed(2)}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>R${item.total.toFixed(2)}</td>
@@ -1135,19 +1175,19 @@ function SaleDetailModal({sale, allSales, onClose}){
         <div>
           <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:18}}>
             <div style={{background:'#f9f9f9', border:'1px solid #e8e8e8', borderRadius:4, padding:'12px 14px'}}>
-              <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:6}}>Total Gasto</div>
+              <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:6}}>Total Gasto</div>
               <div style={{fontFamily:'Bebas Neue', fontSize:24, letterSpacing:1}}>R${customerTotal.toFixed(2)}</div>
             </div>
             <div style={{background:'#f9f9f9', border:'1px solid #e8e8e8', borderRadius:4, padding:'12px 14px'}}>
-              <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:6}}>Compras</div>
+              <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:6}}>Compras</div>
               <div style={{fontFamily:'Bebas Neue', fontSize:24, letterSpacing:1}}>{customerSales.length}</div>
             </div>
             <div style={{background:'#f9f9f9', border:'1px solid #e8e8e8', borderRadius:4, padding:'12px 14px'}}>
-              <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:6}}>Itens</div>
+              <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:6}}>Itens</div>
               <div style={{fontFamily:'Bebas Neue', fontSize:24, letterSpacing:1}}>{customerQty}</div>
             </div>
           </div>
-          <div style={{fontFamily:'Share Tech Mono', fontSize:9, letterSpacing:2, color:'#aaa', textTransform:'uppercase', marginBottom:10}}>Histórico Completo — {sale.customer}</div>
+          <div style={{fontFamily:'Share Tech Mono', fontSize:11, letterSpacing:2, color:'#5f6368', textTransform:'uppercase', marginBottom:10}}>Histórico Completo — {sale.customer}</div>
           <div className="table-wrap">
             <table>
               <thead><tr>
@@ -1156,11 +1196,11 @@ function SaleDetailModal({sale, allSales, onClose}){
               <tbody>
                 {customerSales.map(s=>(
                   <tr key={s.id} style={{background: s.id===sale.id ? '#f0f7e8' : ''}}>
-                    <td className="text-mono" style={{fontSize:10}}>{s.date}</td>
+                    <td className="text-mono" style={{fontSize:11}}>{s.date}</td>
                     <td style={{fontSize:12}}><strong>{s.productName}</strong></td>
                     <td className="text-mono">{s.qty}</td>
                     <td style={{fontFamily:'Bebas Neue', fontSize:14, letterSpacing:1}}>R${s.total.toFixed(2)}</td>
-                    <td className="text-mono" style={{fontSize:9}}>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:(salePayments(s)?<span title={paymentLabel(s)}>MÚLTIPLO</span>:s.payment)}</td>
+                    <td className="text-mono" style={{fontSize:11}}>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:(salePayments(s)?<span title={paymentLabel(s)}>MÚLTIPLO</span>:s.payment)}</td>
                     <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
                     <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
                   </tr>
@@ -1198,7 +1238,7 @@ function Dashboard({products,sales,role}){
       </div>
       <div className="card"><div className="card-title">⚠ Estoque Baixo</div>
         {low.length===0?<div style={{color:"var(--success)",fontFamily:"Share Tech Mono",fontSize:11,textAlign:"center",padding:18}}>✓ Estoque OK</div>:low.map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #f5f5f5"}}>
-          <div><div style={{fontFamily:"Oswald",fontSize:12,fontWeight:500,textTransform:"uppercase",letterSpacing:1}}>{p.name}</div><div style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#aaa",letterSpacing:2,marginTop:2}}>{p.sku}</div></div>
+          <div><div style={{fontFamily:"Oswald",fontSize:12,fontWeight:500,textTransform:"uppercase",letterSpacing:1}}>{p.name}</div><div style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#5f6368",letterSpacing:2,marginTop:2}}>{p.sku}</div></div>
           <span className={`tag ${p.stock===0?"tag-out":"tag-low"}`}>{p.stock===0?"SEM EST.":p.stock+" UN"}</span>
         </div>)}
       </div>
@@ -1206,13 +1246,13 @@ function Dashboard({products,sales,role}){
     <div className="card"><div className="card-title">Últimas Vendas</div>
       <div className="table-wrap"><table><thead><tr>{["#","Data","Cliente","Produto","Qtd","Total","Pagamento","Canal","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{recent.map(s=><tr key={s.id} onClick={()=>setSelectedSale(s)} style={{cursor:'pointer'}} title="Ver detalhe">
-          <td className="text-mono" style={{fontSize:9,color:"#bbb"}}>#{String(s.id).padStart(4,"0")}</td>
-          <td className="text-mono" style={{fontSize:10}}>{s.date}</td>
+          <td className="text-mono" style={{fontSize:11,color:"#6b6b6b"}}>#{String(s.id).padStart(4,"0")}</td>
+          <td className="text-mono" style={{fontSize:11}}>{s.date}</td>
           <td><strong>{s.customer}</strong></td>
           <td style={{fontSize:11}}>{s.productName}</td>
           <td className="text-mono">{s.qty}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
+          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:11}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
           <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
           <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
         </tr>)}</tbody>
@@ -1251,10 +1291,10 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
     });
   },[outroPolo]);
 
-  const filtered = products.filter(p=>
+  const filtered = ordenarProdutos(products.filter(p=>
     p.name.toLowerCase().includes(search.toLowerCase())||
     (p.sku||'').toLowerCase().includes(search.toLowerCase())
-  );
+  ));
 
   async function transferir(){
     if(!modal||qty<1){notify('Selecione um produto e quantidade válida','error');return;}
@@ -1325,21 +1365,21 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
       <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
         <div style={{textAlign:'center'}}>
           <div style={{fontFamily:'Bebas Neue',fontSize:28,letterSpacing:3,color:'#fff',lineHeight:1}}>{poloInfo.sigla}</div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:2,color:'#555',textTransform:'uppercase'}}>Origem</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#555',textTransform:'uppercase'}}>Origem</div>
         </div>
         <div style={{fontSize:22,color:'#444'}}>→</div>
         <div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:2,color:'#555',textTransform:'uppercase',marginBottom:4}}>Polo Destino</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#555',textTransform:'uppercase',marginBottom:4}}>Polo Destino</div>
           <select value={poloDestino} onChange={e=>{setPoloDestino(e.target.value);setProdDestino([]);setLoadingDestino(true);}}
             style={{background:'#1a2a3a',border:'1px solid #2a3a4a',color:'#4a8cc9',fontFamily:'Oswald,sans-serif',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',padding:'6px 10px',borderRadius:3,cursor:'pointer'}}>
             {outrosPolos.map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
           </select>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#555',marginTop:4}}>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#555',marginTop:4}}>
             {loadingDestino?'Carregando...':prodDestino.length+' produtos cadastrados'}
           </div>
         </div>
       </div>
-      <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#444',letterSpacing:1,textTransform:'uppercase',textAlign:'right'}}>
+      <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#444',letterSpacing:1,textTransform:'uppercase',textAlign:'right'}}>
         Estoque do polo destino<br/>é atualizado em tempo real
       </div>
     </div>
@@ -1356,21 +1396,21 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
           <table>
             <thead><tr>{['Produto','SKU','Estoque Aqui',outroPoloSigla+' tem?','Status','Ação'].map(h=><th key={h}>{h}</th>)}</tr></thead>
             <tbody>
-              {!filtered.length&&<tr><td colSpan={6} style={{textAlign:'center',padding:24,color:'#bbb'}}>Nenhum produto encontrado</td></tr>}
+              {!filtered.length&&<tr><td colSpan={6} style={{textAlign:'center',padding:24,color:'#6b6b6b'}}>Nenhum produto encontrado</td></tr>}
               {filtered.map(p=>{
                 const dest = prodDestino.find(d=>(d.sku&&d.sku===p.sku)||d.name===p.name);
                 return <tr key={p.id}>
                   <td><strong>{p.name}</strong></td>
-                  <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{p.sku||'—'}</td>
+                  <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{p.sku||'—'}</td>
                   <td>
                     <span className="text-mono" style={{fontSize:13,fontWeight:600,color:p.stock===0?'#cc2222':p.stock<=p.minStock?'#996622':'#111'}}>{p.stock} un.</span>
                   </td>
                   <td>
                     {loadingDestino
-                      ? <span style={{color:'#aaa',fontSize:11}}>...</span>
+                      ? <span style={{color:'#5f6368',fontSize:11}}>...</span>
                       : dest
                         ? <span className="text-mono" style={{fontSize:12,color:dest.stock===0?'#cc2222':'#1a6e2e'}}>{dest.stock} un.</span>
-                        : <span className="tag tag-pending" style={{fontSize:8}}>Não cadastrado</span>
+                        : <span className="tag tag-pending" style={{fontSize:11}}>Não cadastrado</span>
                     }
                   </td>
                   <td>
@@ -1397,20 +1437,20 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
 
     {tab==='historico'&&<div className="card">
       {!historico.length
-        ? <div style={{textAlign:'center',padding:40,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2}}>NENHUMA TRANSFERÊNCIA REGISTRADA</div>
+        ? <div style={{textAlign:'center',padding:40,color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2}}>NENHUMA TRANSFERÊNCIA REGISTRADA</div>
         : <div className="table-wrap">
             <table>
               <thead><tr>{['Data/Hora','Produto','SKU','Qtd','Origem','Destino','Obs'].map(h=><th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {historico.map(r=>(
                   <tr key={r.id}>
-                    <td className="text-mono" style={{fontSize:9}}>{r.data} {r.hora}</td>
+                    <td className="text-mono" style={{fontSize:11}}>{r.data} {r.hora}</td>
                     <td><strong>{r.produto}</strong></td>
-                    <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{r.sku}</td>
+                    <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{r.sku}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:16,letterSpacing:1,color:'#1a4e8e'}}>{r.qty}</td>
                     <td><span className="tag tag-loja">{r.origem}</span></td>
                     <td><span className="tag tag-online">{r.destino}</span></td>
-                    <td style={{fontSize:11,color:'#888'}}>{r.obs}</td>
+                    <td style={{fontSize:11,color:'#525252'}}>{r.obs}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1438,12 +1478,12 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
           <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,padding:'14px 0',marginBottom:16,background:'#f9f9f9',borderRadius:4,border:'1px solid #e8e8e8'}}>
             <div style={{textAlign:'center'}}>
               <div style={{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:3,color:'#111'}}>{poloInfo.sigla}</div>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:8,color:'#aaa',letterSpacing:2}}>ORIGEM</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:2}}>ORIGEM</div>
             </div>
-            <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#aaa',letterSpacing:2}}>→ {qty} un. →</div>
+            <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#5f6368',letterSpacing:2}}>→ {qty} un. →</div>
             <div style={{textAlign:'center'}}>
               <div style={{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:3,color:'#1a4e8e'}}>{outroPoloSigla}</div>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:8,color:'#aaa',letterSpacing:2}}>DESTINO</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:2}}>DESTINO</div>
             </div>
           </div>
 
@@ -1455,7 +1495,7 @@ function Transferencia({products, setProducts, polo, poloInfo, notify}){
                 onChange={e=>setQty(Math.min(modal.stock,Math.max(1,parseInt(e.target.value)||1)))}
                 style={{textAlign:'center',fontFamily:'Bebas Neue',fontSize:28,letterSpacing:2,padding:'8px',width:100}}/>
               <button className="qty-btn" style={{width:36,height:36,fontSize:18}} onClick={()=>setQty(q=>Math.min(modal.stock,q+1))}>+</button>
-              <span style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1}}>MÁX: {modal.stock}</span>
+              <span style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1}}>MÁX: {modal.stock}</span>
             </div>
           </div>
 
@@ -1544,7 +1584,7 @@ function HistoricoEstoque({polo, products}){
   const saidasHoje  = movHoje.filter(m=>m.variacao<0).reduce((a,b)=>a+Math.abs(b.variacao),0);
 
   const tiposUnicos = [...new Set(movs.map(m=>m.tipo))];
-  const prodsUnicos = products.map(p=>({id:String(p.id), name:p.name}));
+  const prodsUnicos = ordenarProdutos(products).map(p=>({id:String(p.id), name:p.name}));
 
   function exportarCSV(){
     exportCSV('historico-estoque-'+polo+'-'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-'),
@@ -1612,9 +1652,9 @@ function HistoricoEstoque({polo, products}){
     </div>
 
     {loading
-      ? <div style={{textAlign:'center',padding:40,color:'#aaa',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2}}>CARREGANDO...</div>
+      ? <div style={{textAlign:'center',padding:40,color:'#5f6368',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2}}>CARREGANDO...</div>
       : !filtered.length
-        ? <div style={{textAlign:'center',padding:40,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2}}>NENHUMA MOVIMENTAÇÃO ENCONTRADA</div>
+        ? <div style={{textAlign:'center',padding:40,color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2}}>NENHUMA MOVIMENTAÇÃO ENCONTRADA</div>
         : <>
           <div className="card">
             <div className="table-wrap">
@@ -1624,18 +1664,18 @@ function HistoricoEstoque({polo, products}){
                 </tr></thead>
                 <tbody>
                   {filtered.map(m=>{
-                    const cfg = TIPO_MOV[m.tipo]||{label:m.tipo,color:'#888',sinal:'',tag:'tag-pending'};
+                    const cfg = TIPO_MOV[m.tipo]||{label:m.tipo,color:'#525252',sinal:'',tag:'tag-pending'};
                     const isPos = m.variacao>0;
                     return <tr key={m.id}>
                       <td>
-                        <div className="text-mono" style={{fontSize:10}}>{m.data}</div>
-                        <div style={{fontFamily:'Share Tech Mono',fontSize:8,color:'#bbb'}}>{m.hora}</div>
+                        <div className="text-mono" style={{fontSize:11}}>{m.data}</div>
+                        <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#6b6b6b'}}>{m.hora}</div>
                       </td>
                       <td>
                         <strong>{m.produto}</strong>
-                        {m.obs&&<div style={{fontSize:10,color:'#aaa',marginTop:2}}>{m.obs}</div>}
+                        {m.obs&&<div style={{fontSize:11,color:'#5f6368',marginTop:2}}>{m.obs}</div>}
                       </td>
-                      <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{m.sku||'—'}</td>
+                      <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{m.sku||'—'}</td>
                       <td><span className={`tag ${cfg.tag}`}>{cfg.label}</span></td>
                       <td className="text-mono" style={{fontSize:11}}>{m.qtd_antes}</td>
                       <td>
@@ -1648,8 +1688,8 @@ function HistoricoEstoque({polo, products}){
                           {m.qtd_depois}
                         </span>
                       </td>
-                      <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{m.ref||'—'}</td>
-                      <td style={{fontSize:11,color:'#888'}}>{m.operador}</td>
+                      <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{m.ref||'—'}</td>
+                      <td style={{fontSize:11,color:'#525252'}}>{m.operador}</td>
                     </tr>;
                   })}
                 </tbody>
@@ -1669,7 +1709,7 @@ function HistoricoEstoque({polo, products}){
 function Estoque({products,setProducts,categories,setCategories,notify,polo,poloInfo}){
   const [estoqueTab,setEstoqueTab]=useState('lista');
   const [search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[modal,setModal]=useState(null),[form,setForm]=useState({}),[catModal,setCatModal]=useState(false),[newCat,setNewCat]=useState("");
-  const filtered=products.filter(p=>(cat==="Todos"||p.category===cat)&&(p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase())));
+  const filtered=ordenarProdutos(products.filter(p=>(cat==="Todos"||p.category===cat)&&(p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase()))));
   function save(){
     if(!form.name||!form.price||!form.stock){notify("Preencha os campos obrigatórios","error");return;}
     const novoStock=parseInt(form.stock);
@@ -1707,20 +1747,20 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
         <button className={`btn btn-sm ${cat==="Todos"?"btn-primary":""}`} onClick={()=>setCat("Todos")}>Todos</button>
         {categories.map(c=><button key={c} className={`btn btn-sm ${cat===c?"btn-primary":""}`} onClick={()=>setCat(c)}>{c}</button>)}
       </div>
-      <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#aaa',textTransform:'uppercase'}}>Somente consulta · cadastro, quantidades e transferências em <strong style={{color:'#111'}}>Gestão de Estoque</strong></div>
+      <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',textTransform:'uppercase'}}>Somente consulta · cadastro, quantidades e transferências em <strong style={{color:'#111'}}>Gestão de Estoque</strong></div>
     </div>
     <div className="card">
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar produto ou SKU..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table><thead><tr>{["Foto","SKU","Produto","Categoria","Preço","Custo","Estoque","Mín","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map(p=><tr key={p.id}>
-          <td><div className="tbl-thumb">{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#ccc"}}>SEM FOTO</span>}</div></td>
-          <td className="text-mono" style={{fontSize:9,color:"#aaa"}}>{p.sku}</td>
+          <td><div className="tbl-thumb">{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
+          <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{p.sku}</td>
           <td><strong>{p.name}</strong></td>
-          <td className="text-mono" style={{fontSize:10}}>{p.category}</td>
+          <td className="text-mono" style={{fontSize:11}}>{p.category}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:15,letterSpacing:1}}>{fmt(p.price)}</td>
-          <td className="text-mono" style={{fontSize:10,color:"#aaa"}}>{fmt(p.cost)}</td>
+          <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{fmt(p.cost)}</td>
           <td className="text-mono" style={{fontSize:12}}>{p.stock}</td>
-          <td className="text-mono" style={{fontSize:11,color:"#aaa"}}>{p.minStock}</td>
+          <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{p.minStock}</td>
           <td>{gt(p)}</td>
         </tr>)}</tbody>
       </table></div>
@@ -1781,7 +1821,7 @@ function AberturaCaixaScreen({polo, operador, onAbrir}){
       <div className="card" style={{textAlign:'center',padding:'32px 28px'}}>
         <div style={{fontSize:48,marginBottom:12}}>🏦</div>
         <div style={{fontFamily:'Bebas Neue',fontSize:26,letterSpacing:4,marginBottom:4}}>Abertura de Caixa</div>
-        <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:3,color:'#aaa',textTransform:'uppercase',marginBottom:28}}>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:3,color:'#5f6368',textTransform:'uppercase',marginBottom:28}}>
           Polo {polo?.toUpperCase()} · {new Date().toLocaleDateString('pt-BR')} · {new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
         </div>
         {err&&<div style={{background:'rgba(204,34,34,.08)',border:'1px solid rgba(204,34,34,.2)',borderRadius:3,padding:'9px 12px',fontSize:12,color:'#cc2222',marginBottom:14}}>{err}</div>}
@@ -1790,7 +1830,7 @@ function AberturaCaixaScreen({polo, operador, onAbrir}){
           <input type="number" step="0.01" min="0" placeholder="0,00" value={valor}
             onChange={e=>setValor(e.target.value)}
             style={{fontSize:24,fontFamily:'Bebas Neue',letterSpacing:2,textAlign:'center',padding:'12px'}}/>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:4}}>TROCO DO DIA ANTERIOR + FUNDO DE CAIXA</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:4}}>TROCO DO DIA ANTERIOR + FUNDO DE CAIXA</div>
         </div>
         <div className="form-group mb-4" style={{textAlign:'left'}}>
           <label>Observações (opcional)</label>
@@ -1799,7 +1839,7 @@ function AberturaCaixaScreen({polo, operador, onAbrir}){
         <button className="btn btn-primary w-full" style={{justifyContent:'center',padding:'13px',fontSize:13}} onClick={confirmar}>
           ✓ Abrir Caixa
         </button>
-        {operador&&<div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#bbb',letterSpacing:1,marginTop:12,textTransform:'uppercase'}}>
+        {operador&&<div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#6b6b6b',letterSpacing:1,marginTop:12,textTransform:'uppercase'}}>
           Operador: {operador.nome}
         </div>}
       </div>
@@ -1875,7 +1915,7 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
         <div className="modal-title">🧾 Fechamento de Caixa<button className="modal-close" onClick={onClose}>✕</button></div>
 
         <div style={{background:'#f9f9f9',border:'1px solid #e8e8e8',borderRadius:4,padding:'16px',marginBottom:16}}>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10}}>Resumo do Turno</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10}}>Resumo do Turno</div>
           {[
             ['Fundo de Abertura', caixa.abertura?.valor||0, '#444'],
             ['Suprimentos', suprimentos, '#1a6e2e'],
@@ -1899,10 +1939,10 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
 
         <div style={{background:'#111',color:'#fff',borderRadius:4,padding:'14px 16px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#666',textTransform:'uppercase',marginBottom:4}}>Saldo em Caixa (Dinheiro)</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#b0b0b0',textTransform:'uppercase',marginBottom:4}}>Saldo em Caixa (Dinheiro)</div>
             <div style={{fontFamily:'Bebas Neue',fontSize:32,letterSpacing:3}}>{fmt(saldoFinal)}</div>
           </div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#555',letterSpacing:1,textTransform:'uppercase',textAlign:'right'}}>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#a8a8a8',letterSpacing:1,textTransform:'uppercase',textAlign:'right'}}>
             Abertura: {caixa.abertura?.hora}<br/>
             Polo: {polo?.toUpperCase()}
           </div>
@@ -1915,7 +1955,7 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
               <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid #f5f5f5',fontSize:12}}>
                 <div>
                   <span className={`tag ${m.tipo==='sangria'?'tag-out':'tag-ok'}`} style={{marginRight:8}}>{m.tipo.toUpperCase()}</span>
-                  <span style={{color:'#666'}}>{m.obs}</span>
+                  <span style={{color:'#b0b0b0'}}>{m.obs}</span>
                 </div>
                 <span style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1,color:m.tipo==='sangria'?'#cc2222':'#1a6e2e'}}>
                   {m.tipo==='sangria'?'-':'+'}R${m.valor.toFixed(2)}
@@ -1980,7 +2020,7 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
   const [splits,setSplits]=useState([]);
   // envio do comprovante por WhatsApp
   const [waModal,setWaModal]=useState(false);
-  const filtered=products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered=ordenarProdutos(products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())));
   const total=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const troco=multiPay ? trocoSplits(total,splits) : (payment==="Dinheiro"&&paid?Math.max(0,parseFloat(paid)-total):0);
   // Descrição e parcelas do pagamento conforme o modo escolhido
@@ -2094,7 +2134,7 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
         <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid rgba(204,34,34,.15)'}}>
           <div>
             <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:500,textTransform:'uppercase',letterSpacing:1}}>{item.name}</div>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#cc2222',marginTop:2}}>ESTOQUE ZERADO</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#cc2222',marginTop:2}}>ESTOQUE ZERADO</div>
           </div>
           <button className="btn btn-sm" style={{borderColor:'#cc2222',color:'#cc2222'}}
             onClick={()=>setQuickEncModal({product:item.product||item,qty:1})}>
@@ -2147,23 +2187,23 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     <div style={{background:'#111',borderRadius:4,padding:'12px 18px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:10}}>
       <div style={{display:'flex',alignItems:'center',gap:20,flexWrap:'wrap'}}>
         <div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:2,color:'#555',textTransform:'uppercase',marginBottom:2}}>Caixa Aberto</div>
-          <div style={{fontFamily:'Oswald',fontSize:11,letterSpacing:1,color:'#bbb',textTransform:'uppercase'}}>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#a8a8a8',textTransform:'uppercase',marginBottom:2}}>Caixa Aberto</div>
+          <div style={{fontFamily:'Oswald',fontSize:11,letterSpacing:1,color:'#dcdcdc',textTransform:'uppercase'}}>
             Desde {caixa.abertura?.hora} · Fundo: {fmt(caixa.abertura?.valor||0)}
           </div>
         </div>
         <div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:2,color:'#555',textTransform:'uppercase',marginBottom:2}}>Saldo est. em caixa</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#a8a8a8',textTransform:'uppercase',marginBottom:2}}>Saldo est. em caixa</div>
           <div style={{fontFamily:'Bebas Neue',fontSize:22,letterSpacing:2,color:'#4caf50'}}>{fmt(saldoCaixa)}</div>
         </div>
         {(caixa.movimentos||[]).length>0&&<div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:2,color:'#555',textTransform:'uppercase',marginBottom:2}}>Movimentos</div>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:10,color:'#aaa'}}>{caixa.movimentos.length} registro{caixa.movimentos.length!==1?'s':''}</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#a8a8a8',textTransform:'uppercase',marginBottom:2}}>Movimentos</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#d0d0d0'}}>{caixa.movimentos.length} registro{caixa.movimentos.length!==1?'s':''}</div>
         </div>}
       </div>
       <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-        <button className="btn btn-sm" style={{background:'transparent',border:'1px solid #333',color:'#aaa'}} onClick={()=>setMovModal('suprimento')}>💵 Suprimento</button>
-        <button className="btn btn-sm" style={{background:'transparent',border:'1px solid #333',color:'#aaa'}} onClick={()=>setMovModal('sangria')}>💸 Sangria</button>
+        <button className="btn btn-sm" style={{background:'transparent',border:'1px solid #333',color:'#d0d0d0'}} onClick={()=>setMovModal('suprimento')}>💵 Suprimento</button>
+        <button className="btn btn-sm" style={{background:'transparent',border:'1px solid #333',color:'#d0d0d0'}} onClick={()=>setMovModal('sangria')}>💸 Sangria</button>
         <button className="btn btn-sm" style={{background:'transparent',border:'1px solid #554400',color:'#c9a227'}} onClick={()=>setFechModal(true)}>🔒 Fechar Caixa</button>
       </div>
     </div>
@@ -2181,13 +2221,13 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
         <button key="c" className="btn btn-primary" onClick={fin}>✓ Confirmar Venda</button>
       ]}>
       <div style={{marginBottom:14}}>
-        <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Itens da compra</div>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Itens da compra</div>
         <div className="table-wrap"><table>
           <thead><tr>{['Produto','Qtd','Unit.','Subtotal'].map(h=><th key={h}>{h}</th>)}</tr></thead>
           <tbody>
             {cart.map(item=>(
               <tr key={item.id}>
-                <td><strong>{item.name}</strong>{item.isEncomenda&&<span className="tag tag-integra" style={{marginLeft:6,fontSize:8}}>ENCOMENDA</span>}</td>
+                <td><strong>{item.name}</strong>{item.isEncomenda&&<span className="tag tag-integra" style={{marginLeft:6,fontSize:11}}>ENCOMENDA</span>}</td>
                 <td className="text-mono">{item.qty}</td>
                 <td className="text-mono">{fmt(item.price)}</td>
                 <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(item.price*item.qty)}</td>
@@ -2198,17 +2238,17 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
       </div>
       <div style={{background:'#f9f9f9',border:'1px solid #e8e8e8',borderRadius:6,padding:'14px 18px'}}>
         {[['Cliente',customer||'Consumidor Final'],['Pagamento',multiPay?'Múltiplo ('+splitsLimpos(splits).length+' formas)':payment]].map(([l,v])=>(
-          <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>{l}</span><span style={{fontWeight:600}}>{v}</span></div>
+          <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#525252'}}>{l}</span><span style={{fontWeight:600}}>{v}</span></div>
         ))}
         {multiPay&&splitsLimpos(splits).map((p,i)=>(
-          <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0 3px 14px',fontSize:12}}><span style={{color:'#888'}}>↳ {p.tipo}</span><span style={{fontWeight:600}}>{fmt(p.valor)}</span></div>
+          <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'3px 0 3px 14px',fontSize:12}}><span style={{color:'#525252'}}>↳ {p.tipo}</span><span style={{fontWeight:600}}>{fmt(p.valor)}</span></div>
         ))}
         {multiPay&&trocoSplits(total,splits)>0&&(
-          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(trocoSplits(total,splits))}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#525252'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(trocoSplits(total,splits))}</span></div>
         )}
         {!multiPay&&payment==="Dinheiro"&&paid&&<>
-          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Recebido</span><span style={{fontWeight:600}}>{fmt(parseFloat(paid)||0)}</span></div>
-          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#888'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(troco)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#525252'}}>Recebido</span><span style={{fontWeight:600}}>{fmt(parseFloat(paid)||0)}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',padding:'4px 0',fontSize:13}}><span style={{color:'#525252'}}>Troco</span><span style={{fontWeight:600,color:'#1a6e2e'}}>{fmt(troco)}</span></div>
         </>}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,marginTop:6,borderTop:'1px solid #e0e0e0'}}>
           <span style={{fontFamily:'Oswald',fontSize:14,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>Total</span>
@@ -2251,30 +2291,30 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     <div><div className="card"><div className="card-title">Produtos</div>
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {filtered.map(p=><div key={p.id} className="pdv-item" style={{position:'relative'}}>
-        {p.stock===0&&<div style={{position:'absolute',top:6,right:6,background:'#cc2222',color:'#fff',fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>SEM ESTOQUE</div>}
-        {p.stock>0&&p.stock<=p.minStock&&<div style={{position:'absolute',top:6,right:6,background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>BAIXO: {p.stock}</div>}
-        <div className="pdv-thumb" onClick={()=>add(p)} style={{cursor:'pointer'}}>{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:7,color:"#ccc",textAlign:"center"}}>SEM FOTO</span>}</div>
+        {p.stock===0&&<div style={{position:'absolute',top:6,right:6,background:'#cc2222',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>SEM ESTOQUE</div>}
+        {p.stock>0&&p.stock<=p.minStock&&<div style={{position:'absolute',top:6,right:6,background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>BAIXO: {p.stock}</div>}
+        <div className="pdv-thumb" onClick={()=>add(p)} style={{cursor:'pointer'}}>{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
         <div className="pdv-name" onClick={()=>add(p)} style={{cursor:'pointer',flex:1}}>{p.name}</div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
           <div style={{textAlign:"right"}}>
             <div className="pdv-price">{fmt(p.price)}</div>
-            <div className="text-mono" style={{fontSize:8,color:p.stock===0?"#cc2222":p.stock<=p.minStock?"#e65100":"#aaa"}}>{p.stock===0?"Indisp.":"Est: "+p.stock}</div>
+            <div className="text-mono" style={{fontSize:11,color:p.stock===0?"#cc2222":p.stock<=p.minStock?"#e65100":"#aaa"}}>{p.stock===0?"Indisp.":"Est: "+p.stock}</div>
           </div>
           <button onClick={()=>setQuickEncModal({product:p,qty:1})}
-            style={{background:'transparent',border:'1px solid #ccc',borderRadius:2,padding:'3px 7px',fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:1,color:'#666',cursor:'pointer'}}>
+            style={{background:'transparent',border:'1px solid #ccc',borderRadius:2,padding:'3px 7px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#666',cursor:'pointer'}}>
             🧵 ENCOMENDAR
           </button>
         </div>
       </div>)}
     </div></div>
     <div><div className="card">
-      <div className="card-title">Carrinho {cart.length>0&&<span style={{background:"#f0f0f0",padding:"2px 8px",borderRadius:2,fontFamily:"Share Tech Mono",fontSize:10}}>{cart.reduce((a,b)=>a+b.qty,0)} itens</span>}</div>
+      <div className="card-title">Carrinho {cart.length>0&&<span style={{background:"#f0f0f0",padding:"2px 8px",borderRadius:2,fontFamily:"Share Tech Mono",fontSize:11}}>{cart.reduce((a,b)=>a+b.qty,0)} itens</span>}</div>
       {!cart.length?<div className="store-empty" style={{padding:"20px 0"}}><div className="store-empty-icon">🛒</div><div className="store-empty-text" style={{fontSize:11}}>Vazio</div></div>:cart.map(item=><div key={item.id} className="cart-item">
-        <div className="cart-thumb">{item.photo?<img src={item.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:7,color:"#ccc",textAlign:"center",padding:2}}>SEM FOTO</span>}</div>
+        <div className="cart-thumb">{item.photo?<img src={item.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center",padding:2}}>SEM FOTO</span>}</div>
         <div style={{flex:1}}>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <div className="cart-name">{item.name}</div>
-              {item.isEncomenda&&<span style={{background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>ENCOMENDA</span>}
+              {item.isEncomenda&&<span style={{background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>ENCOMENDA</span>}
             </div>
             <div className="cart-price">{fmt(item.price)}/un</div>
           <div className="qty-row"><button className="qty-btn" onClick={()=>qty(item.id,item.qty-1)}>−</button><span className="qty-n">{item.qty}</span><button className="qty-btn" onClick={()=>qty(item.id,item.qty+1)}>+</button><span style={{marginLeft:"auto",fontFamily:"Bebas Neue",fontSize:14}}>{fmt(item.price*item.qty)}</span></div>
@@ -2290,7 +2330,7 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
       <PagamentoMultiplo total={total} payment={payment} setPayment={setPayment}
         splits={splits} setSplits={setSplits} multi={multiPay} setMulti={setMultiPay}/>
       {!multiPay&&payment==="Integra Card — Bolsa Uniforme"&&<div className="integra-pill mb-2"><div style={{fontSize:22}}>🟢</div><div><div className="integra-pill-title">Integra Card</div><div className="integra-pill-sub">Bolsa Uniforme • Governo MG</div></div></div>}
-      {!multiPay&&payment==="Dinheiro"&&<div className="form-group mb-2"><label>Valor Recebido</label><input type="number" step="0.01" value={paid} onChange={e=>setPaid(e.target.value)} placeholder="0,00"/>{paid&&<div className="text-mono" style={{fontSize:10,color:"#aaa",marginTop:3}}>Troco: {fmt(troco)}</div>}</div>}
+      {!multiPay&&payment==="Dinheiro"&&<div className="form-group mb-2"><label>Valor Recebido</label><input type="number" step="0.01" value={paid} onChange={e=>setPaid(e.target.value)} placeholder="0,00"/>{paid&&<div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:3}}>Troco: {fmt(troco)}</div>}</div>}
       <hr className="divider"/>
       <div className="cart-total-row"><span className="cart-total-lbl">Total</span><span className="cart-total-val">{fmt(total)}</span></div>
       <button className="btn btn-primary w-full" style={{justifyContent:"center"}} onClick={abrirConfirmacao}>✓ Finalizar Venda</button>
@@ -2326,27 +2366,27 @@ function exportPDFVendas(sales, label, polo){
     body{font-family:Arial,sans-serif;color:#111;padding:32px;font-size:12px}
     .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:16px;margin-bottom:24px}
     .logo h1{font-size:28px;font-weight:900;letter-spacing:4px}
-    .logo p{font-size:9px;letter-spacing:3px;color:#888;margin-top:3px}
+    .logo p{font-size:11px;letter-spacing:3px;color:#525252;margin-top:3px}
     .meta{text-align:right;font-size:11px;color:#666}
     .meta strong{display:block;font-size:14px;color:#111;margin-bottom:2px}
     .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
     .stat{border:1px solid #e0e0e0;border-radius:4px;padding:12px;border-top:3px solid #111}
     .stat.green{border-top-color:#1a6e2e}.stat.blue{border-top-color:#1a4e8e}.stat.gold{border-top-color:#996622}
-    .stat-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:4px}
+    .stat-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5f6368;margin-bottom:4px}
     .stat-val{font-size:20px;font-weight:700;letter-spacing:1px}
     .section{margin-bottom:20px}
-    .section h2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#888;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}
+    .section h2{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#525252;border-bottom:1px solid #eee;padding-bottom:5px;margin-bottom:10px}
     table{width:100%;border-collapse:collapse}
-    th{background:#111;color:#fff;padding:7px 9px;font-size:9px;letter-spacing:1px;text-align:left}
+    th{background:#111;color:#fff;padding:7px 9px;font-size:11px;letter-spacing:1px;text-align:left}
     td{padding:6px 9px;border-bottom:1px solid #f0f0f0;font-size:11px}
     tr:nth-child(even) td{background:#fafafa}
-    .tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:8px;letter-spacing:1px;text-transform:uppercase}
+    .tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:11px;letter-spacing:1px;text-transform:uppercase}
     .tag-loja{background:#ede7f6;color:#5a1e96}.tag-online{background:#e3f2fd;color:#1a3c96}
     .tag-done{background:#e8f5e9;color:#1a6e2e}.tag-pend{background:#f5f5f5;color:#666}
     .pgto-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5}
     .bar-wrap{height:3px;background:#e8e8e8;border-radius:1px;margin-top:3px}
     .bar-fill{height:100%;background:#111;border-radius:1px}
-    .footer{margin-top:32px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:9px;color:#aaa;letter-spacing:2px}
+    .footer{margin-top:32px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#5f6368;letter-spacing:2px}
     @media print{body{padding:16px}.no-print{display:none}}
   </style></head><body>
   <div class="header">
@@ -2375,7 +2415,7 @@ function exportPDFVendas(sales, label, polo){
     <tbody>${sales.map(s=>`<tr>
       <td>${s.date}</td><td>${s.customer}</td><td>${s.productName}</td>
       <td style="text-align:center">${s.qty}</td><td><strong>R$${s.total.toFixed(2)}</strong></td>
-      <td style="font-size:9px">${s.payment==='Integra Card — Bolsa Uniforme'?'Integra Card':paymentLabel(s)}</td>
+      <td style="font-size:11px">${s.payment==='Integra Card — Bolsa Uniforme'?'Integra Card':paymentLabel(s)}</td>
       <td><span class="tag ${saleCanal(s).cls}">${saleCanal(s).label}</span></td>
       <td><span class="tag ${s.status==='Concluído'?'tag-done':'tag-pend'}">${s.status}</span></td>
     </tr>`).join('')}</tbody></table>
@@ -2416,13 +2456,13 @@ function BtnExport({sales, label, polo}){
         <button onClick={doPDF} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 16px',background:'none',border:'none',cursor:'pointer',fontFamily:'Oswald,sans-serif',fontSize:11,letterSpacing:1,textTransform:'uppercase',color:'#111',textAlign:'left'}}
           onMouseOver={e=>e.currentTarget.style.background='#f5f5f5'} onMouseOut={e=>e.currentTarget.style.background='none'}>
           <span style={{fontSize:16}}>📄</span>
-          <div><div>Exportar PDF</div><div style={{fontFamily:'Share Tech Mono',fontSize:8,color:'#aaa',letterSpacing:1,marginTop:1}}>Relatório completo para impressão</div></div>
+          <div><div>Exportar PDF</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:1}}>Relatório completo para impressão</div></div>
         </button>
         <div style={{borderTop:'1px solid #f0f0f0',margin:'2px 0'}}/>
         <button onClick={doCSV} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'10px 16px',background:'none',border:'none',cursor:'pointer',fontFamily:'Oswald,sans-serif',fontSize:11,letterSpacing:1,textTransform:'uppercase',color:'#111',textAlign:'left'}}
           onMouseOver={e=>e.currentTarget.style.background='#f5f5f5'} onMouseOut={e=>e.currentTarget.style.background='none'}>
           <span style={{fontSize:16}}>📊</span>
-          <div><div>Exportar CSV / Excel</div><div style={{fontFamily:'Share Tech Mono',fontSize:8,color:'#aaa',letterSpacing:1,marginTop:1}}>Abrir no Excel, Sheets ou Numbers</div></div>
+          <div><div>Exportar CSV / Excel</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:1}}>Abrir no Excel, Sheets ou Numbers</div></div>
         </button>
       </div>
     </div>}
@@ -2456,24 +2496,24 @@ function Vendas({sales, polo}){
         </div>
         <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
         <div className="table-wrap"><table><thead><tr>{["#","Data","Cliente","Produto","Qtd","Total","Pgto","Canal","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
-          <tbody>{!f.length?<tr><td colSpan={9} style={{textAlign:"center",padding:24,color:"#bbb"}}>Sem vendas neste período</td></tr>:f.map(s=><tr key={s.id} onClick={()=>setSelectedSale(s)} style={{cursor:"pointer"}}>
-            <td className="text-mono" style={{fontSize:9,color:"#bbb"}}>#{String(Math.floor(s.id)).padStart(4,"0").slice(-4)}</td>
-            <td className="text-mono" style={{fontSize:10}}>{s.date}</td>
+          <tbody>{!f.length?<tr><td colSpan={9} style={{textAlign:"center",padding:24,color:"#6b6b6b"}}>Sem vendas neste período</td></tr>:f.map(s=><tr key={s.id} onClick={()=>setSelectedSale(s)} style={{cursor:"pointer"}}>
+            <td className="text-mono" style={{fontSize:11,color:"#6b6b6b"}}>#{String(Math.floor(s.id)).padStart(4,"0").slice(-4)}</td>
+            <td className="text-mono" style={{fontSize:11}}>{s.date}</td>
             <td><strong>{s.customer}</strong></td>
             <td style={{fontSize:11}}>{s.productName}</td>
             <td className="text-mono">{s.qty}</td>
             <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-            <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
+            <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:11}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
             <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
             <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
           </tr>)}</tbody>
         </table></div>
-        <div style={{fontFamily:"Share Tech Mono",fontSize:9,color:"#bbb",textAlign:"center",padding:"6px 0"}}>Clique para ver detalhes</div>
+        <div style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#6b6b6b",textAlign:"center",padding:"6px 0"}}>Clique para ver detalhes</div>
       </div>
       <div className="card"><div className="card-title">Top Produtos</div>
         {top.map((p,i)=><div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f5f5f5"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontFamily:"Oswald",fontSize:11,fontWeight:500,textTransform:"uppercase",letterSpacing:1}}>{p.name.substring(0,18)}</div><span style={{fontFamily:"Bebas Neue",fontSize:13,letterSpacing:1}}>{fmt(p.total)}</span></div>
-          <div className="text-mono" style={{fontSize:8,color:"#bbb",marginTop:2}}>{p.qty} unidades</div>
+          <div className="text-mono" style={{fontSize:11,color:"#6b6b6b",marginTop:2}}>{p.qty} unidades</div>
           <div style={{marginTop:3,height:2,background:"#e8e8e8",borderRadius:1}}><div style={{height:"100%",background:"#111",borderRadius:1,width:(top[0]?p.total/top[0].total*100:0)+"%"}}/></div>
         </div>)}
         {!top.length&&<div className="text-faint" style={{textAlign:"center",padding:16,fontSize:12}}>Sem dados</div>}
@@ -2515,7 +2555,7 @@ function Fechamento({sales,notify}){
     <div className="tabs">{["diario","semanal","mensal"].map(t=><div key={t} className={`tab ${tab===t?"active":""}`} onClick={()=>setTab(t)}>{t==="diario"?"📅 Diário":t==="semanal"?"📆 Semanal":"📊 Mensal"}</div>)}</div>
     {tab==="mensal"&&<div className="flex gap-2 mb-3" style={{flexWrap:"wrap"}}>{MONTHS.map((m,i)=><button key={i} className={`btn btn-sm ${month===i?"btn-primary":""}`} onClick={()=>setMonth(i)}>{m}</button>)}</div>}
     <div className="flex justify-between items-center mb-3">
-      <div className="text-mono" style={{fontSize:10,color:"#aaa",letterSpacing:2}}>PERÍODO: {lbl}</div>
+      <div className="text-mono" style={{fontSize:11,color:"#5f6368",letterSpacing:2}}>PERÍODO: {lbl}</div>
       <div className="flex gap-2">
         <button className="btn btn-sm" onClick={print}>🖨 Imprimir</button>
         <BtnExport sales={ms} label={lbl} polo={null}/>
@@ -2536,7 +2576,7 @@ function Fechamento({sales,notify}){
         {Object.entries(byPay).map(([k,v])=><div key={k} style={{padding:"8px 0",borderBottom:"1px solid #f5f5f5"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontFamily:"Oswald",fontSize:12,textTransform:"uppercase",letterSpacing:1}}>{k==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA CARD</span>:k}</span><span style={{fontFamily:"Bebas Neue",fontSize:15,letterSpacing:1}}>{fmt(v)}</span></div>
           <div style={{height:3,background:"#e8e8e8",borderRadius:1}}><div style={{height:"100%",background:"#111",borderRadius:1,width:(revenue>0?v/revenue*100:0)+"%"}}/></div>
-          <div className="text-mono" style={{fontSize:8,color:"#aaa",marginTop:3}}>{revenue>0?Math.round(v/revenue*100):0}% do total</div>
+          <div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:3}}>{revenue>0?Math.round(v/revenue*100):0}% do total</div>
         </div>)}
         {!Object.keys(byPay).length&&<div className="text-faint" style={{textAlign:"center",padding:16,fontSize:12}}>Sem dados</div>}
       </div>
@@ -2549,18 +2589,18 @@ function Fechamento({sales,notify}){
     </div>
     <div className="card"><div className="card-title">Todas as Operações — {lbl}</div>
       <div className="table-wrap"><table><thead><tr>{["Data","Cliente","Produto","Qtd","Total","Pagamento","Canal","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
-        <tbody>{!ms.length?<tr><td colSpan={8} style={{textAlign:"center",padding:24,color:"#bbb"}}>Sem operações</td></tr>:ms.map(s=><tr key={s.id} onClick={()=>setSelectedSale(s)} style={{cursor:"pointer",opacity:s.status==="Aguardando Pagamento"?.5:1,fontStyle:s.status==="Aguardando Pagamento"?"italic":"normal"}}>
-          <td className="text-mono" style={{fontSize:10}}>{s.date}</td>
+        <tbody>{!ms.length?<tr><td colSpan={8} style={{textAlign:"center",padding:24,color:"#6b6b6b"}}>Sem operações</td></tr>:ms.map(s=><tr key={s.id} onClick={()=>setSelectedSale(s)} style={{cursor:"pointer",opacity:s.status==="Aguardando Pagamento"?.5:1,fontStyle:s.status==="Aguardando Pagamento"?"italic":"normal"}}>
+          <td className="text-mono" style={{fontSize:11}}>{s.date}</td>
           <td><strong>{s.customer}</strong></td>
           <td style={{fontSize:11}}>{s.productName}</td>
           <td className="text-mono">{s.qty}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:14,letterSpacing:1}}>{fmt(s.total)}</td>
-          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:9}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
+          <td>{s.payment==="Integra Card — Bolsa Uniforme"?<span className="tag tag-integra">INTEGRA</span>:<span className="text-mono" style={{fontSize:11}} title={paymentLabel(s)}>{salePayments(s)?"MÚLTIPLO":s.payment}</span>}</td>
           <td><span className={`tag ${saleCanal(s).cls}`}>{saleCanal(s).label}</span></td>
           <td><span className={`tag ${s.status==="Concluído"?"tag-done":"tag-pending"}`}>{s.status}</span></td>
         </tr>)}</tbody>
       </table></div>
-        <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#bbb',textAlign:'center',padding:'6px 0'}}>Clique para ver detalhes</div>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#6b6b6b',textAlign:'center',padding:'6px 0'}}>Clique para ver detalhes</div>
       </div>
     {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} onClose={()=>setSelectedSale(null)}/>}
   </div>;
@@ -2604,18 +2644,18 @@ function HistoricoComprasModal({cliente, sales, encomendas, onClose}){
       <div className="stat-card"><div className="stat-icon">📅</div><div className="stat-label">Última Compra</div><div className="stat-value" style={{fontSize:20}}>{ultima}</div></div>
     </div>
 
-    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Vendas e pedidos online</div>
+    <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Vendas e pedidos online</div>
     {pedidos.length===0
-      ? <div style={{textAlign:'center',padding:24,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma compra registrada</div>
+      ? <div style={{textAlign:'center',padding:24,color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma compra registrada</div>
       : <div className="table-wrap" style={{marginBottom:18}}><table>
           <thead><tr>{['Pedido','Data','Itens','Canal','Pagamento','Status','Total'].map(h=><th key={h}>{h}</th>)}</tr></thead>
           <tbody>{pedidos.map(p=>(
             <tr key={p.num}>
-              <td className="text-mono" style={{fontSize:10}}>{String(p.num).startsWith('AVULSO-')?'—':p.num}</td>
-              <td className="text-mono" style={{fontSize:10}}>{p.date}</td>
+              <td className="text-mono" style={{fontSize:11}}>{String(p.num).startsWith('AVULSO-')?'—':p.num}</td>
+              <td className="text-mono" style={{fontSize:11}}>{p.date}</td>
               <td style={{fontSize:11}}>{p.itens.map((it,i)=><div key={i}>{it.qty}x {it.productName}</div>)}</td>
               <td><span className={`tag ${p.canal.cls}`}>{p.canal.label}</span></td>
-              <td className="text-mono" style={{fontSize:9}}>
+              <td className="text-mono" style={{fontSize:11}}>
                 {p.payments && p.payments.length
                   ? p.payments.map((x,i)=><div key={i}>{x.tipo}: {fmt(x.valor)}</div>)
                   : p.payment}
@@ -2626,18 +2666,18 @@ function HistoricoComprasModal({cliente, sales, encomendas, onClose}){
           ))}</tbody>
         </table></div>}
 
-    <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Encomendas</div>
+    <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Encomendas</div>
     {minhasEnc.length===0
-      ? <div style={{textAlign:'center',padding:18,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma encomenda registrada</div>
+      ? <div style={{textAlign:'center',padding:18,color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Nenhuma encomenda registrada</div>
       : <div className="table-wrap"><table>
           <thead><tr>{['Número','Tipo','Descrição','Pedido em','Prazo','Status','Pgto','Valor'].map(h=><th key={h}>{h}</th>)}</tr></thead>
           <tbody>{minhasEnc.map(e=>(
             <tr key={e.id}>
-              <td className="text-mono" style={{fontSize:10}}>{e.numero}</td>
+              <td className="text-mono" style={{fontSize:11}}>{e.numero}</td>
               <td style={{fontSize:11}}>{e.tipo}</td>
               <td style={{fontSize:11,maxWidth:220}}>{e.descricao||'—'}</td>
-              <td className="text-mono" style={{fontSize:10}}>{e.dataPedido||'—'}</td>
-              <td className="text-mono" style={{fontSize:10}}>{e.prazoEntrega||'—'}</td>
+              <td className="text-mono" style={{fontSize:11}}>{e.dataPedido||'—'}</td>
+              <td className="text-mono" style={{fontSize:11}}>{e.prazoEntrega||'—'}</td>
               <td><span className={`tag ${e.status==='Entregue'?'tag-done':'tag-pending'}`}>{e.status}</span></td>
               <td><span className={`tag ${e.sinalPago?'tag-done':'tag-pending'}`}>{e.sinalPago?'PAGO':'EM ABERTO'}</span></td>
               <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{e.precoTotal?fmt(e.precoTotal):'—'}</td>
@@ -2658,11 +2698,11 @@ function Clientes({customers,setCustomers,notify,sales,encomendas}){
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar por nome ou escola..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table><thead><tr>{["Nome","Escola","Telefone","Responsável","Cadastro","Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map(c=><tr key={c.id}>
-          <td><strong>{c.name}</strong><div className="text-mono" style={{fontSize:8,color:"#aaa",marginTop:2}}>Matrícula: {c.enrollment||"—"}</div></td>
-          <td style={{fontSize:12}}>{c.school}<div className="text-mono" style={{fontSize:8,color:"#aaa",marginTop:2}}>{c.grade||""}</div></td>
+          <td><strong>{c.name}</strong><div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:2}}>Matrícula: {c.enrollment||"—"}</div></td>
+          <td style={{fontSize:12}}>{c.school}<div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:2}}>{c.grade||""}</div></td>
           <td className="text-mono" style={{fontSize:11}}>{c.phone}</td>
           <td style={{fontSize:12}}>{c.parentName||"—"}</td>
-          <td className="text-mono" style={{fontSize:10}}>{c.createdAt}</td>
+          <td className="text-mono" style={{fontSize:11}}>{c.createdAt}</td>
           <td><div className="flex gap-2"><button className="btn btn-sm" title="Ver ficha" onClick={()=>setView(c)}>👁</button><button className="btn btn-sm" title="Histórico de compras" onClick={()=>setHistCliente(c)}>🧾</button><button className="btn btn-sm" title="Editar" onClick={()=>{setForm({...c});setModal(true);}}>✏</button><button className="btn btn-sm btn-danger" title="Excluir" onClick={()=>{if(confirm("Excluir?"))setCustomers(prev=>prev.filter(x=>x.id!==c.id));notify("Removido","success");}}>🗑</button></div></td>
         </tr>)}</tbody>
       </table></div>
@@ -2687,11 +2727,11 @@ function Clientes({customers,setCustomers,notify,sales,encomendas}){
       ]}>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <div className="section-divider">📋 Dados do Aluno</div>
-        {[["Nome",view.name],["CPF",view.cpf],["RG",view.rg],["Nascimento",view.birthdate],["Telefone",view.phone],["Email",view.email],["Escola",view.school],["Turma",view.grade],["Matrícula",view.enrollment]].map(([l,v])=><div key={l}><div className="text-mono" style={{fontSize:8,color:"#aaa",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
+        {[["Nome",view.name],["CPF",view.cpf],["RG",view.rg],["Nascimento",view.birthdate],["Telefone",view.phone],["Email",view.email],["Escola",view.school],["Turma",view.grade],["Matrícula",view.enrollment]].map(([l,v])=><div key={l}><div className="text-mono" style={{fontSize:11,color:"#5f6368",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
         <div className="section-divider">🏠 Endereço</div>
-        <div style={{gridColumn:"1/-1"}}><div className="text-mono" style={{fontSize:8,color:"#aaa",letterSpacing:2,marginBottom:2}}>ENDEREÇO</div><div style={{fontSize:13}}>{[view.address,view.neighborhood,view.city,view.state,view.cep].filter(Boolean).join(", ")||"—"}</div></div>
+        <div style={{gridColumn:"1/-1"}}><div className="text-mono" style={{fontSize:11,color:"#5f6368",letterSpacing:2,marginBottom:2}}>ENDEREÇO</div><div style={{fontSize:13}}>{[view.address,view.neighborhood,view.city,view.state,view.cep].filter(Boolean).join(", ")||"—"}</div></div>
         <div className="section-divider">👨‍👩‍👧 Responsável</div>
-        {[["Nome",view.parentName],["Telefone",view.parentPhone],["Email",view.parentEmail],["CPF",view.parentCpf]].map(([l,v])=><div key={"p"+l}><div className="text-mono" style={{fontSize:8,color:"#aaa",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
+        {[["Nome",view.parentName],["Telefone",view.parentPhone],["Email",view.parentEmail],["CPF",view.parentCpf]].map(([l,v])=><div key={"p"+l}><div className="text-mono" style={{fontSize:11,color:"#5f6368",letterSpacing:2,marginBottom:2}}>{l.toUpperCase()}</div><div style={{fontSize:13,fontWeight:500}}>{v||"—"}</div></div>)}
       </div>
     </Modal>}
     {histCliente&&<HistoricoComprasModal cliente={histCliente} sales={sales} encomendas={encomendas} onClose={()=>setHistCliente(null)}/>}
@@ -2844,7 +2884,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
-  const filtered=products.filter(p=>(cat==="Todos"||p.category===cat)&&p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered=ordenarProdutos(products.filter(p=>(cat==="Todos"||p.category===cat)&&p.name.toLowerCase().includes(search.toLowerCase())));
   const cartTotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const frete=0;
   function addCart(p){
@@ -2902,7 +2942,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
     </div>
     <div style={{background:"#111",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
       <img src={LOGO} alt="Boina Preta" style={{height:48,objectFit:"contain"}}/>
-      <button className="btn" style={{background:"transparent",border:"1px solid #444",color:"#aaa"}} onClick={()=>setStep("catalog")}>← Voltar à Loja</button>
+      <button className="btn" style={{background:"transparent",border:"1px solid #444",color:"#d0d0d0"}} onClick={()=>setStep("catalog")}>← Voltar à Loja</button>
     </div>
     <MeusPedidos sales={sales} currentUser={currentUser} onBack={()=>setStep("catalog")}/>
     <StoreFooter/>
@@ -2918,7 +2958,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
         <div className="order-confirmed-title">Pedido Confirmado!</div>
         <div className="order-number">Pedido #{orderResult.orderNum}</div>
         <div className="order-summary-box" style={{textAlign:"left"}}>
-          {[["Data",orderResult.date],["Entrega",orderResult.delivery==="retirada"?"🏪 Retirada na Loja":"🚚 Envio pelos Correios"],["Pagamento",orderResult.payment]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #eee"}}><span className="text-mono" style={{fontSize:10,color:"#aaa"}}>{l}:</span><span style={{fontWeight:500,fontSize:13}}>{v}</span></div>)}
+          {[["Data",orderResult.date],["Entrega",orderResult.delivery==="retirada"?"🏪 Retirada na Loja":"🚚 Envio pelos Correios"],["Pagamento",orderResult.payment]].map(([l,v])=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid #eee"}}><span className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{l}:</span><span style={{fontWeight:500,fontSize:13}}>{v}</span></div>)}
           <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",marginTop:4}}><span style={{fontFamily:"Oswald",fontSize:13,fontWeight:600,letterSpacing:1}}>TOTAL</span><span style={{fontFamily:"Bebas Neue",fontSize:22,letterSpacing:2}}>{fmt(orderResult.total)}</span></div>
         </div>
         <div style={{background:'rgba(26,110,46,.08)',border:'1px solid rgba(26,110,46,.2)',borderRadius:4,padding:14,fontSize:13,color:'#1a6e2e',margin:'0 0 10px'}}>
@@ -2939,7 +2979,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   if(step==="checkout")return <div className="store-root">
     <div style={{background:"#111",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
       <img src={LOGO} alt="Boina Preta" style={{height:48,objectFit:"contain"}}/>
-      <button className="btn" style={{background:"transparent",border:"1px solid #444",color:"#aaa"}} onClick={()=>setStep("catalog")}>← Voltar</button>
+      <button className="btn" style={{background:"transparent",border:"1px solid #444",color:"#d0d0d0"}} onClick={()=>setStep("catalog")}>← Voltar</button>
     </div>
     <div className="checkout-wrap">
       <div className="checkout-steps">
@@ -2963,7 +3003,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
           {["Pix","Cartão Crédito","Cartão Débito","Integra Card — Bolsa Uniforme (Pagar na Loja)","Pagar na Retirada"].map(p=><div key={p} style={{border:"2px solid "+(orderForm.payment===p?"#111":"#e0e0e0"),borderRadius:3,padding:"10px 8px",cursor:"pointer",textAlign:"center",background:orderForm.payment===p?"#fafafa":"#fff",transition:"all .15s"}} onClick={()=>setOrderForm({...orderForm,payment:p})}>
             <div style={{fontFamily:"Oswald",fontSize:11,fontWeight:500,letterSpacing:1,textTransform:"uppercase"}}>{p==="Integra Card — Bolsa Uniforme"?"Integra Card":p}</div>
-            {p==="Integra Card — Bolsa Uniforme"&&<div style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#00643c",marginTop:2,letterSpacing:1}}>BOLSA UNIFORME</div>}
+            {p==="Integra Card — Bolsa Uniforme"&&<div style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#00643c",marginTop:2,letterSpacing:1}}>BOLSA UNIFORME</div>}
           </div>)}
         </div>
       </div>
@@ -3037,7 +3077,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
               {p.stock===0?"📦 Fazer Encomenda":p.stock<=p.minStock?"⚠ Últimas unidades — Comprar":"+ Adicionar ao Carrinho"}
             </button>
             <button className="product-add-btn" onClick={()=>setStoreQuickEncModal({product:p,qty:1})}
-              style={{background:'transparent',color:'#555',border:'1px solid #ccc',fontSize:10,padding:'6px'}}>
+              style={{background:'transparent',color:'#555',border:'1px solid #ccc',fontSize:11,padding:'6px'}}>
               🧵 Fazer Encomenda
             </button>
           </div>
@@ -3100,11 +3140,11 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       <div className="cart-drawer-header"><span className="cart-drawer-title">Meu Carrinho</span><button className="cart-drawer-close" onClick={()=>setCartOpen(false)}>✕</button></div>
       <div className="cart-drawer-items">
         {!cart.length?<div className="store-empty"><div className="store-empty-icon">🛒</div><div className="store-empty-text">Carrinho Vazio</div></div>:cart.map(item=><div key={item.id} className="cart-item">
-          <div className="cart-thumb">{item.photo?<img src={item.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:7,color:"#bbb",textAlign:"center",padding:2}}>SEM FOTO</span>}</div>
+          <div className="cart-thumb">{item.photo?<img src={item.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#6b6b6b",textAlign:"center",padding:2}}>SEM FOTO</span>}</div>
           <div style={{flex:1}}>
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <div className="cart-name">{item.name}</div>
-              {item.isEncomenda&&<span style={{background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:8,letterSpacing:1,padding:'2px 6px',borderRadius:2,flexShrink:0}}>ENCOMENDA</span>}
+              {item.isEncomenda&&<span style={{background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2,flexShrink:0}}>ENCOMENDA</span>}
             </div>
             <div className="cart-price">{item.isEncomenda?'🧵 Encomenda #'+item.encNumero:fmt(item.price)+'/un'}</div>
             <div className="qty-row"><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty-1)}>−</button><span className="qty-n">{item.qty}</span><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty+1)}>+</button><span style={{marginLeft:"auto",fontFamily:"Bebas Neue",fontSize:14}}>{fmt(item.price*item.qty)}</span></div>
@@ -3258,7 +3298,7 @@ function RecuperarSenhaModal({onClose, polo, onSuccess}){
               {loading?'Verificando...':'Verificar Identidade →'}
             </button>
           </div>
-          <div style={{marginTop:14,padding:'10px 12px',background:'#f9f9f9',borderRadius:4,fontSize:11,color:'#888',lineHeight:1.6}}>
+          <div style={{marginTop:14,padding:'10px 12px',background:'#f9f9f9',borderRadius:4,fontSize:11,color:'#525252',lineHeight:1.6}}>
             Não lembra os dados? Entre em contato com a loja para que um atendente redefina sua senha.
           </div>
         </>}
@@ -3348,7 +3388,7 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
         <div className="form-group mb-3"><label>Senha</label><input type="password" placeholder="••••••" value={form.password||""} onChange={e=>setForm({...form,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&login()}/></div>
         <button className="btn btn-primary w-full" style={{justifyContent:"center",padding:"11px"}} onClick={login} disabled={loading}>{loading?"Entrando...":"Entrar →"}</button>
         <div style={{textAlign:"center",marginTop:10}}>
-          <span onClick={()=>setRecovModal(true)} style={{fontFamily:"Share Tech Mono",fontSize:9,letterSpacing:1,color:"#aaa",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>Esqueci minha senha</span>
+          <span onClick={()=>setRecovModal(true)} style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:1,color:"#5f6368",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>Esqueci minha senha</span>
         </div>
       </div>:<div>
         <div style={{background:'#fff8e8',border:'1px solid #e6c800',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#7a5500',marginBottom:12}}>
@@ -3402,7 +3442,7 @@ function AdminLogin({onLogin, onBackToStore, notify, polo}){
       <div className="form-group mb-2"><label>E-mail</label><input type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}/></div>
       <div className="form-group mb-3"><label>Senha</label><input type="password" placeholder="••••••••" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}/></div>
       <button className="btn btn-primary w-full" style={{justifyContent:'center',padding:'11px'}} onClick={login} disabled={loading}>{loading?'Entrando...':'Acessar Painel →'}</button>
-      <div style={{textAlign:'center',marginTop:10,fontSize:11,color:'#aaa',fontFamily:'Share Tech Mono',letterSpacing:1,lineHeight:1.6}}>
+      <div style={{textAlign:'center',marginTop:10,fontSize:11,color:'#5f6368',fontFamily:'Share Tech Mono',letterSpacing:1,lineHeight:1.6}}>
         Esqueceu a senha?<br/>Solicite ao dono da loja para redefinir.
       </div>
       <div className="admin-link"><span onClick={onBackToStore}>← Voltar à loja</span></div>
@@ -3472,24 +3512,24 @@ function Configuracoes({polo, notify}){
   return <div>
     <div className="flex justify-between items-center mb-4">
       <div>
-        <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:4}}>Gerencie os acessos da equipe</div>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:4}}>Gerencie os acessos da equipe</div>
       </div>
       <button className="btn btn-primary" onClick={()=>{setForm({role:'vendedor',polo,ativo:true});setErr('');setModal(true);}}>+ Novo Operador</button>
     </div>
 
-    {loading ? <div style={{textAlign:'center',padding:40,color:'#aaa',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2}}>Carregando...</div> : (
+    {loading ? <div style={{textAlign:'center',padding:40,color:'#5f6368',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2}}>Carregando...</div> : (
     <div className="card">
       <div className="table-wrap">
         <table>
           <thead><tr>{['Nome','E-mail','Perfil','Polo','Status','Ações'].map(h=><th key={h}>{h}</th>)}</tr></thead>
           <tbody>
-            {!ops.length&&<tr><td colSpan={6} style={{textAlign:'center',padding:24,color:'#bbb'}}>Nenhum operador cadastrado</td></tr>}
+            {!ops.length&&<tr><td colSpan={6} style={{textAlign:'center',padding:24,color:'#6b6b6b'}}>Nenhum operador cadastrado</td></tr>}
             {ops.map(op=>(
               <tr key={op.id} style={{opacity:op.ativo?1:.5}}>
                 <td><strong>{op.nome}</strong></td>
                 <td className="text-mono" style={{fontSize:11}}>{op.email}</td>
                 <td><span className={`tag ${op.role==='dono'?'tag-done':op.role==='gerente'?'tag-integra':'tag-online'}`}>{roleLabel[op.role]||op.role}</span></td>
-                <td className="text-mono" style={{fontSize:10}}>{poloLabel[op.polo]||op.polo}</td>
+                <td className="text-mono" style={{fontSize:11}}>{poloLabel[op.polo]||op.polo}</td>
                 <td><span className={`tag ${op.ativo?'tag-ok':'tag-out'}`}>{op.ativo?'ATIVO':'INATIVO'}</span></td>
                 <td>
                   <div className="flex gap-2">
@@ -3521,12 +3561,12 @@ function Configuracoes({polo, notify}){
             <div style={{fontFamily:'Oswald',fontSize:12,fontWeight:600,letterSpacing:2,textTransform:'uppercase',marginBottom:10,color:roleMeta(r).color}}>{roleMeta(r).icon} {roleMeta(r).label}</div>
             {perms.map(p=>(
               <div key={p} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',fontSize:12,color:'#444'}}>
-                <span style={{color:'#1a6e2e',fontSize:10}}>✓</span>{p}
+                <span style={{color:'#1a6e2e',fontSize:11}}>✓</span>{p}
               </div>
             ))}
             {nega.map(p=>(
-              <div key={p} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',fontSize:12,color:'#bbb'}}>
-                <span style={{color:'#cc2222',fontSize:10}}>✕</span>{p}
+              <div key={p} style={{display:'flex',alignItems:'center',gap:6,padding:'3px 0',fontSize:12,color:'#6b6b6b'}}>
+                <span style={{color:'#cc2222',fontSize:11}}>✕</span>{p}
               </div>
             ))}
           </div>
@@ -3637,9 +3677,9 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
       .orc-num h2{font-size:20px;font-weight:700;margin:0}
       .orc-num p{font-size:12px;color:#666;margin:4px 0 0}
       .section{margin-bottom:20px}
-      .section h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px}
+      .section h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#525252;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px}
       .client-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-      .client-field label{font-size:10px;color:#aaa;display:block;margin-bottom:2px}
+      .client-field label{font-size:11px;color:#5f6368;display:block;margin-bottom:2px}
       .client-field span{font-size:13px;font-weight:500}
       table{width:100%;border-collapse:collapse;margin-top:8px}
       th{background:#111;color:#fff;padding:9px 10px;text-align:left;font-size:11px;letter-spacing:1px}
@@ -3650,12 +3690,12 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
       .totals .grand{font-size:20px;font-weight:700;margin-top:8px}
       .obs-box{background:#f9f9f9;border:1px solid #eee;border-radius:4px;padding:14px;font-size:12px;color:#555;margin-top:8px}
       .validade{background:#fff8e6;border:1px solid #f0d060;border-radius:4px;padding:10px 14px;font-size:12px;color:#775500;display:inline-block;margin-top:12px}
-      .footer{margin-top:40px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#aaa;letter-spacing:2px}
-      .status-badge{display:inline-block;padding:4px 12px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:${form.status==='Aprovado'?'#d4edda':form.status==='Recusado'?'#f8d7da':'#fff3cd'};color:${form.status==='Aprovado'?'#155724':form.status==='Recusado'?'#721c24':'#856404'}}
+      .footer{margin-top:40px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#5f6368;letter-spacing:2px}
+      .status-badge{display:inline-block;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;background:${form.status==='Aprovado'?'#d4edda':form.status==='Recusado'?'#f8d7da':'#fff3cd'};color:${form.status==='Aprovado'?'#155724':form.status==='Recusado'?'#721c24':'#856404'}}
     </style></head>
     <body>
       <div class="header">
-        <div class="logo-area"><h1>BOINA PRETA</h1><p>SHOPPING TÁTICO MILITAR</p><p style="margin-top:8px;font-size:10px;color:#aaa">@boina.preta</p></div>
+        <div class="logo-area"><h1>BOINA PRETA</h1><p>SHOPPING TÁTICO MILITAR</p><p style="margin-top:8px;font-size:11px;color:#5f6368">@boina.preta</p></div>
         <div class="orc-num">
           <h2>ORÇAMENTO</h2>
           <p><strong>${form.numero}</strong></p>
@@ -3719,7 +3759,7 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
           </select>
         </div>
         <div className="form-group"><label>Validade</label><input type="text" placeholder="DD/MM/AAAA" value={form.validade} onChange={e=>setForm({...form,validade:e.target.value})}/></div>
-        <div className="form-group"><label>Emissão</label><input value={form.createdAt} readOnly style={{background:'#f9f9f9',color:'#aaa'}}/></div>
+        <div className="form-group"><label>Emissão</label><input value={form.createdAt} readOnly style={{background:'#f9f9f9',color:'#5f6368'}}/></div>
         <div className="section-divider">👤 Cliente</div>
         <div className="form-group full">
           <label>Puxar cliente cadastrado</label>
@@ -3742,7 +3782,7 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
           <div className="flex gap-2 items-center mb-2">
             <select value={addProd} onChange={e=>setAddProd(e.target.value)} style={{flex:2}}>
               <option value="">Selecionar produto...</option>
-              {products.map(p=><option key={p.id} value={p.id} disabled={(p.stock||0)<=0}>{p.name} — {fmt(p.price)} · {(p.stock||0)} em estoque{(p.stock||0)<=0?' (esgotado)':''}</option>)}
+              {ordenarProdutos(products).map(p=><option key={p.id} value={p.id} disabled={(p.stock||0)<=0}>{p.name} — {fmt(p.price)} · {(p.stock||0)} em estoque{(p.stock||0)<=0?' (esgotado)':''}</option>)}
             </select>
             <input type="number" min="1" value={addQty} onChange={e=>setAddQty(e.target.value)} style={{width:70}} placeholder="Qtd"/>
             <button className="btn btn-primary btn-sm" onClick={addItem}>+ Add</button>
@@ -3754,7 +3794,7 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
                 {form.items.map(item=>(
                   <tr key={item.productId}>
                     <td><strong>{item.name}</strong></td>
-                    <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{item.sku}</td>
+                    <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{item.sku}</td>
                     <td>
                       <div className="qty-row">
                         <button className="qty-btn" onClick={()=>updateItemQty(item.productId, item.qty-1)}>−</button>
@@ -3770,15 +3810,15 @@ function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, n
               </tbody>
             </table>
           )}
-          {form.items.length === 0 && <div style={{textAlign:'center',padding:'16px',color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,border:'1px dashed #ddd',borderRadius:3}}>NENHUM ITEM ADICIONADO</div>}
+          {form.items.length === 0 && <div style={{textAlign:'center',padding:'16px',color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,border:'1px dashed #ddd',borderRadius:3}}>NENHUM ITEM ADICIONADO</div>}
         </div>
         <div className="form-group"><label>Desconto (%)</label><input type="number" min="0" max="100" value={form.desconto} onChange={e=>setForm({...form,desconto:parseFloat(e.target.value)||0})} placeholder="0"/></div>
         <div className="form-group full"><label>Observações</label><textarea value={form.obs} onChange={e=>setForm({...form,obs:e.target.value})} placeholder="Condições de pagamento, prazo de entrega, informações adicionais..."/></div>
       </div>
       {form.items.length > 0 && (
         <div style={{background:'#f9f9f9',border:'1px solid #e8e8e8',borderRadius:4,padding:'14px 18px',marginTop:12,display:'flex',justifyContent:'flex-end',flexDirection:'column',alignItems:'flex-end',gap:4}}>
-          <div style={{fontFamily:'Share Tech Mono',fontSize:10,color:'#aaa'}}>Subtotal: {fmt(subtotal)}</div>
-          {descVal > 0 && <div style={{fontFamily:'Share Tech Mono',fontSize:10,color:'#cc2222'}}>Desconto ({form.desconto}%): – {fmt(descVal)}</div>}
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368'}}>Subtotal: {fmt(subtotal)}</div>
+          {descVal > 0 && <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#cc2222'}}>Desconto ({form.desconto}%): – {fmt(descVal)}</div>}
           <div style={{fontFamily:'Bebas Neue',fontSize:24,letterSpacing:2}}>Total: {fmt(total)}</div>
         </div>
       )}
@@ -3901,7 +3941,7 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
           <table>
             <thead><tr>{['Número','Cliente','Escola','Itens','Subtotal','Desconto','Total','Validade','Status','Ações'].map(h=><th key={h}>{h}</th>)}</tr></thead>
             <tbody>
-              {!filtered.length && <tr><td colSpan={10} style={{textAlign:'center',padding:28,color:'#bbb'}}>Nenhum orçamento encontrado</td></tr>}
+              {!filtered.length && <tr><td colSpan={10} style={{textAlign:'center',padding:28,color:'#6b6b6b'}}>Nenhum orçamento encontrado</td></tr>}
               {filtered.map(o => {
                 const sub = o.items.reduce((a,b)=>a+b.price*b.qty,0);
                 const disc = o.desconto>0 ? sub*(o.desconto/100) : 0;
@@ -3913,9 +3953,9 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
                     <td style={{fontSize:12}}>{o.escola||'—'}</td>
                     <td className="text-mono" style={{fontSize:11}}>{o.items.length} {o.items.length===1?'item':'itens'}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(sub)}</td>
-                    <td>{o.desconto>0?<span className="tag tag-out">{o.desconto}%</span>:<span style={{color:'#bbb',fontSize:11}}>—</span>}</td>
+                    <td>{o.desconto>0?<span className="tag tag-out">{o.desconto}%</span>:<span style={{color:'#6b6b6b',fontSize:11}}>—</span>}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(tot)}</td>
-                    <td className="text-mono" style={{fontSize:10,color: o.validade?'#111':'#bbb'}}>{o.validade||'—'}</td>
+                    <td className="text-mono" style={{fontSize:11,color: o.validade?'#111':'#bbb'}}>{o.validade||'—'}</td>
                     <td><span className={`tag ${ORC_STATUS_COLORS[o.status]||'tag-pending'}`}>{o.status}</span></td>
                     <td>
                       <div className="flex gap-2">
@@ -3955,7 +3995,7 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
             <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#666',marginBottom:10}}>Resumo do Pedido</div>
             {convertModal.items.map(item=>(
               <div key={item.productId} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #f5f5f5',fontSize:13}}>
-                <span>{item.name} <span className="text-mono" style={{fontSize:10,color:'#aaa'}}>x{item.qty}</span></span>
+                <span>{item.name} <span className="text-mono" style={{fontSize:11,color:'#5f6368'}}>x{item.qty}</span></span>
                 <span style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(item.price*item.qty)}</span>
               </div>
             ))}
@@ -4022,7 +4062,7 @@ function EncomendaItensTab({form, setForm, products}){
       <div className="flex gap-2 mb-3 items-center">
         <select value={addItemProd} onChange={e=>setAddItemProd(e.target.value)} style={{flex:2}}>
           <option value="">Selecionar produto...</option>
-          {products.map(p=>(
+          {ordenarProdutos(products).map(p=>(
             <option key={p.id} value={p.id}>
               {p.name} — {(p.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
               {p.stock>0?' (est: '+p.stock+')':' (SEM ESTOQUE)'}
@@ -4046,7 +4086,7 @@ function EncomendaItensTab({form, setForm, products}){
                 {items.map(item=>(
                   <tr key={item.productId}>
                     <td><strong>{item.name}</strong></td>
-                    <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{item.sku||'—'}</td>
+                    <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{item.sku||'—'}</td>
                     <td>
                       <div className="qty-row">
                         <button className="qty-btn" onClick={()=>setForm(f=>({...f,items:f.items.map(x=>x.productId===item.productId?{...x,qty:Math.max(1,x.qty-1)}:x)}))}>−</button>
@@ -4067,7 +4107,7 @@ function EncomendaItensTab({form, setForm, products}){
           </div>
         </div>
       ) : (
-        <div style={{textAlign:'center',padding:24,color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,border:'1px dashed #ddd',borderRadius:3}}>
+        <div style={{textAlign:'center',padding:24,color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,border:'1px dashed #ddd',borderRadius:3}}>
           NENHUM ITEM ADICIONADO
         </div>
       )}
@@ -4142,15 +4182,15 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
     win.document.write(`<html><head><title>Ficha ${form.numero}</title>
     <style>body{font-family:Arial,sans-serif;padding:32px;max-width:700px;margin:0 auto;color:#111}
     h1{font-size:26px;font-weight:900;letter-spacing:4px;margin:0}
-    .sub{font-size:10px;letter-spacing:3px;color:#666;margin-bottom:24px}
+    .sub{font-size:11px;letter-spacing:3px;color:#666;margin-bottom:24px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-    .field label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px}
+    .field label{font-size:11px;color:#5f6368;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px}
     .field span{font-size:13px;font-weight:600}
-    h2{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;border-bottom:2px solid #111;padding-bottom:5px;margin:20px 0 12px}
+    h2{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#525252;border-bottom:2px solid #111;padding-bottom:5px;margin:20px 0 12px}
     table{width:100%;border-collapse:collapse}td{padding:8px 10px;border-bottom:1px solid #eee;font-size:12px}
-    .badge{display:inline-block;padding:4px 12px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#e8f5e9;color:#1a6e2e}
+    .badge{display:inline-block;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#e8f5e9;color:#1a6e2e}
     .hist{font-size:11px;padding:5px 0;border-bottom:1px solid #f5f5f5;display:flex;gap:12px}
-    .hist-time{color:#aaa;min-width:90px}.hist-acao{flex:1}
+    .hist-time{color:#5f6368;min-width:90px}.hist-acao{flex:1}
     </style></head><body>
     <h1>BOINA PRETA</h1><div class="sub">SHOPPING TÁTICO MILITAR — FICHA DE ENCOMENDA</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -4172,7 +4212,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
     <tr><td><b>Pagamento</b></td><td>${form.sinalPago?'PAGO':'NÃO PAGO'}</td></tr></table>
     ${form.obs?`<h2>Observações Gerais</h2><p style="font-size:12px;background:#f9f9f9;border:1px solid #eee;padding:12px;border-radius:4px">${form.obs}</p>`:''}
     ${form.historico&&form.historico.length?`<h2>Histórico</h2>${form.historico.map(h=>`<div class="hist"><span class="hist-time">${h.data} ${h.hora}</span><span class="hist-acao">${h.acao}</span></div>`).join('')}`:''}
-    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#aaa;letter-spacing:2px">BOINA PRETA LTDA · SHOPPING TÁTICO MILITAR</div>
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#5f6368;letter-spacing:2px">BOINA PRETA LTDA · SHOPPING TÁTICO MILITAR</div>
     </body></html>`);
     win.print();
     notify('Ficha impressa!','success');
@@ -4231,7 +4271,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
               {['Normal','Alta','Urgente'].map(p=><option key={p}>{p}</option>)}
             </select>
           </div>
-          <div className="form-group"><label>Data do Pedido</label><input value={form.dataPedido} readOnly style={{background:'#f9f9f9',color:'#aaa'}}/></div>
+          <div className="form-group"><label>Data do Pedido</label><input value={form.dataPedido} readOnly style={{background:'#f9f9f9',color:'#5f6368'}}/></div>
           <div className="form-group"><label>Prazo de Entrega</label><input placeholder="DD/MM/AAAA" value={form.prazoEntrega} onChange={e=>setForm({...form,prazoEntrega:e.target.value})}/></div>
 
           <div className="section-divider">👤 Cliente</div>
@@ -4241,7 +4281,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
               <option value="">Selecionar cliente cadastrado...</option>
               {[...(customers||[])].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}{cu.phone?' · '+cu.phone:''}</option>)}
             </select>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:9,color:'#aaa',letterSpacing:1,marginTop:4}}>Ao selecionar, nome, telefone, e-mail e escola são preenchidos abaixo.</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:4}}>Ao selecionar, nome, telefone, e-mail e escola são preenchidos abaixo.</div>
           </div>
           <div className="form-group"><label>Nome do Cliente *</label><input placeholder="Nome completo" value={form.cliente} onChange={e=>setForm({...form,cliente:e.target.value})}/></div>
           <div className="form-group"><label>Telefone / WhatsApp</label><input placeholder="(00) 00000-0000" value={form.clientePhone} onChange={e=>setForm({...form,clientePhone:e.target.value})}/></div>
@@ -4273,7 +4313,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
 
             {/* Tamanho roupa */}
             <div style={{background:'#fafafa',border:'1px solid #e8e8e8',borderRadius:4,padding:14}}>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10}}>Tamanho Roupa</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10}}>Tamanho Roupa</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                 {['PP','P','M','G','GG','EGG','EGGP'].map(t=>(
                   <button key={t} onClick={()=>setForm(f=>({...f,medidas:{...f.medidas,tamRoupa:t}}))}
@@ -4287,7 +4327,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
                 ))}
               </div>
               {form.medidas.tamRoupa && (
-                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:9,color:'#1a6e2e',letterSpacing:1}}>
+                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:11,color:'#1a6e2e',letterSpacing:1}}>
                   ✓ Selecionado: {form.medidas.tamRoupa}
                 </div>
               )}
@@ -4295,7 +4335,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
 
             {/* Tamanho por idade */}
             <div style={{background:'#fafafa',border:'1px solid #e8e8e8',borderRadius:4,padding:14}}>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10}}>Tamanho por Idade</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10}}>Tamanho por Idade</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                 {['6 anos','8 anos','10 anos','12 anos','14 anos','16 anos','Adulto'].map(t=>(
                   <button key={t} onClick={()=>setForm(f=>({...f,medidas:{...f.medidas,tamIdade:t}}))}
@@ -4309,7 +4349,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
                 ))}
               </div>
               {form.medidas.tamIdade && (
-                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:9,color:'#1a6e2e',letterSpacing:1}}>
+                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:11,color:'#1a6e2e',letterSpacing:1}}>
                   ✓ Selecionado: {form.medidas.tamIdade}
                 </div>
               )}
@@ -4317,7 +4357,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
 
             {/* Tamanho calça */}
             <div style={{background:'#fafafa',border:'1px solid #e8e8e8',borderRadius:4,padding:14}}>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10}}>Tamanho Calça</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10}}>Tamanho Calça</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                 {['34','36','38','40','42','44','46','48','50','52'].map(t=>(
                   <button key={t} onClick={()=>setForm(f=>({...f,medidas:{...f.medidas,tamCalca:t}}))}
@@ -4331,7 +4371,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
                 ))}
               </div>
               {form.medidas.tamCalca && (
-                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:9,color:'#1a6e2e',letterSpacing:1}}>
+                <div style={{marginTop:8,fontFamily:'Share Tech Mono',fontSize:11,color:'#1a6e2e',letterSpacing:1}}>
                   ✓ Selecionado: {form.medidas.tamCalca}
                 </div>
               )}
@@ -4339,7 +4379,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
           </div>
 
           {/* CAMPOS DETALHADOS */}
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10,paddingTop:4,borderTop:'1px solid #e8e8e8'}}>Medidas Detalhadas (opcional)</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10,paddingTop:4,borderTop:'1px solid #e8e8e8'}}>Medidas Detalhadas (opcional)</div>
           <div className="form-grid">
             {[
               ['altura','Altura (cm)','Ex: 165'],
@@ -4362,7 +4402,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
           {/* TABELAS DE REFERÊNCIA */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:16}}>
             <div>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Ref. — Camisas / Fardas</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Ref. — Camisas / Fardas</div>
               <div className="table-wrap">
                 <table>
                   <thead><tr>{['Tam.','Busto','Cintura','Quadril'].map(h=><th key={h}>{h}</th>)}</tr></thead>
@@ -4378,7 +4418,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
               </div>
             </div>
             <div>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Ref. — Tamanho por Idade</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Ref. — Tamanho por Idade</div>
               <div className="table-wrap">
                 <table>
                   <thead><tr>{['Idade','Altura','Tam. Roupa','Calça'].map(h=><th key={h}>{h}</th>)}</tr></thead>
@@ -4442,7 +4482,7 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
       {tab==='historico' && (
         <div>
           <div style={{marginBottom:16}}>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:8}}>Adicionar Observação ao Histórico</div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:8}}>Adicionar Observação ao Histórico</div>
             <div className="flex gap-2">
               <input placeholder="Descreva a atualização..." value={novaObs} onChange={e=>setNovaObs(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addObsHistorico()} style={{flex:1}}/>
               <button className="btn btn-primary btn-sm" onClick={addObsHistorico}>+ Registrar</button>
@@ -4452,12 +4492,12 @@ function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
             {(form.historico||[]).slice().reverse().map((h,i)=>(
               <div key={i} style={{marginBottom:14,position:'relative'}}>
                 <div style={{width:10,height:10,background:'#111',borderRadius:'50%',position:'absolute',left:-21,top:3}}/>
-                <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#aaa',marginBottom:3}}>{h.data} às {h.hora}</div>
+                <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',marginBottom:3}}>{h.data} às {h.hora}</div>
                 <div style={{fontSize:13,fontWeight:500,marginBottom:2}}>{h.acao}</div>
                 {h.status && <span className={`tag ${ENC_STATUS_CLS[h.status]||'tag-pending'}`}>{h.status}</span>}
               </div>
             ))}
-            {(!form.historico||!form.historico.length) && <div style={{color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,textAlign:'center',padding:20}}>SEM HISTÓRICO</div>}
+            {(!form.historico||!form.historico.length) && <div style={{color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,textAlign:'center',padding:20}}>SEM HISTÓRICO</div>}
           </div>
         </div>
       )}
@@ -4529,9 +4569,9 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
   };
 
   const prioStyle = (p) => ({
-    'Urgente': {background:'rgba(204,34,34,.1)',color:'#cc2222',border:'1px solid rgba(204,34,34,.25)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,textTransform:'uppercase'},
-    'Alta': {background:'rgba(153,102,34,.1)',color:'#996622',border:'1px solid rgba(153,102,34,.25)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,textTransform:'uppercase'},
-    'Normal': {background:'rgba(100,100,100,.08)',color:'#888',border:'1px solid rgba(100,100,100,.15)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,textTransform:'uppercase'},
+    'Urgente': {background:'rgba(204,34,34,.1)',color:'#cc2222',border:'1px solid rgba(204,34,34,.25)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,textTransform:'uppercase'},
+    'Alta': {background:'rgba(153,102,34,.1)',color:'#996622',border:'1px solid rgba(153,102,34,.25)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,textTransform:'uppercase'},
+    'Normal': {background:'rgba(100,100,100,.08)',color:'#525252',border:'1px solid rgba(100,100,100,.15)',padding:'2px 7px',borderRadius:2,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,textTransform:'uppercase'},
   }[p] || {});
 
   return (
@@ -4766,7 +4806,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     const matchText=(g.name||'').toLowerCase().includes(s) || (g.sku||'').toLowerCase().includes(s) || (g.category||'').toLowerCase().includes(s);
     const matchPolo=poloFilter==='Todos' || !!g.polos[poloFilter];
     return matchText && matchPolo;
-  }).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  }).sort((a,b)=>cmpProdutoTamanho(a.name,b.name));
 
   // Linhas visíveis (para os totalizadores)
   const visibleRows = rows.filter(r=>podePolo(r.polo));
@@ -4902,7 +4942,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     </div>
 
     {isGerente && (
-      <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:12,fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,color:'#1a4e8e'}}>
+      <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:12,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#1a4e8e'}}>
         🧑‍💼 Perfil <b>Gerente</b> — você gerencia o estoque apenas do polo <b>{(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}</b> ({(POLOS[poloGerente]&&POLOS[poloGerente].nome)||''}).
       </div>
     )}
@@ -4938,22 +4978,22 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
       </div>
     )}
 
-    {loading ? <div style={{textAlign:'center',padding:40,color:'#aaa',fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:2}}>Carregando estoque de todos os polos...</div> : (
+    {loading ? <div style={{textAlign:'center',padding:40,color:'#5f6368',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2}}>Carregando estoque de todos os polos...</div> : (
     <div className="card">
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar produto, SKU ou categoria..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table>
         <thead><tr>{["Foto","Produto","SKU","Categoria","Preço","Estoque por polo",(poloFilter==='Todos'?'Total (todos)':('Estoque '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter))),"Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>
-          {!groups.length&&<tr><td colSpan={8} style={{textAlign:'center',padding:28,color:'#bbb'}}>Nenhum produto cadastrado</td></tr>}
+          {!groups.length&&<tr><td colSpan={8} style={{textAlign:'center',padding:28,color:'#6b6b6b'}}>Nenhum produto cadastrado</td></tr>}
           {groups.map(g=>{
             const total=Object.values(g.polos).reduce((a,r)=>a+(r.stock||0),0);
             const displayQty = poloFilter==='Todos' ? total : (g.polos[poloFilter]?(g.polos[poloFilter].stock||0):0);
             const polosToShow = polosPermitidos.filter(pid=> (poloFilter==='Todos' || pid===poloFilter) && g.polos[pid]);
             return <tr key={g.key}>
-              <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:8,color:"#ccc"}}>SEM FOTO</span>}</div></td>
+              <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
               <td><strong>{g.name}</strong></td>
-              <td className="text-mono" style={{fontSize:9,color:'#aaa'}}>{g.sku||'—'}</td>
-              <td className="text-mono" style={{fontSize:10}}>{g.category||'—'}</td>
+              <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{g.sku||'—'}</td>
+              <td className="text-mono" style={{fontSize:11}}>{g.category||'—'}</td>
               <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(g.price)}</td>
               <td>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
@@ -4962,7 +5002,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
                     const low=r.stock<=(r.minStock||5);
                     return <span key={pid} className="kb-pill" style={{background:r.stock===0?'#fde8e8':low?'#fff4e0':'#eef7ee',color:r.stock===0?'#cc2222':low?'#9a6a00':'#1a6e2e',border:'1px solid '+(r.stock===0?'#f3c2c2':low?'#f0d9a8':'#bfe3c2')}}>{POLOS[pid].sigla} {r.stock}</span>;
                   })}
-                  {polosToShow.length===0&&<span style={{color:'#bbb',fontSize:10}}>—</span>}
+                  {polosToShow.length===0&&<span style={{color:'#6b6b6b',fontSize:11}}>—</span>}
                 </div>
               </td>
               <td style={{fontFamily:'Bebas Neue',fontSize:16}}>{displayQty}</td>
@@ -4992,7 +5032,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <span key={c} onClick={()=>setForm({...form,category:c})} className={`ge-polochip ${form.category===c?'on':''}`}>{c}</span>
             ))}
           </div>}
-          {form.category && form.category.trim() && !catOptions.includes(form.category.trim()) && <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#1a6e2e',marginTop:6}}>+ Nova categoria "{form.category.trim()}" será criada ao salvar</div>}
+          {form.category && form.category.trim() && !catOptions.includes(form.category.trim()) && <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#1a6e2e',marginTop:6}}>+ Nova categoria "{form.category.trim()}" será criada ao salvar</div>}
         </div>
         <div className="form-group"><label>Preço Venda *</label><input type="number" step="0.01" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></div>
         <div className="form-group"><label>Custo</label><input type="number" step="0.01" value={form.cost} onChange={e=>setForm({...form,cost:e.target.value})}/></div>
@@ -5002,7 +5042,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
       {/* Gerente: produto entra automaticamente apenas no polo dele */}
       {isGerente ? <>
         <div className="section-divider">🏪 Polo · quantidade inicial</div>
-        <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:10,fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,color:'#1a4e8e'}}>
+        <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'9px 14px',marginBottom:10,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#1a4e8e'}}>
           O produto será cadastrado automaticamente no polo <b>{(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}</b>.
         </div>
         <div className="ge-polo-qty">
@@ -5025,7 +5065,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <input type="number" min="0" placeholder="Qtd" value={pQty[p.id]} onChange={e=>setPQty({...pQty,[p.id]:e.target.value})}/>
             </div>
           ))}
-          {Object.values(POLOS).filter(p=>pSel[p.id]).length===0&&<div style={{textAlign:'center',padding:'12px',color:'#bbb',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Selecione acima os polos onde o produto será vendido</div>}
+          {Object.values(POLOS).filter(p=>pSel[p.id]).length===0&&<div style={{textAlign:'center',padding:'12px',color:'#6b6b6b',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>Selecione acima os polos onde o produto será vendido</div>}
         </div>
       </>}
     </Modal>}
@@ -5036,7 +5076,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         <div className="form-group full"><label>Produto</label>
           <select value={tForm.key} onChange={e=>setTForm({...tForm,key:e.target.value})}>
             <option value="">Selecionar produto...</option>
-            {Object.values(groupsMap).sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(g=><option key={g.key} value={g.key}>{g.name}{g.sku?' ('+g.sku+')':''}</option>)}
+            {Object.values(groupsMap).sort((a,b)=>cmpProdutoTamanho(a.name,b.name)).map(g=><option key={g.key} value={g.key}>{g.name}{g.sku?' ('+g.sku+')':''}</option>)}
           </select>
         </div>
         <div className="form-group"><label>De (origem)</label>
@@ -5044,7 +5084,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
             const g=groupsMap[tForm.key]; const r=g&&g.polos[poloGerente];
             return <>
               <input readOnly disabled value={`${(POLOS[poloGerente]&&POLOS[poloGerente].sigla)||poloGerente}${r?' — '+r.stock+' un.':' — 0 un.'}`} style={{background:'#f2f2f2',color:'#555',cursor:'not-allowed'}}/>
-              <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:1,color:'#888',marginTop:4}}>🔒 Origem fixa no seu polo</div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#525252',marginTop:4}}>🔒 Origem fixa no seu polo</div>
             </>;
           })() : (
             <select value={tForm.from} onChange={e=>setTForm({...tForm,from:e.target.value})}>
@@ -5205,7 +5245,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
             <div className="kb-card-sub">{p.date} · {p.payment}</div>
             {p.phone && <div className="kb-card-sub" style={{marginTop:2,color:'#1a6e2e'}}>📱 {p.phone}</div>}
             <div style={{margin:'7px 0 2px',borderTop:'1px dashed #ececec',paddingTop:6}}>
-              {p.items.map((it,i)=><div key={i} style={{fontSize:11,color:'#555',lineHeight:1.55,display:'flex',justifyContent:'space-between',gap:6}}><span><strong style={{color:'#111'}}>{it.qty}×</strong> {it.productName}</span><span style={{color:'#999',whiteSpace:'nowrap'}}>R${it.total.toFixed(2)}</span></div>)}
+              {p.items.map((it,i)=><div key={i} style={{fontSize:11,color:'#555',lineHeight:1.55,display:'flex',justifyContent:'space-between',gap:6}}><span><strong style={{color:'#111'}}>{it.qty}×</strong> {it.productName}</span><span style={{color:'#5f6368',whiteSpace:'nowrap'}}>R${it.total.toFixed(2)}</span></div>)}
             </div>
             <div className="kb-card-row">
               <span className="kb-card-total">R${p.total.toFixed(2)}</span>
@@ -5241,7 +5281,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:18}}>
             {[['Cliente',selected.customer],['Data',selected.date],['Telefone',selected.phone||'—'],['Pagamento',selected.payment],['Status',selected.status]].map(([l,v])=>(
               <div key={l}>
-                <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:3}}>{l}</div>
+                <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:3}}>{l}</div>
                 <div style={{fontSize:13,fontWeight:500}}>{l==='Status'?<span className={`tag ${PEDIDO_STATUS_CLS[v]||'tag-pending'}`}>{v}</span>:v}</div>
               </div>
             ))}
@@ -5249,7 +5289,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
 
           {/* Seção WhatsApp */}
           <div style={{background:'#f0faf4',border:'1px solid #b2dfdb',borderRadius:6,padding:'14px 16px',marginBottom:16}}>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#00796b',textTransform:'uppercase',marginBottom:10}}>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#00796b',textTransform:'uppercase',marginBottom:10}}>
               📲 Notificar cliente via WhatsApp
             </div>
             {selected.phone ? (
@@ -5264,7 +5304,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
                         background: isCurrentStatus ? '#25D366' : '#fff',
                         color: isCurrentStatus ? '#fff' : '#25D366',
                         border:'1px solid #25D366',borderRadius:3,textDecoration:'none',
-                        fontFamily:'Oswald,sans-serif',fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>
+                        fontFamily:'Oswald,sans-serif',fontSize:11,letterSpacing:1,textTransform:'uppercase'}}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill={isCurrentStatus?'white':'#25D366'}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                       {s}
                     </a>
@@ -5272,13 +5312,13 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
                 })}
               </div>
             ) : (
-              <div style={{fontSize:12,color:'#888',fontFamily:'Share Tech Mono',letterSpacing:1}}>
+              <div style={{fontSize:12,color:'#525252',fontFamily:'Share Tech Mono',letterSpacing:1}}>
                 ⚠ Telefone não cadastrado para este cliente.
               </div>
             )}
           </div>
 
-          <div style={{fontFamily:'Share Tech Mono',fontSize:9,letterSpacing:2,color:'#aaa',textTransform:'uppercase',marginBottom:10}}>Itens do Pedido</div>
+          <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:2,color:'#5f6368',textTransform:'uppercase',marginBottom:10}}>Itens do Pedido</div>
           <table>
             <thead><tr>{['Produto','Qtd','Total'].map(h=><th key={h}>{h}</th>)}</tr></thead>
             <tbody>
@@ -5349,7 +5389,7 @@ const ROLE_META={
   gerente: {label:'Gerente',       icon:'🧑‍💼', color:'#1a6e2e', badgeBg:'#173a1f', badgeBorder:'#2c5e38'},
   vendedor:{label:'Vendedor',      icon:'🙋',  color:'#4a8cc9', badgeBg:undefined, badgeBorder:undefined},
 };
-function roleMeta(r){ return ROLE_META[r] || {label:r||'—', icon:'•', color:'#888'}; }
+function roleMeta(r){ return ROLE_META[r] || {label:r||'—', icon:'•', color:'#525252'}; }
 
 const ADMIN_PAGES=[
   {id:"dashboard",  label:"Dashboard",          icon:"📊", section:"GERAL",      roles:['dono','gerente','vendedor']},
@@ -5382,15 +5422,15 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
     <div className={`sidebar ${sideOpen?"open":""}`}>
       <div className="sidebar-logo"><img src={LOGO} alt="Boina Preta"/></div>
       <div style={{padding:"8px 16px 0",borderBottom:"1px solid #2a2a2a",paddingBottom:10}}>
-        <div style={{fontFamily:"Share Tech Mono",fontSize:8,letterSpacing:3,color:"#444",textTransform:"uppercase",marginBottom:3}}>Polo Ativo</div>
-        <div style={{fontFamily:"Oswald",fontSize:11,fontWeight:600,letterSpacing:1,color:"#bbb",textTransform:"uppercase",marginBottom:6}}>{polo.sigla} — {polo.nome.split(' ').slice(0,3).join(' ')}</div>
-        <button onClick={onTrocarPolo} style={{background:"transparent",border:"1px solid #2a2a2a",borderRadius:2,padding:"4px 8px",fontFamily:"Share Tech Mono",fontSize:8,letterSpacing:2,color:"#555",cursor:"pointer",textTransform:"uppercase",width:"100%",transition:"all .15s"}} onMouseOver={e=>{e.target.style.borderColor="#555";e.target.style.color="#aaa";}} onMouseOut={e=>{e.target.style.borderColor="#2a2a2a";e.target.style.color="#555";}}>⇄ Trocar Polo</button>
+        <div style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:3,color:"#444",textTransform:"uppercase",marginBottom:3}}>Polo Ativo</div>
+        <div style={{fontFamily:"Oswald",fontSize:11,fontWeight:600,letterSpacing:1,color:"#6b6b6b",textTransform:"uppercase",marginBottom:6}}>{polo.sigla} — {polo.nome.split(' ').slice(0,3).join(' ')}</div>
+        <button onClick={onTrocarPolo} style={{background:"transparent",border:"1px solid #2a2a2a",borderRadius:2,padding:"4px 8px",fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:2,color:"#555",cursor:"pointer",textTransform:"uppercase",width:"100%",transition:"all .15s"}} onMouseOver={e=>{e.target.style.borderColor="#555";e.target.style.color="#aaa";}} onMouseOut={e=>{e.target.style.borderColor="#2a2a2a";e.target.style.color="#555";}}>⇄ Trocar Polo</button>
       </div>
       {/* operador logado */}
       {operador&&<div style={{padding:"8px 16px",borderBottom:"1px solid #1a1a1a"}}>
-        <div style={{fontFamily:"Share Tech Mono",fontSize:8,letterSpacing:2,color:"#333",textTransform:"uppercase",marginBottom:2}}>Operador</div>
-        <div style={{fontFamily:"Oswald",fontSize:11,letterSpacing:1,color:"#bbb",textTransform:"uppercase"}}>{operador.nome.split(' ')[0]}</div>
-        <div style={{fontFamily:"Share Tech Mono",fontSize:8,letterSpacing:1,color:roleMeta(role).color,marginTop:2}}>{roleMeta(role).icon} {roleMeta(role).label.toUpperCase()}</div>
+        <div style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:2,color:"#333",textTransform:"uppercase",marginBottom:2}}>Operador</div>
+        <div style={{fontFamily:"Oswald",fontSize:11,letterSpacing:1,color:"#6b6b6b",textTransform:"uppercase"}}>{operador.nome.split(' ')[0]}</div>
+        <div style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:1,color:roleMeta(role).color,marginTop:2}}>{roleMeta(role).icon} {roleMeta(role).label.toUpperCase()}</div>
       </div>}
       <nav className="sidebar-nav">
         {secs.map(sec=><div key={sec}>
@@ -5398,7 +5438,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
           {pages.filter(p=>p.section===sec).map(p=><div key={p.id} className={`nav-item ${page===p.id?"active":""}`} onClick={()=>navTo(p.id)}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></div>)}
         </div>)}
         <div style={{padding:"12px 0 0"}}>
-          <div className="nav-item" onClick={()=>setSenhaModal(true)} style={{color:"#888"}}><span className="nav-icon">🔑</span><span>Alterar Senha</span></div>
+          <div className="nav-item" onClick={()=>setSenhaModal(true)} style={{color:"#525252"}}><span className="nav-icon">🔑</span><span>Alterar Senha</span></div>
           <div className="nav-item" onClick={onLogout} style={{color:"#cc4444"}}><span className="nav-icon">🔓</span><span>Sair do Admin</span></div>
         </div>
       </nav>
@@ -5437,7 +5477,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
         {page==="encomendas"&&<Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/>}
         {page==="pedidos"&&<PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} notify={notify} customers={customers} polo={polo.id}/>}
         {page==="config"&&role==='dono'&&<Configuracoes polo={polo.id} notify={notify}/>}
-        {page==="config"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#bbb'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,marginTop:6}}>Apenas o administrador pode gerenciar usuários</div></div>}
+        {page==="config"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#6b6b6b'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,marginTop:6}}>Apenas o administrador pode gerenciar usuários</div></div>}
       </div>
     </div>
   </div>;
@@ -5567,8 +5607,16 @@ const sb = {
       if(body!==undefined) opts.body = JSON.stringify(body);
       const res = await fetch(this._url(), opts);
       if(this._head||method==='DELETE'){
-        if(!res.ok){ let t=''; try{t=await res.text();}catch(e){} return {data:null, error:{message:t||res.statusText}, count:0}; }
-        return {data:null,error:null,count:0};
+        if(!res.ok){ let t=''; try{t=await res.text();}catch(e){} return {data:null, error:{message:t||res.statusText}, count:null}; }
+        // CORREÇÃO: antes devolvia count:0 fixo, sem ler o cabeçalho content-range.
+        // Isso fazia qualquer contagem parecer "zero registros".
+        let cnt=null;
+        if(this._count){
+          const c=res.headers.get('content-range');       // formato: "0-9/42"
+          const n=c?parseInt(String(c).split('/')[1]):NaN;
+          cnt=isNaN(n)?null:n;                            // null = não foi possível contar
+        }
+        return {data:null,error:null,count:cnt};
       }
       const text = await res.text();
       let data = null;
@@ -5650,8 +5698,20 @@ function orcFromDB(r){return{...r,clienteId:r.cliente_id,payments:normPayments(r
 function orcToDB(o,polo){return{id:String(o.id),polo,numero:o.numero||'',cliente:o.cliente||'',cliente_id:String(o.clienteId||o.cliente_id||''),items:o.items||[],total:parseFloat(o.total)||0,status:o.status||'Aberto',pagamento:o.pagamento||'',payments:normPayments(o.payments),obs:o.obs||''};}
 
 // ── seed inicial (só roda se o banco estiver vazio) ───────────────────────────
+// ⚠ POPULAÇÃO AUTOMÁTICA DE DADOS DE DEMONSTRAÇÃO — DESLIGADA
+// O sistema está em uso real. Nenhum produto, categoria ou cliente de exemplo
+// pode ser criado automaticamente: o estoque é conferido fisicamente pela equipe
+// e não pode ser alterado por rotina nenhuma.
+// Para repovoar um polo novo do zero, mude para true, abra o sistema uma vez
+// nesse polo e volte para false em seguida.
+const SEED_DEMO_ATIVO = false;
+
 async function seedIfEmpty(polo){
-  const {count}=await sb.from('products').select('*',{count:'exact',head:true}).eq('polo',polo);
+  if(!SEED_DEMO_ATIVO) return;                    // trava principal
+  const {count,error}=await sb.from('products').select('*',{count:'exact',head:true}).eq('polo',polo);
+  // Em caso de dúvida, NÃO popula. Só segue se a contagem vier confirmada como zero.
+  if(error){ console.warn('[Boina Preta] Contagem de produtos falhou — população automática abortada.'); return; }
+  if(typeof count!=='number'){ console.warn('[Boina Preta] Contagem indisponível — população automática abortada.'); return; }
   if(count>0) return;
   // Cada polo recebe o catálogo base com IDs únicos e estoque levemente variado
   const poloIndex = Object.keys(POLOS).indexOf(polo);
@@ -5685,10 +5745,15 @@ function usePoloData(polo){
   const [orcamentos,setOrcamentosLocal]= useState([]);
   const [loading,   setLoading]        = useState(true);
   const [syncStatus,setSyncStatus]     = useState('idle'); // 'idle'|'saving'|'saved'|'error'
+  // Só liberamos gravação depois que o servidor confirmar os dados reais do polo.
+  // Sem isso, uma venda feita em cima de um cache antigo gravaria um estoque
+  // desatualizado por cima do valor correto (ex.: banco 10, cache 30 → grava 29).
+  const dadosConfirmados = useRef(false);
 
   useEffect(()=>{
     if(!polo) return;
     let alive=true;
+    dadosConfirmados.current=false;   // troca de polo volta a bloquear até confirmar
     // 1) pinta na hora com o cache local (reload instantâneo)
     const cached=bpReadCache(polo);
     if(cached){
@@ -5704,7 +5769,10 @@ function usePoloData(polo){
     }
     // 2) revalida em segundo plano a partir do Supabase
     (async()=>{
-      if(!cached) await seedIfEmpty(polo);
+      // Antes, abrir o sistema sem cache local (navegador novo, cache limpo, aba anônima)
+      // disparava a criação dos produtos de demonstração. Agora só roda se
+      // SEED_DEMO_ATIVO estiver ligado manualmente.
+      if(!cached && SEED_DEMO_ATIVO) await seedIfEmpty(polo);
       const [p,s,c,cat,enc,orc] = await Promise.all([
         sb.from('products'  ).select('*').eq('polo',polo),
         sb.from('sales'     ).select('*').eq('polo',polo).order('ts',{ascending:false}),
@@ -5714,6 +5782,15 @@ function usePoloData(polo){
         sb.from('orcamentos').select('*').eq('polo',polo).order('created_at',{ascending:false}),
       ]);
       if(!alive) return;
+      // Se a leitura falhou, NÃO zera a tela nem grava cache vazio: mantém o que
+      // já estava e continua bloqueando a gravação até conseguir confirmar.
+      const falhou = p.error||s.error||c.error||cat.error||enc.error||orc.error;
+      if(falhou){
+        console.warn('[Boina Preta] Não foi possível carregar os dados do polo. Gravação bloqueada até reconectar.');
+        setLoading(false);
+        setSyncStatus('error');
+        return;
+      }
       const nproducts=(p.data||[]).map(prodFromDB);
       const nsales=(s.data||[]).map(saleFromDB);
       const ncustomers=(c.data||[]).map(custFromDB);
@@ -5727,6 +5804,7 @@ function usePoloData(polo){
       setEncomendasLocal(nencomendas);
       setOrcamentosLocal(norcamentos);
       setLoading(false);
+      dadosConfirmados.current=true;   // a partir daqui é seguro gravar
       bpWriteCache(polo,{products:nproducts,sales:nsales,customers:ncustomers,categories:ncategories,encomendas:nencomendas,orcamentos:norcamentos});
     })();
     return ()=>{ alive=false; };
@@ -5735,10 +5813,20 @@ function usePoloData(polo){
   // ── setters que sincronizam com Supabase ─────────────────────────────────────
   function flash(ok){
     setSyncStatus(ok?'saved':'error');
-    setTimeout(()=>setSyncStatus('idle'),2000);
+    // o aviso de bloqueio não some sozinho: o operador precisa vê-lo
+    setTimeout(()=>setSyncStatus(st=>st==='bloqueado'?st:'idle'),2000);
+  }
+
+  // Bloqueio de segurança: nada é gravado antes do servidor confirmar os dados
+  function podeGravar(oQue){
+    if(dadosConfirmados.current) return true;
+    console.warn('[Boina Preta] Gravação de '+oQue+' bloqueada: dados do polo ainda não confirmados pelo servidor.');
+    setSyncStatus('bloqueado');
+    return false;
   }
 
   async function setProducts(val){
+    if(!podeGravar('produtos')) return;
     const next = typeof val==='function' ? val(products) : val;
     setProductsLocal(next);
     setSyncStatus('saving');
@@ -5755,6 +5843,7 @@ function usePoloData(polo){
   }
 
   async function setSales(val){
+    if(!podeGravar('vendas')) return;
     const next = typeof val==='function' ? val(sales) : val;
     setSalesLocal(next);
     setSyncStatus('saving');
@@ -5767,6 +5856,7 @@ function usePoloData(polo){
   }
 
   async function setCustomers(val){
+    if(!podeGravar('clientes')) return;
     const prev = customers;
     const next = typeof val==='function' ? val(prev) : val;
     setCustomersLocal(next);
@@ -5782,6 +5872,7 @@ function usePoloData(polo){
   }
 
   async function setCategories(val){
+    if(!podeGravar('categorias')) return;
     const next = typeof val==='function' ? val(categories) : val;
     setCategoriesLocal(next);
     setSyncStatus('saving');
@@ -5792,6 +5883,7 @@ function usePoloData(polo){
   }
 
   async function setEncomendas(val){
+    if(!podeGravar('encomendas')) return;
     const next = typeof val==='function' ? val(encomendas) : val;
     setEncomendasLocal(next);
     setSyncStatus('saving');
@@ -5806,6 +5898,7 @@ function usePoloData(polo){
   }
 
   async function setOrcamentos(val){
+    if(!podeGravar('orçamentos')) return;
     const next = typeof val==='function' ? val(orcamentos) : val;
     setOrcamentosLocal(next);
     setSyncStatus('saving');
@@ -5834,18 +5927,25 @@ function usePoloData(polo){
 function SyncIndicator({status}){
   if(status==='idle') return null;
   const cfg={
-    saving:{bg:'#1a4e8e',txt:'Salvando...'},
-    saved: {bg:'#1a6e2e',txt:'✓ Salvo'},
-    error: {bg:'#cc2222',txt:'⚠ Erro ao salvar'},
+    saving:   {bg:'#1a4e8e',txt:'Salvando...'},
+    saved:    {bg:'#1a6e2e',txt:'✓ Salvo'},
+    error:    {bg:'#cc2222',txt:'⚠ Erro ao salvar'},
+    bloqueado:{bg:'#cc2222',txt:'⚠ Sem conexão — ação não gravada'},
   }[status]||{};
-  return <div style={{position:'fixed',bottom:60,right:20,background:cfg.bg,color:'#fff',padding:'6px 14px',borderRadius:3,fontFamily:'Oswald,sans-serif',fontSize:11,letterSpacing:2,zIndex:9998,boxShadow:'0 2px 8px rgba(0,0,0,.2)'}}>{cfg.txt}</div>;
+  const persistente = status==='bloqueado';
+  return <div style={{position:'fixed',bottom:60,right:20,background:cfg.bg,color:'#fff',padding:persistente?'10px 16px':'6px 14px',borderRadius:3,fontFamily:'Oswald,sans-serif',fontSize:persistente?13:12,letterSpacing:1.5,zIndex:9998,boxShadow:'0 2px 8px rgba(0,0,0,.2)',maxWidth:300}}>
+    {cfg.txt}
+    {persistente&&<div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:.5,marginTop:5,opacity:.9,lineHeight:1.45}}>
+      Os dados do polo ainda não foram carregados. Recarregue a página antes de continuar — nada foi alterado no estoque.
+    </div>}
+  </div>;
 }
 
 // ── Tela de loading ───────────────────────────────────────────────────────────
 function LoadingScreen({polo}){
   return <div style={{minHeight:'100vh',background:'#0a0a0a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}}>
     <img src={LOGO} style={{height:80,opacity:.8}} alt=""/>
-    <div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:4,color:'#555',textTransform:'uppercase'}}>
+    <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:4,color:'#555',textTransform:'uppercase'}}>
       Carregando polo {polo?.toUpperCase()}...
     </div>
     <div style={{width:120,height:2,background:'#222',borderRadius:1,overflow:'hidden'}}>
