@@ -1754,6 +1754,10 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
   const [estoqueTab,setEstoqueTab]=useState('lista');
   const [search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[modal,setModal]=useState(null),[form,setForm]=useState({}),[catModal,setCatModal]=useState(false),[newCat,setNewCat]=useState("");
   const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&(p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase()))));
+  // Botões de categoria: as cadastradas + as que aparecem nos produtos deste polo,
+  // para nenhuma categoria em uso ficar sem filtro
+  const catsDisponiveis=categoriasUnicas([...(categories||[]), ...products.flatMap(p=>prodCategorias(p))])
+    .sort((a,b)=>a.localeCompare(b,'pt-BR'));
   function save(){
     if(!form.name||!form.price||!form.stock){notify("Preencha os campos obrigatórios","error");return;}
     const novoStock=parseInt(form.stock);
@@ -1786,12 +1790,23 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
     {estoqueTab==='historico'&&<HistoricoEstoque polo={polo} products={products}/>}
 
     {estoqueTab==='lista'&&<>
-    <div className="flex justify-between items-center gap-2 mb-4" style={{flexWrap:"wrap"}}>
-      <div className="flex gap-2" style={{flexWrap:"wrap"}}>
-        <button className={`btn btn-sm ${cat==="Todos"?"btn-primary":""}`} onClick={()=>setCat("Todos")}>Todos</button>
-        {categoriasUnicas(categories).map(c=><button key={c} className={`btn btn-sm ${cat===c?"btn-primary":""}`} onClick={()=>setCat(c)}>{c}</button>)}
+    <div className="flex justify-between items-center gap-2 mb-3" style={{flexWrap:"wrap"}}>
+      <div className="flex gap-2" style={{flexWrap:"wrap",alignItems:'center'}}>
+        <span className="kb-hint" style={{marginBottom:0}}>Categoria:</span>
+        <button className={`btn btn-sm ${cat==="Todos"?"btn-primary":""}`} onClick={()=>setCat("Todos")}>Todas</button>
+        {catsDisponiveis.map(c=><button key={c} className={`btn btn-sm ${cat===c?"btn-primary":""}`} onClick={()=>setCat(c)}>{c}</button>)}
       </div>
       <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',textTransform:'uppercase'}}>Somente consulta · cadastro, quantidades e transferências em <strong style={{color:'#111'}}>Gestão de Estoque</strong></div>
+    </div>
+
+    {/* Resumo do que está sendo exibido */}
+    <div className="kb-hint" style={{marginBottom:12}}>
+      Exibindo {filtered.length} de {products.length} produto{products.length!==1?'s':''}
+      {cat!=='Todos' && ` · categoria ${cat}`}
+      {search.trim() && ` · busca "${search.trim()}"`}
+      {(cat!=='Todos'||search.trim()) &&
+        <button onClick={()=>{setCat('Todos');setSearch('');}}
+          style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,cursor:'pointer',marginLeft:8,textTransform:'uppercase'}}>limpar filtros</button>}
     </div>
     <div className="card">
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar produto ou SKU..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
@@ -4819,6 +4834,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   const [pQty,setPQty]=useState({});
   const [tModal,setTModal]=useState(false);
   const [novaCat,setNovaCat]=useState('');
+  const [catFilter,setCatFilter]=useState('Todos');   // filtro de categoria da listagem
   const [tForm,setTForm]=useState({key:'',from:(isGerente?poloGerente:activePolo),to:'',qty:''});
 
   useEffect(()=>{ load(); },[]);
@@ -4850,7 +4866,8 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     const s=search.toLowerCase();
     const matchText=(g.name||'').toLowerCase().includes(s) || (g.sku||'').toLowerCase().includes(s) || prodCategorias(g).some(c=>c.toLowerCase().includes(s));
     const matchPolo=poloFilter==='Todos' || !!g.polos[poloFilter];
-    return matchText && matchPolo;
+    const matchCat=prodTemCategoria(g, catFilter);
+    return matchText && matchPolo && matchCat;
   }).sort((a,b)=>cmpProdutoTamanho(a.name,b.name));
 
   // Linhas visíveis (para os totalizadores)
@@ -5038,6 +5055,26 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
       <button className={`btn btn-sm ${poloFilter==='Todos'?'btn-primary':''}`} onClick={()=>setPoloFilter('Todos')}>Todos os polos</button>
       {Object.values(POLOS).map(p=><button key={p.id} className={`btn btn-sm ${poloFilter===p.id?'btn-primary':''}`} onClick={()=>setPoloFilter(p.id)}>{p.sigla}</button>)}
     </div>}
+
+    {/* Filtro por categoria — um produto em duas categorias aparece nas duas */}
+    {catOptions.length>0 && <div className="flex gap-2 mb-3" style={{flexWrap:'wrap',alignItems:'center'}}>
+      <span className="kb-hint" style={{marginBottom:0}}>Categoria:</span>
+      <button className={`btn btn-sm ${catFilter==='Todos'?'btn-primary':''}`} onClick={()=>setCatFilter('Todos')}>Todas</button>
+      {catOptions.map(c=>(
+        <button key={c} className={`btn btn-sm ${catFilter===c?'btn-primary':''}`} onClick={()=>setCatFilter(c)}>{c}</button>
+      ))}
+    </div>}
+
+    {/* Resumo do que está sendo exibido */}
+    <div className="kb-hint" style={{marginBottom:10}}>
+      Exibindo {groups.length} de {Object.keys(groupsMap).length} produto{Object.keys(groupsMap).length!==1?'s':''}
+      {catFilter!=='Todos' && ` · categoria ${catFilter}`}
+      {!isGerente && poloFilter!=='Todos' && ` · polo ${poloSigla}`}
+      {search.trim() && ` · busca "${search.trim()}"`}
+      {(catFilter!=='Todos'||search.trim()||(!isGerente&&poloFilter!=='Todos')) &&
+        <button onClick={()=>{setCatFilter('Todos');setSearch('');if(!isGerente)setPoloFilter('Todos');}}
+          style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,cursor:'pointer',marginLeft:8,textTransform:'uppercase'}}>limpar filtros</button>}
+    </div>
 
     {/* Alerta de estoque baixo (apenas polos habilitados) */}
     {lowAlerts.length>0 && (
