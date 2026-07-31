@@ -579,6 +579,50 @@ function cmpProdutoTamanho(nomeA, nomeB){
 function ordenarProdutos(lista){
   return [...(lista||[])].sort((a,b)=>cmpProdutoTamanho(a&&a.name, b&&b.name));
 }
+
+// ====== CATEGORIAS DO PRODUTO (uma ou várias) ======
+// Um produto pode pertencer a mais de uma categoria (ex.: Fardamento E Calças).
+// A lista fica em `categories`; `category` continua guardando a primeira, para
+// não quebrar nada que já lia esse campo.
+function normCategorias(v){
+  let arr = v;
+  if(typeof arr==='string'){
+    const txt=arr.trim();
+    if(!txt) return [];
+    if(txt.startsWith('[')){ try{ arr=JSON.parse(txt); }catch(e){ arr=txt.split(','); } }
+    else arr=txt.split(',');
+  }
+  if(!Array.isArray(arr)) return [];
+  const vistas=new Set(); const saida=[];
+  arr.forEach(c=>{
+    const nome=String(c||'').trim();
+    if(!nome) return;
+    const chave=nome.toLowerCase();
+    if(vistas.has(chave)) return;      // sem repetir
+    vistas.add(chave); saida.push(nome);
+  });
+  return saida;
+}
+// Categorias de um produto, aceitando registros antigos que só têm `category`
+function prodCategorias(p){
+  if(!p) return [];
+  const lista=normCategorias(p.categories);
+  if(lista.length) return lista;
+  return normCategorias(p.category);
+}
+// Texto para exibir na tabela: "Fardamento · Calças"
+function prodCategoriasTexto(p, sep=' · '){
+  const l=prodCategorias(p);
+  return l.length ? l.join(sep) : '—';
+}
+// O produto pertence à categoria selecionada no filtro?
+function prodTemCategoria(p, cat){
+  if(!cat || cat==='Todos') return true;
+  const alvo=String(cat).trim().toLowerCase();
+  return prodCategorias(p).some(c=>c.toLowerCase()===alvo);
+}
+// Remove nomes repetidos de uma lista de categorias, preservando a ordem
+function categoriasUnicas(lista){ return normCategorias(lista); }
 function genSales(){
   const s=[];let id=1;
   for(let m=0;m<12;m++){const n=Math.floor(Math.random()*12)+4;for(let i=0;i<n;i++){const p=INIT_PRODS[Math.floor(Math.random()*INIT_PRODS.length)];const qty=Math.floor(Math.random()*3)+1;const day=Math.floor(Math.random()*28)+1;const dt=new Date(2025,m,day);s.push({id:id++,productId:p.id,productName:p.name,qty,unitPrice:p.price,total:parseFloat((p.price*qty).toFixed(2)),cost:parseFloat((p.cost*qty).toFixed(2)),month:m,week:getWeekNum(dt),date:`${String(day).padStart(2,"0")}/${String(m+1).padStart(2,"0")}/2025`,ts:dt.getTime(),payment:PMTS[Math.floor(Math.random()*PMTS.length)],type:Math.random()>.3?"loja":"online",status:Math.random()>.1?"Concluído":"Pendente",customer:["Ana Lima","Carlos Souza","Marina Costa","Pedro Alves"][Math.floor(Math.random()*4)]});}}
@@ -1709,7 +1753,7 @@ function HistoricoEstoque({polo, products}){
 function Estoque({products,setProducts,categories,setCategories,notify,polo,poloInfo}){
   const [estoqueTab,setEstoqueTab]=useState('lista');
   const [search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[modal,setModal]=useState(null),[form,setForm]=useState({}),[catModal,setCatModal]=useState(false),[newCat,setNewCat]=useState("");
-  const filtered=ordenarProdutos(products.filter(p=>(cat==="Todos"||p.category===cat)&&(p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase()))));
+  const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&(p.name.toLowerCase().includes(search.toLowerCase())||p.sku.toLowerCase().includes(search.toLowerCase()))));
   function save(){
     if(!form.name||!form.price||!form.stock){notify("Preencha os campos obrigatórios","error");return;}
     const novoStock=parseInt(form.stock);
@@ -1745,7 +1789,7 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
     <div className="flex justify-between items-center gap-2 mb-4" style={{flexWrap:"wrap"}}>
       <div className="flex gap-2" style={{flexWrap:"wrap"}}>
         <button className={`btn btn-sm ${cat==="Todos"?"btn-primary":""}`} onClick={()=>setCat("Todos")}>Todos</button>
-        {categories.map(c=><button key={c} className={`btn btn-sm ${cat===c?"btn-primary":""}`} onClick={()=>setCat(c)}>{c}</button>)}
+        {categoriasUnicas(categories).map(c=><button key={c} className={`btn btn-sm ${cat===c?"btn-primary":""}`} onClick={()=>setCat(c)}>{c}</button>)}
       </div>
       <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',textTransform:'uppercase'}}>Somente consulta · cadastro, quantidades e transferências em <strong style={{color:'#111'}}>Gestão de Estoque</strong></div>
     </div>
@@ -1756,7 +1800,7 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
           <td><div className="tbl-thumb">{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
           <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{p.sku}</td>
           <td><strong>{p.name}</strong></td>
-          <td className="text-mono" style={{fontSize:11}}>{p.category}</td>
+          <td className="text-mono" style={{fontSize:11}}>{prodCategoriasTexto(p)}</td>
           <td style={{fontFamily:"Bebas Neue",fontSize:15,letterSpacing:1}}>{fmt(p.price)}</td>
           <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{fmt(p.cost)}</td>
           <td className="text-mono" style={{fontSize:12}}>{p.stock}</td>
@@ -2884,7 +2928,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
-  const filtered=ordenarProdutos(products.filter(p=>(cat==="Todos"||p.category===cat)&&p.name.toLowerCase().includes(search.toLowerCase())));
+  const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&p.name.toLowerCase().includes(search.toLowerCase())));
   const cartTotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const frete=0;
   function addCart(p){
@@ -3040,7 +3084,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       <div className="store-nav-inner">
         <div className="store-nav-cats">
           <div className={`store-nav-cat ${cat==="Todos"?"active":""}`} onClick={()=>setCat("Todos")}>Todos</div>
-          {categories.map(c=><div key={c} className={`store-nav-cat ${cat===c?"active":""}`} onClick={()=>setCat(c)}>{c}</div>)}
+          {categoriasUnicas(categories).map(c=><div key={c} className={`store-nav-cat ${cat===c?"active":""}`} onClick={()=>setCat(c)}>{c}</div>)}
         </div>
         <div className="store-nav-right">
           {currentUser?<div style={{fontFamily:"Oswald",fontSize:12,letterSpacing:1,textTransform:"uppercase",color:"#555",display:"flex",alignItems:"center",gap:8}}>
@@ -3068,7 +3112,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
             {p.stock>0&&p.stock<=p.minStock&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
           </div>
           <div className="product-body">
-            <div className="product-cat">{p.category}</div>
+            <div className="product-cat">{prodCategoriasTexto(p)}</div>
             <div className="product-name">{p.name}</div>
             <div className="product-price">{fmt(p.price)}</div>
             <div className="product-stock">Estoque: {p.stock} un.</div>
@@ -4774,6 +4818,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   const [pSel,setPSel]=useState({});
   const [pQty,setPQty]=useState({});
   const [tModal,setTModal]=useState(false);
+  const [novaCat,setNovaCat]=useState('');
   const [tForm,setTForm]=useState({key:'',from:(isGerente?poloGerente:activePolo),to:'',qty:''});
 
   useEffect(()=>{ load(); },[]);
@@ -4791,7 +4836,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   const groupsMapFull={};
   rows.forEach(r=>{
     const k=groupKey(r);
-    if(!groupsMapFull[k]) groupsMapFull[k]={key:k, sku:r.sku, name:r.name, category:r.category, price:r.price, cost:r.cost, photo:r.photo, description:r.description, minStock:r.minStock, polos:{}};
+    if(!groupsMapFull[k]) groupsMapFull[k]={key:k, sku:r.sku, name:r.name, category:r.category, categories:prodCategorias(r), price:r.price, cost:r.cost, photo:r.photo, description:r.description, minStock:r.minStock, polos:{}};
     groupsMapFull[k].polos[r.polo]=r;
   });
   // groupsMap = o que o operador pode ver/editar (gerente: só o polo dele)
@@ -4803,7 +4848,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   });
   const groups=Object.values(groupsMap).filter(g=>{
     const s=search.toLowerCase();
-    const matchText=(g.name||'').toLowerCase().includes(s) || (g.sku||'').toLowerCase().includes(s) || (g.category||'').toLowerCase().includes(s);
+    const matchText=(g.name||'').toLowerCase().includes(s) || (g.sku||'').toLowerCase().includes(s) || prodCategorias(g).some(c=>c.toLowerCase().includes(s));
     const matchPolo=poloFilter==='Todos' || !!g.polos[poloFilter];
     return matchText && matchPolo;
   }).sort((a,b)=>cmpProdutoTamanho(a.name,b.name));
@@ -4822,18 +4867,48 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   });
   lowAlerts.sort((a,b)=>a.stock-b.stock);
 
-  // Lista de categorias: une as cadastradas + as já usadas em qualquer produto (todos os polos)
-  const catOptions = Array.from(new Set([...(categories||[]), ...rows.map(r=>r.category)].map(c=>(c||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+  // Lista de categorias: une as cadastradas + as já usadas em qualquer produto (todos os polos).
+  // categoriasUnicas remove nomes repetidos, mesmo com diferença de maiúsculas.
+  const catOptions = categoriasUnicas([...(categories||[]), ...rows.flatMap(r=>prodCategorias(r))])
+    .sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  // ── seleção de várias categorias no cadastro do produto ──
+  function formTemCat(c){
+    const alvo=String(c||'').trim().toLowerCase();
+    return (form?.categories||[]).some(x=>String(x).trim().toLowerCase()===alvo);
+  }
+  function toggleCategoria(c){
+    const nome=String(c||'').trim();
+    if(!nome) return;
+    setForm(f=>{
+      const atuais=f.categories||[];
+      const existe=atuais.some(x=>String(x).trim().toLowerCase()===nome.toLowerCase());
+      const novas=existe
+        ? atuais.filter(x=>String(x).trim().toLowerCase()!==nome.toLowerCase())
+        : [...atuais, nome];
+      return {...f, categories:novas, category:novas[0]||''};
+    });
+  }
+  function addCategoriaForm(texto){
+    const nome=String(texto||'').trim();
+    if(!nome){ notify('Digite o nome da categoria','error'); return; }
+    if(formTemCat(nome)){ notify('Essa categoria já está marcada','error'); setNovaCat(''); return; }
+    toggleCategoria(nome);
+    setNovaCat('');
+  }
 
   function openNew(){
-    setForm({base:'P'+Date.now(), name:'', sku:'', category:categories[0]||'', price:'', cost:'', minStock:5, photo:'', description:'', polos:{}});
+    setForm({base:'P'+Date.now(), name:'', sku:'', category:'', categories:[], price:'', cost:'', minStock:5, photo:'', description:'', polos:{}});
+    setNovaCat('');
     const sel={},qty={}; Object.keys(POLOS).forEach(pid=>{sel[pid]=false;qty[pid]='';});
     // Gerente: produto já nasce vinculado ao polo dele, sem opção de escolher outros
     if(isGerente) sel[poloGerente]=true;
     setPSel(sel); setPQty(qty); setModal(true);
   }
   function openEdit(g){
-    setForm({base:(g.sku?g.sku:'P'+Date.now()), name:g.name, sku:g.sku||'', category:g.category||'', price:g.price, cost:g.cost, minStock:g.minStock||5, photo:g.photo||'', description:g.description||'', polos:g.polos});
+    const cats=prodCategorias(g);   // produtos antigos, com uma só, viram lista de um
+    setForm({base:(g.sku?g.sku:'P'+Date.now()), name:g.name, sku:g.sku||'', category:cats[0]||'', categories:cats, price:g.price, cost:g.cost, minStock:g.minStock||5, photo:g.photo||'', description:g.description||'', polos:g.polos});
+    setNovaCat('');
     const sel={},qty={}; Object.keys(POLOS).forEach(pid=>{const r=g.polos[pid]; sel[pid]=!!r; qty[pid]=r?String(r.stock):'';});
     setPSel(sel); setPQty(qty); setModal(true);
   }
@@ -4852,7 +4927,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
       if(pSel[pid]){
         const id = existing? existing.id : `${form.base}_${pid}`;
         const qty = Math.max(0, parseInt(pQty[pid])||0);
-        ups.push(prodToDB({id, name:form.name.trim(), category:form.category, price:form.price, cost:form.cost, stock:qty, minStock:form.minStock, sku, photo:form.photo, description:form.description}, pid));
+        ups.push(prodToDB({id, name:form.name.trim(), category:(form.categories||[])[0]||'', categories:form.categories||[], price:form.price, cost:form.cost, stock:qty, minStock:form.minStock, sku, photo:form.photo, description:form.description}, pid));
         const before = existing? existing.stock : 0;
         if(qty!==before) registrarMov(pid, {id, name:form.name.trim(), sku}, qty>before?'ajuste_positivo':'ajuste_negativo', before, qty-before, 'Gestão de Estoque','','Gestão');
       } else if(existing){
@@ -4860,11 +4935,13 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         if(delErr){ notify('Não foi possível remover o polo '+((POLOS[pid]&&POLOS[pid].sigla)||pid)+': '+delErr.message,'error'); }
       }
     }
-    if(ups.length>0){ const {error}=await sb.from('products').upsert(ups); if(error){ notify('Erro ao salvar: '+error.message,'error'); return; } }
+    if(ups.length>0){ const {error}=await upsertSafe('products', ups); if(error){ notify('Erro ao salvar: '+error.message,'error'); return; } }
     // Categoria nova: registra para aparecer na lista nos próximos cadastros
-    const catNova=(form.category||'').trim();
-    if(catNova && setCategories && !(categories||[]).includes(catNova)){
-      setCategories(prev=>Array.from(new Set([...(prev||[]), catNova])));
+    // Registra na lista geral qualquer categoria nova digitada no cadastro
+    const jaExistem=new Set((categories||[]).map(c=>String(c).trim().toLowerCase()));
+    const novas=(form.categories||[]).filter(c=>c && !jaExistem.has(String(c).trim().toLowerCase()));
+    if(novas.length>0 && setCategories){
+      setCategories(prev=>categoriasUnicas([...(prev||[]), ...novas]));
     }
     notify('Produto salvo!','success');
     setModal(false); setForm(null);
@@ -4921,8 +4998,8 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     const toRow=g.polos[to];
     const ups=[ prodToDB({...fromRow, stock:fromRow.stock-q}, from) ];
     if(toRow) ups.push(prodToDB({...toRow, stock:toRow.stock+q}, to));
-    else ups.push(prodToDB({id:`${(g.sku||'P'+Date.now())}_${to}`, name:g.name, category:g.category, price:g.price, cost:g.cost, stock:q, minStock:g.minStock, sku:g.sku, photo:g.photo, description:g.description}, to));
-    const {error}=await sb.from('products').upsert(ups);
+    else ups.push(prodToDB({id:`${(g.sku||'P'+Date.now())}_${to}`, name:g.name, category:g.category, categories:prodCategorias(g), price:g.price, cost:g.cost, stock:q, minStock:g.minStock, sku:g.sku, photo:g.photo, description:g.description}, to));
+    const {error}=await upsertSafe('products', ups);
     if(error){ notify('Erro: '+error.message,'error'); return; }
     registrarMov(from,{id:fromRow.id,name:g.name,sku:g.sku},'transferencia_saida',fromRow.stock,-q,'Transf → '+POLOS[to].sigla,'','Gestão');
     registrarMov(to,{id:(toRow?toRow.id:`${g.sku}_${to}`),name:g.name,sku:g.sku},'transferencia_entrada',(toRow?toRow.stock:0),q,'Transf ← '+POLOS[from].sigla,'','Gestão');
@@ -4993,7 +5070,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
               <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
               <td><strong>{g.name}</strong></td>
               <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{g.sku||'—'}</td>
-              <td className="text-mono" style={{fontSize:11}}>{g.category||'—'}</td>
+              <td className="text-mono" style={{fontSize:11}}>{prodCategoriasTexto(g)}</td>
               <td style={{fontFamily:'Bebas Neue',fontSize:15,letterSpacing:1}}>{fmt(g.price)}</td>
               <td>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
@@ -5024,15 +5101,29 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         <div className="form-group full"><label>Foto do Produto</label><PhotoUpload value={form.photo||""} onChange={v=>setForm({...form,photo:v})}/></div>
         <div className="form-group"><label>Nome *</label><input value={form.name||""} onChange={e=>setForm({...form,name:e.target.value})}/></div>
         <div className="form-group"><label>SKU</label><input value={form.sku||""} placeholder="(gerado se vazio)" onChange={e=>setForm({...form,sku:e.target.value})}/></div>
-        <div className="form-group full"><label>Categoria</label>
-          <input list="ge-cats" placeholder="Escolha abaixo ou digite uma categoria nova" value={form.category||""} onChange={e=>setForm({...form,category:e.target.value})}/>
+        <div className="form-group full"><label>Categorias · pode marcar mais de uma</label>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            <input list="ge-cats" placeholder="Digite uma categoria nova e clique em Adicionar" value={novaCat}
+              onChange={e=>setNovaCat(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); addCategoriaForm(novaCat); } }}/>
+            <button type="button" className="btn btn-sm" style={{flexShrink:0}} onClick={()=>addCategoriaForm(novaCat)}>+ Adicionar</button>
+          </div>
           <datalist id="ge-cats">{catOptions.map(c=><option key={c} value={c}/>)}</datalist>
+
           {catOptions.length>0 && <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
             {catOptions.map(c=>(
-              <span key={c} onClick={()=>setForm({...form,category:c})} className={`ge-polochip ${form.category===c?'on':''}`}>{c}</span>
+              <span key={c} onClick={()=>toggleCategoria(c)}
+                className={`ge-polochip ${formTemCat(c)?'on':''}`}>{formTemCat(c)?'✓ ':'＋ '}{c}</span>
             ))}
           </div>}
-          {form.category && form.category.trim() && !catOptions.includes(form.category.trim()) && <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#1a6e2e',marginTop:6}}>+ Nova categoria "{form.category.trim()}" será criada ao salvar</div>}
+
+          {(form.categories||[]).length>0
+            ? <div style={{marginTop:9,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368'}}>
+                Selecionadas: <b style={{color:'#1a6e2e'}}>{(form.categories||[]).join(' · ')}</b>
+              </div>
+            : <div style={{marginTop:9,fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#8a6d00'}}>
+                Nenhuma categoria marcada — o produto ficará sem categoria
+              </div>}
         </div>
         <div className="form-group"><label>Preço Venda *</label><input type="number" step="0.01" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></div>
         <div className="form-group"><label>Custo</label><input type="number" step="0.01" value={form.cost} onChange={e=>setForm({...form,cost:e.target.value})}/></div>
@@ -5655,7 +5746,7 @@ const sb = {
 // ── COMPATIBILIDADE: colunas novas (payments / pagamento) ────────────────────
 // Se o ALTER TABLE ainda não foi executado no Supabase, o sistema continua
 // funcionando: detectamos o erro de "coluna inexistente" e reenviamos sem ela.
-const COLUNAS_NOVAS = ['payments','pagamento'];
+const COLUNAS_NOVAS = ['payments','pagamento','categories'];
 const colunasAusentes = {}; // { 'sales': ['payments'], ... }
 function colunaAusente(msg){
   const m = String(msg||'');
@@ -5686,8 +5777,8 @@ async function upsertSafe(tabela, rows, opts){
 }
 
 // ── helpers de conversão snake_case ↔ camelCase ──────────────────────────────
-function prodFromDB(r){return{id:r.id,polo:r.polo,name:r.name,category:r.category,price:parseFloat(r.price),cost:parseFloat(r.cost),stock:r.stock,minStock:r.min_stock,sku:r.sku,photo:r.photo,description:r.description};}
-function prodToDB(p,polo){return{id:String(p.id),polo,name:p.name,category:p.category||'',price:parseFloat(p.price)||0,cost:parseFloat(p.cost)||0,stock:parseInt(p.stock)||0,min_stock:parseInt(p.minStock)||5,sku:p.sku||'',photo:p.photo||'',description:p.description||''};}
+function prodFromDB(r){return{id:r.id,polo:r.polo,name:r.name,category:r.category,categories:prodCategorias({categories:r.categories,category:r.category}),price:parseFloat(r.price),cost:parseFloat(r.cost),stock:r.stock,minStock:r.min_stock,sku:r.sku,photo:r.photo,description:r.description};}
+function prodToDB(p,polo){const _cats=prodCategorias(p);return{id:String(p.id),polo,name:p.name,category:_cats[0]||p.category||'',categories:_cats.length?_cats:null,price:parseFloat(p.price)||0,cost:parseFloat(p.cost)||0,stock:parseInt(p.stock)||0,min_stock:parseInt(p.minStock)||5,sku:p.sku||'',photo:p.photo||'',description:p.description||''};}
 function custFromDB(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone,cpf:r.cpf,rg:r.rg,birthdate:r.birthdate,school:r.school,grade:r.grade,enrollment:r.enrollment,address:r.address,neighborhood:r.neighborhood,city:r.city,state:r.state,cep:r.cep,parentName:r.parent_name,parentPhone:r.parent_phone,parentEmail:r.parent_email,parentCpf:r.parent_cpf,password:r.password,totalPurchases:r.total_purchases,createdAt:r.created_at};}
 function custToDB(c,polo){return{id:String(c.id),polo,name:c.name||'',email:c.email||'',phone:c.phone||'',cpf:c.cpf||'',rg:c.rg||'',birthdate:c.birthdate||'',school:c.school||'',grade:c.grade||'',enrollment:c.enrollment||'',address:c.address||'',neighborhood:c.neighborhood||'',city:c.city||'',state:c.state||'',cep:c.cep||'',parent_name:c.parentName||'',parent_phone:c.parentPhone||'',parent_email:c.parentEmail||'',parent_cpf:c.parentCpf||'',password:c.password||'123456',total_purchases:c.totalPurchases||0,created_at:c.createdAt||''};}
 function saleFromDB(r){return{id:r.id,productId:r.product_id,productName:r.product_name,qty:r.qty,unitPrice:parseFloat(r.unit_price),total:parseFloat(r.total),cost:parseFloat(r.cost),month:r.month,week:r.week,date:r.date,ts:r.ts,payment:r.payment,payments:normPayments(r.payments),type:r.type,status:r.status,customer:r.customer,orderNum:r.order_num,orderTs:r.order_ts,pedidoStatus:r.pedido_status};}
@@ -5794,7 +5885,8 @@ function usePoloData(polo){
       const nproducts=(p.data||[]).map(prodFromDB);
       const nsales=(s.data||[]).map(saleFromDB);
       const ncustomers=(c.data||[]).map(custFromDB);
-      const ncategories=(cat.data||[]).map(r=>r.name);
+      // categoriasUnicas evita que linhas repetidas no banco virem abas duplicadas
+      const ncategories=categoriasUnicas((cat.data||[]).map(r=>r.name));
       const nencomendas=(enc.data||[]).map(encFromDB);
       const norcamentos=(orc.data||[]).map(orcFromDB);
       setProductsLocal(nproducts);
@@ -5837,7 +5929,7 @@ function usePoloData(polo){
     const nextIds = new Set(next.map(p=>String(p.id)));
     const toDelete = products.filter(p=>!nextIds.has(String(p.id))).map(p=>String(p.id));
     let error=null;
-    if(toUpsert.length>0){ const r=await sb.from('products').upsert(toUpsert.map(p=>prodToDB(p,polo))); error=r.error; }
+    if(toUpsert.length>0){ const r=await upsertSafe('products', toUpsert.map(p=>prodToDB(p,polo))); error=r.error; }
     if(toDelete.length>0){ await sb.from('products').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
@@ -5874,11 +5966,12 @@ function usePoloData(polo){
   async function setCategories(val){
     if(!podeGravar('categorias')) return;
     const next = typeof val==='function' ? val(categories) : val;
-    setCategoriesLocal(next);
+    setCategoriesLocal(categoriasUnicas(next));
     setSyncStatus('saving');
-    const rows=next.map((name,i)=>({id:`${polo}-cat-${i}-${name.toLowerCase().replace(/\s+/g,'_')}`,polo,name}));
+    const limpas=categoriasUnicas(next);
+    const rows=limpas.map((name,i)=>({id:`${polo}-cat-${i}-${name.toLowerCase().replace(/\s+/g,'_')}`,polo,name}));
     await sb.from('categories').eq('polo',polo).delete();
-    const {error}=next.length>0 ? await sb.from('categories').insert(rows) : {error:null};
+    const {error}=limpas.length>0 ? await sb.from('categories').insert(rows) : {error:null};
     flash(!error);
   }
 
