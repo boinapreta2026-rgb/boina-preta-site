@@ -6761,7 +6761,7 @@ function fotoChave(r){ return String(r.polo||'')+'|'+String(r.id||''); }
 function fotoVersao(r){ return String(r.updated_at||r.updatedAt||''); }
 
 // Campos do produto sem a foto — é o que trafega na abertura do sistema
-const PROD_CAMPOS_LEVES='id,polo,name,sku,category,categories,price,cost,stock,min_stock,description,photo_url,updated_at';
+const PROD_CAMPOS_LEVES='id,polo,name,sku,category,categories,price,cost,stock,min_stock,description,updated_at';
 
 // Recebe as linhas leves e devolve as mesmas linhas com a foto preenchida,
 // baixando do servidor apenas as que mudaram ou que o aparelho ainda não tem.
