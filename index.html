@@ -1053,8 +1053,13 @@ function Modal({title,children,onClose,actions,wide}){
 // servidor toda vez que alguém abre o sistema, em todos os aparelhos.
 // Reduzindo para 800px e qualidade 0,72, a mesma foto fica em torno de 60 KB
 // sem perda visível na tela — cerca de 40x menos tráfego.
-const FOTO_LADO_MAX = 800;
-const FOTO_QUALIDADE = 0.72;
+// A maior exibição de foto no sistema é a vitrine da loja virtual, com 180px.
+// Em tela retina isso pede 360px. Guardar a 400px cobre todos os usos com folga
+// — nas listas a foto aparece com 36 a 44px.
+const FOTO_LADO_MAX = 400;
+const FOTO_QUALIDADE = 0.70;
+// Acima deste tamanho a foto é considerada grande e vale reprocessar
+const FOTO_ALVO_BYTES = 45000;   // ~45 KB
 
 function comprimirDataURL(dataURL, ladoMax=FOTO_LADO_MAX, qualidade=FOTO_QUALIDADE){
   return new Promise(resolve=>{
@@ -1084,6 +1089,73 @@ function tamanhoLegivel(bytes){
   if(b<1024) return b+' B';
   if(b<1048576) return (b/1024).toFixed(0)+' KB';
   return (b/1048576).toFixed(1)+' MB';
+}
+
+// ====== LISTAS LONGAS: MOSTRAR AOS POUCOS ======
+// Desenhar centenas de linhas de uma vez trava a tela, mesmo com os dados já
+// no aparelho. Mostramos um bloco por vez e o operador pede mais se precisar.
+// A busca continua percorrendo TODOS os produtos — só o desenho é limitado.
+const PAGINA_TAMANHO = 60;
+
+function usePaginacao(lista, tamanho=PAGINA_TAMANHO){
+  const [limite,setLimite]=useState(tamanho);
+  const total=(lista||[]).length;
+  // Ao trocar o filtro ou a busca, volta ao começo
+  const assinatura = total+'|'+((lista||[])[0]?.id ?? '');
+  useEffect(()=>{ setLimite(tamanho); },[assinatura]);
+  return {
+    visiveis:(lista||[]).slice(0,limite),
+    total,
+    mostrando: Math.min(limite,total),
+    temMais: limite<total,
+    mostrarMais: ()=>setLimite(l=>l+tamanho),
+    mostrarTodos: ()=>setLimite(total)
+  };
+}
+
+// Busca a foto APENAS dos produtos que estão na tela agora. Sem isso, abrir uma
+// lista de 3.000 produtos baixava 3.000 fotos para exibir 60. Ao pedir "mostrar
+// mais", só as novas são buscadas — e as já vistas vêm do cache do aparelho.
+function useFotosDaPagina(lista){
+  const [mapa,setMapa]=useState({});
+  const chaves=(lista||[]).map(p=>String(p.polo)+'|'+String(p.id)).join(',');
+  useEffect(()=>{
+    let vivo=true;
+    const itens=(lista||[]).filter(p=>!p.photo && mapa[String(p.polo)+'|'+String(p.id)]===undefined);
+    if(itens.length===0) return;
+    (async()=>{
+      try{
+        const r=await preencherFotos(itens.map(p=>({
+          id:p.id, polo:p.polo, updated_at:p.updatedAt||p.updated_at||''
+        })));
+        if(!vivo) return;
+        const novas={};
+        r.rows.forEach(x=>{ novas[String(x.polo)+'|'+String(x.id)]=x.photo||''; });
+        setMapa(m=>({...m,...novas}));
+      }catch(e){ console.warn('[Boina Preta] fotos indisponíveis:',e&&e.message); }
+    })();
+    return ()=>{ vivo=false; };
+  },[chaves]);
+  return (p)=> (p&&p.photo) || mapa[String(p&&p.polo)+'|'+String(p&&p.id)] || '';
+}
+
+function MostrarMais({p, rotulo='produtos'}){
+  if(!p.temMais) return p.total>PAGINA_TAMANHO
+    ? <div className="kb-hint" style={{textAlign:'center',padding:'10px 0',marginBottom:0}}>
+        {p.total} {rotulo} · todos exibidos
+      </div>
+    : null;
+  return <div style={{textAlign:'center',padding:'12px 0'}}>
+    <div className="kb-hint" style={{marginBottom:8}}>
+      Mostrando {p.mostrando} de {p.total} {rotulo}
+    </div>
+    <button className="btn btn-sm" onClick={p.mostrarMais}>▼ Mostrar mais {PAGINA_TAMANHO}</button>
+    {' '}
+    <button className="btn btn-sm" onClick={p.mostrarTodos}>Mostrar todos ({p.total})</button>
+    <div className="kb-hint" style={{marginTop:8}}>
+      Dica: use a busca para achar direto o que precisa
+    </div>
+  </div>;
 }
 
 function PhotoUpload({value,onChange}){
@@ -2002,6 +2074,8 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
   // para nenhuma categoria em uso ficar sem filtro
   const catsDisponiveis=categoriasUnicas([...(categories||[]), ...products.flatMap(p=>prodCategorias(p))])
     .sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const pag = usePaginacao(filtered);
+  const fotoDe = useFotosDaPagina(pag.visiveis);
   function save(){
     if(!form.name||!form.price||!form.stock){notify("Preencha os campos obrigatórios","error");return;}
     const novoStock=parseInt(form.stock);
@@ -2055,8 +2129,8 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
     <div className="card">
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar produto ou SKU..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table><thead><tr>{["Foto","SKU","Produto","Categoria","Preço","Custo","Estoque","Mín","Status"].map(h=><th key={h}>{h}</th>)}</tr></thead>
-        <tbody>{filtered.map(p=><tr key={p.id}>
-          <td><div className="tbl-thumb">{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
+        <tbody>{pag.visiveis.map(p=><tr key={p.id}>
+          <td><div className="tbl-thumb">{fotoDe(p)?<img src={fotoDe(p)} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
           <td className="text-mono" style={{fontSize:11,color:"#5f6368"}}>{p.sku}</td>
           <td><strong>{p.name}</strong></td>
           <td className="text-mono" style={{fontSize:11}}>{prodCategoriasTexto(p)}</td>
@@ -2067,6 +2141,7 @@ function Estoque({products,setProducts,categories,setCategories,notify,polo,polo
           <td>{gt(p)}</td>
         </tr>)}</tbody>
       </table></div>
+      <MostrarMais p={pag}/>
     </div>
     </>}
   </div>;
@@ -2324,6 +2399,8 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
   // envio do comprovante por WhatsApp
   const [waModal,setWaModal]=useState(false);
   const filtered=ordenarProdutos(products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase())));
+  const pagProd = usePaginacao(filtered, 40);
+  const fotoDe = useFotosDaPagina(pagProd.visiveis);
   const total=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const troco=multiPay ? trocoSplits(total,splits) : (payment==="Dinheiro"&&paid?Math.max(0,parseFloat(paid)-total):0);
   // Descrição e parcelas do pagamento conforme o modo escolhido
@@ -2364,7 +2441,7 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
         return prev.map(x=>x.id===p.id&&!x.isEncomenda?{...x,qty:newQty}:x);
       }
       if(p.stock<=p.minStock) notify("⚠ Estoque baixo: apenas "+p.stock+" un. disponíveis","error");
-      return[...prev,{...p,qty:1}];
+      return[...prev,{...p,qty:1,photo:fotoDe(p)||p.photo||''}];
     });
   }
   function setCaixaQty(id,q){
@@ -2627,10 +2704,10 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     <div className="caixa-grid">
     <div><div className="card"><div className="card-title">Produtos</div>
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-      {filtered.map(p=><div key={p.id} className="pdv-item" style={{position:'relative'}}>
+      {pagProd.visiveis.map(p=><div key={p.id} className="pdv-item" style={{position:'relative'}}>
         {p.stock===0&&<div style={{position:'absolute',top:6,right:6,background:'#cc2222',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>SEM ESTOQUE</div>}
         {p.stock>0&&p.stock<=p.minStock&&<div style={{position:'absolute',top:6,right:6,background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2}}>BAIXO: {p.stock}</div>}
-        <div className="pdv-thumb" onClick={()=>add(p)} style={{cursor:'pointer'}}>{p.photo?<img src={p.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
+        <div className="pdv-thumb" onClick={()=>add(p)} style={{cursor:'pointer'}}>{fotoDe(p)?<img src={fotoDe(p)} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
         <div className="pdv-name" onClick={()=>add(p)} style={{cursor:'pointer',flex:1}}>{p.name}</div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
           <div style={{textAlign:"right"}}>
@@ -2643,6 +2720,7 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
           </button>
         </div>
       </div>)}
+      <MostrarMais p={pagProd}/>
     </div></div>
     <div><div className="card">
       <div className="card-title">Carrinho {cart.length>0&&<span style={{background:"#f0f0f0",padding:"2px 8px",borderRadius:2,fontFamily:"Share Tech Mono",fontSize:11}}>{cart.reduce((a,b)=>a+b.qty,0)} itens</span>}</div>
@@ -3236,8 +3314,8 @@ function Clientes({customers,setCustomers,notify,sales,encomendas,creditos}){
         <div className="section-divider">📋 Dados do Aluno</div>
         {fg("name","Nome Completo *","text","Nome completo")}{fg("cpf","CPF","text","000.000.000-00")}{fg("birthdate","Nascimento","text","DD/MM/AAAA")}{fg("phone","Telefone *","text","(00) 00000-0000")}{fg("email","E-mail","email","email@exemplo.com")}{fg("school","Escola","text","Nome da escola")}{fg("grade","Série/Turma","text","1º Ano A")}
         <div className="section-divider">🔐 Acesso à Loja Virtual</div>
-        {fg("password","Senha de Acesso","password","Senha para o cliente entrar na loja")}
-        <div className="form-group full"><div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#1a4e8e',fontFamily:'Share Tech Mono',letterSpacing:1}}>O cliente usa o e-mail e esta senha para entrar na loja virtual e acompanhar pedidos.</div></div>
+        {fg("password","Senha de Acesso","password",form.id?"Deixe em branco para manter a senha atual":"Senha para o cliente entrar na loja")}
+        <div className="form-group full"><div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#1a4e8e',fontFamily:'Share Tech Mono',letterSpacing:1}}>O cliente usa o e-mail e esta senha para entrar na loja virtual e acompanhar pedidos.{form.id?" A senha guardada não pode ser lida por ninguém, nem por você: este campo aparece vazio de propósito. Só preencha se for definir uma senha nova.":""}</div></div>
         <div className="section-divider">🏠 Endereço</div>
         {fg("cep","CEP","text","00000-000")}{fg("address","Logradouro","text","Rua, número")}{fg("neighborhood","Bairro","text","Bairro")}{fg("city","Cidade","text","Cidade")}{fg("state","Estado","text","MG")}
         <div className="section-divider">👨‍👩‍👧 Dados do Responsável</div>
@@ -3409,6 +3487,8 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
   const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&p.name.toLowerCase().includes(search.toLowerCase())));
+  const pagLoja = usePaginacao(filtered, 24);
+  const fotoDe = useFotosDaPagina(pagLoja.visiveis);
   const cartTotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const frete=0;
   function addCart(p){
@@ -3418,7 +3498,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
     setCart(prev=>{
       const existing=prev.find(x=>x.id===p.id&&!x.isEncomenda);
       if(existing) return prev.map(x=>x.id===p.id&&!x.isEncomenda?{...x,qty:x.qty+1}:x);
-      return[...prev,{...p,qty:1}];
+      return[...prev,{...p,qty:1,photo:fotoDe(p)||p.photo||''}];
     });
     setCartOpen(true);
   }
@@ -3585,9 +3665,9 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       <div className="store-section-sub">{filtered.length} ITENS ENCONTRADOS</div>
       <div className="store-search"><span className="store-search-icon">🔍</span><input placeholder="Buscar produto..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="products-grid">
-        {filtered.map(p=><div key={p.id} className="product-card">
+        {pagLoja.visiveis.map(p=><div key={p.id} className="product-card">
           <div className="product-img">
-            {p.photo?<img src={p.photo} alt={p.name}/>:<div className="product-img-ph">SEM FOTO</div>}
+            {fotoDe(p)?<img src={fotoDe(p)} alt={p.name} loading="lazy"/>:<div className="product-img-ph">SEM FOTO</div>}
             {p.stock===0&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
             {p.stock>0&&p.stock<=p.minStock&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
           </div>
@@ -3606,6 +3686,9 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
             </button>
           </div>
         </div>)}
+        {pagLoja.temMais&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"16px 0"}}>
+          <button className="btn" onClick={pagLoja.mostrarMais}>▼ Ver mais produtos ({pagLoja.total-pagLoja.mostrando} restantes)</button>
+        </div>}
         {!filtered.length&&<div className="store-empty" style={{gridColumn:"1/-1"}}><div className="store-empty-icon">📦</div><div className="store-empty-text">Nenhum produto encontrado</div></div>}
       </div>
     </div>
@@ -3986,7 +4069,7 @@ function OtimizarFotos({notify}){
     if(error){ notify('Não foi possível ler os produtos: '+error.message,'error'); setEstado('parado'); return; }
     const lista=(data||[]).filter(r=>r.photo&&r.photo.length>0);
     const total=lista.reduce((a,r)=>a+r.photo.length,0);
-    const grandes=lista.filter(r=>r.photo.length>120000);   // acima de ~120 KB
+    const grandes=lista.filter(r=>r.photo.length>FOTO_ALVO_BYTES);
     setAnalise({
       comFoto:lista.length, total,
       grandes:grandes.length,
@@ -4033,7 +4116,7 @@ function OtimizarFotos({notify}){
       <div className="stats-grid" style={{marginBottom:12}}>
         <div className="stat-card"><div className="stat-label">Produtos com foto</div><div className="stat-value">{analise.comFoto}</div></div>
         <div className="stat-card blue"><div className="stat-label">Espaço total</div><div className="stat-value">{tamanhoLegivel(analise.total)}</div></div>
-        <div className="stat-card gold"><div className="stat-label">Fotos grandes</div><div className="stat-value">{analise.grandes}</div><div className="stat-change">acima de 120 KB</div></div>
+        <div className="stat-card gold"><div className="stat-label">Fotos grandes</div><div className="stat-value">{analise.grandes}</div><div className="stat-change">acima de {tamanhoLegivel(FOTO_ALVO_BYTES)}</div></div>
         <div className="stat-card red"><div className="stat-label">A reduzir</div><div className="stat-value">{tamanhoLegivel(analise.espacoGrandes)}</div></div>
       </div>
       {analise.grandes===0
@@ -4079,7 +4162,11 @@ function Configuracoes({polo, notify}){
 
   async function save(){
     setErr('');
-    if(!form.nome||!form.email||!form.password){setErr('Preencha nome, e-mail e senha.');return;}
+    if(!form.nome||!form.email){setErr('Preencha nome e e-mail.');return;}
+    // Ao criar, a senha é obrigatória. Ao editar, o campo vazio significa
+    // "manter a senha atual" — que nem o administrador consegue ler.
+    if(!form.id&&!form.password){setErr('Defina uma senha para o novo operador.');return;}
+    if(form.password&&String(form.password).length<4){setErr('A senha precisa ter ao menos 4 caracteres.');return;}
     // checar email duplicado
     if(!form.id){
       const dup=(ops||[]).find(o=>o.email===form.email);
@@ -4090,13 +4177,14 @@ function Configuracoes({polo, notify}){
       polo: form.polo||polo,
       nome: form.nome,
       email: form.email,
-      password: form.password,
       role: form.role||'vendedor',
       ativo: form.ativo!==false
     };
+    if(form.password) row.password=String(form.password);
     const {error}=await sb.from('operadores').upsert(row);
     if(error){setErr('Erro ao salvar: '+error.message);return;}
-    setOps(prev=>prev.find(o=>o.id===row.id)?prev.map(o=>o.id===row.id?row:o):[...prev,row]);
+    const semSenha={...row}; delete semSenha.password;   // não guardamos senha na tela
+    setOps(prev=>prev.find(o=>o.id===semSenha.id)?prev.map(o=>o.id===semSenha.id?semSenha:o):[...prev,semSenha]);
     notify(form.id?'Operador atualizado!':'Operador criado!','success');
     setModal(false);
   }
@@ -4195,7 +4283,7 @@ function Configuracoes({polo, notify}){
       <div className="form-grid">
         <div className="form-group"><label>Nome Completo *</label><input placeholder="Nome do operador" value={form.nome||''} onChange={e=>setForm({...form,nome:e.target.value})}/></div>
         <div className="form-group"><label>E-mail *</label><input type="email" placeholder="email@exemplo.com" value={form.email||''} onChange={e=>setForm({...form,email:e.target.value})}/></div>
-        <div className="form-group"><label>Senha *</label><input type="password" placeholder="Senha de acesso" value={form.password||''} onChange={e=>setForm({...form,password:e.target.value})}/></div>
+        <div className="form-group"><label>{form.id?'Nova senha':'Senha *'}</label><input type="password" placeholder={form.id?'Deixe em branco para manter a atual':'Senha de acesso'} value={form.password||''} onChange={e=>setForm({...form,password:e.target.value})}/></div>
         <div className="form-group"><label>Perfil</label>
           <select value={form.role||'vendedor'} onChange={e=>setForm({...form,role:e.target.value})}>
             <option value="vendedor">🙋 Vendedor</option>
@@ -5392,7 +5480,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   const [catFilter,setCatFilter]=useState('Todos');   // filtro de categoria da listagem
   const [tForm,setTForm]=useState({key:'',from:(isGerente?poloGerente:activePolo),to:'',qty:''});
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(()=>{ load(); },[poloFilter]);   // troca de polo recarrega, trazendo as fotos daquele polo
   async function load(){
     setLoading(true);
     // Duas consultas em vez de uma: a foto (que é o campo pesado) só é baixada
@@ -5400,21 +5488,31 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     // campos necessários para a transferência não duplicar registro no destino.
     // Sem foto na consulta: elas vêm do cache do aparelho. Só as alteradas
     // são rebaixadas, e apenas dos polos que este operador realmente enxerga.
-    let visiveis = isGerente
-      ? await sb.from('products').select(PROD_CAMPOS_LEVES).eq('polo',poloGerente)
-      : await sb.from('products').select(PROD_CAMPOS_LEVES);
-    if(visiveis.error && /updated_at|photo_url|column/i.test(String(visiveis.error.message||''))){
-      visiveis = isGerente
-        ? await sb.from('products').select('*').eq('polo',poloGerente)
-        : await sb.from('products').select('*');
+    // Só o polo que está sendo exibido traz foto. Dos demais vêm apenas os
+    // campos necessários para a transferência não duplicar registro no destino.
+    // Isso vale também para o administrador: sem isso, abrir a tela baixava as
+    // fotos das cinco lojas de uma vez.
+    const poloComFoto = isGerente ? poloGerente : (poloFilter!=='Todos' ? poloFilter : null);
+
+    let visiveis;
+    if(poloComFoto){
+      visiveis = await sb.from('products').select(PROD_CAMPOS_LEVES).eq('polo',poloComFoto);
+      if(visiveis.error && /updated_at|column/i.test(String(visiveis.error.message||'')))
+        visiveis = await sb.from('products').select('*').eq('polo',poloComFoto);
+    } else {
+      // "Todos os polos": ninguém precisa de foto grande numa lista de 36px
+      visiveis = await sb.from('products').select(PROD_CAMPOS_LEVES);
+      if(visiveis.error && /updated_at|column/i.test(String(visiveis.error.message||'')))
+        visiveis = await sb.from('products').select('*');
     }
-    const outros = isGerente
-      ? await sb.from('products').select('id,polo,name,sku,stock,min_stock').not('polo','eq',poloGerente)
+
+    const outros = poloComFoto
+      ? await sb.from('products').select(PROD_CAMPOS_LEVES).not('polo','eq',poloComFoto)
       : {data:[]};
-    let comFoto=(visiveis&&visiveis.data)||[];
-    try{ comFoto=(await preencherFotos(comFoto)).rows; }
-    catch(e){ console.warn('[Boina Preta] cache de fotos indisponível:',e&&e.message); }
-    setRows([...comFoto, ...((outros&&outros.data)||[])].map(prodFromDB));
+
+    // As fotos NÃO são buscadas aqui: só as da página exibida, mais abaixo.
+    const lista=(visiveis&&visiveis.data)||[];
+    setRows([...lista, ...((outros&&outros.data)||[])].map(prodFromDB));
     setLoading(false);
   }
 
@@ -5443,6 +5541,18 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
 
   // Linhas visíveis (para os totalizadores)
   const visibleRows = rows.filter(r=>podePolo(r.polo));
+  // Desenha aos poucos: a lista cresce e travava a tela
+  const pag = usePaginacao(groups);
+  // A lista da gestão é agrupada por SKU, e o grupo não tem id/polo próprios.
+  // Escolhemos uma linha representante — a do polo em exibição, quando houver —
+  // para buscar a foto daquele produto.
+  const repDaPagina = pag.visiveis.map(g=>{
+    const pid = (poloFilter!=='Todos' && g.polos[poloFilter]) ? poloFilter : Object.keys(g.polos)[0];
+    const r = pid ? g.polos[pid] : null;
+    return r ? {chave:g.key, id:r.id, polo:r.polo, updatedAt:r.updatedAt||'', photo:r.photo||''} : null;
+  }).filter(Boolean);
+  const fotoRep = useFotosDaPagina(repDaPagina);
+  const fotoDe = (g)=>{ const r=repDaPagina.find(x=>x.chave===g.key); return r?fotoRep(r):''; };
 
   // Alertas de estoque baixo — somente nos polos habilitados a vender o item
   const lowAlerts=[];
@@ -5670,12 +5780,12 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
         <thead><tr>{["Foto","Produto","SKU","Categoria","Preço","Estoque por polo",(poloFilter==='Todos'?'Total (todos)':('Estoque '+((POLOS[poloFilter]&&POLOS[poloFilter].sigla)||poloFilter))),"Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>
           {!groups.length&&<tr><td colSpan={8} style={{textAlign:'center',padding:28,color:'#6b6b6b'}}>Nenhum produto cadastrado</td></tr>}
-          {groups.map(g=>{
+          {pag.visiveis.map(g=>{
             const total=Object.values(g.polos).reduce((a,r)=>a+(r.stock||0),0);
             const displayQty = poloFilter==='Todos' ? total : (g.polos[poloFilter]?(g.polos[poloFilter].stock||0):0);
             const polosToShow = polosPermitidos.filter(pid=> (poloFilter==='Todos' || pid===poloFilter) && g.polos[pid]);
             return <tr key={g.key}>
-              <td><div className="tbl-thumb">{g.photo?<img src={g.photo} alt=""/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
+              <td><div className="tbl-thumb">{fotoDe(g)?<img src={fotoDe(g)} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a"}}>SEM FOTO</span>}</div></td>
               <td><strong>{g.name}</strong></td>
               <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{g.sku||'—'}</td>
               <td className="text-mono" style={{fontSize:11}}>{prodCategoriasTexto(g)}</td>
@@ -5700,6 +5810,7 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
           })}
         </tbody>
       </table></div>
+      <MostrarMais p={pag}/>
     </div>
     )}
 
@@ -6054,11 +6165,10 @@ function AlterarSenhaOperadorModal({operador, onClose, onSuccess}){
     if(nova!==conf){ setErr('As senhas não coincidem.'); return; }
     setLoading(true);
     try{
-      // verifica senha atual
-      const {data} = await sb.from('operadores').select('password').eq('id',operador.id).single();
-      if(!data||data.password!==atual){ setErr('Senha atual incorreta.'); setLoading(false); return; }
-      const {error} = await sb.from('operadores').eq('id',operador.id).update({password:nova});
-      if(error){ setErr('Erro ao salvar. Tente novamente.'); setLoading(false); return; }
+      // A senha não sai mais do banco: quem confere a senha atual e grava a
+      // nova é o servidor, que é o único lado capaz de ler o resumo guardado.
+      const r = await apiPost('/senha/alterar', {atual, nova});
+      if(!r.ok){ setErr(r.erro||'Não foi possível alterar a senha.'); setLoading(false); return; }
       onSuccess&&onSuccess();
       onClose();
     } catch(e){ setErr('Erro ao salvar. Tente novamente.'); }
@@ -6524,6 +6634,7 @@ const sb = {
     q.eq    = function(col,val){ this._filters.push(`${col}=eq.${encodeURIComponent(val)}`); return this; };
     q.not   = function(col,op,val){ this._filters.push(`${col}=not.${op}.${encodeURIComponent(val)}`); return this; };
     q.gte   = function(col,val){ this._filters.push(`${col}=gte.${encodeURIComponent(val)}`); return this; };
+    q.gt    = function(col,val){ this._filters.push(`${col}=gt.${encodeURIComponent(val)}`); return this; };
     q.in    = function(col,vals){ this._filters.push(`${col}=in.(${vals.map(v=>`"${v}"`).join(',')})`); return this; };
     q.order = function(col,{ascending=true}={}){ this._order=`${col}.${ascending?'asc':'desc'}`; return this; };
     q.single= function(){ this._single=true; return this; };
@@ -6617,7 +6728,28 @@ function limparColunas(rows, tabela){
   return rows.map(r=>{ const o={...r}; rem.forEach(c=>{ delete o[c]; }); return o; });
 }
 // Upsert tolerante a colunas que ainda não existem no banco
+// Numa gravação em lote, o banco exige que todas as linhas tenham exatamente
+// os mesmos campos. Como a senha só viaja quando alguém digitou uma nova, um
+// lote pode ficar misturado — então separamos por formato e gravamos cada
+// conjunto de uma vez.
 async function upsertSafe(tabela, rows, opts){
+  const lista = Array.isArray(rows) ? rows : [rows];
+  if(lista.length > 1){
+    const formatos = new Map();
+    lista.forEach(r=>{
+      const assinatura = Object.keys(r||{}).sort().join('|');
+      if(!formatos.has(assinatura)) formatos.set(assinatura, []);
+      formatos.get(assinatura).push(r);
+    });
+    if(formatos.size > 1){
+      let erro = null;
+      for(const grupo of formatos.values()){
+        const r = await upsertSafe(tabela, grupo, opts);
+        if(r.error && !erro) erro = r.error;
+      }
+      return {data:null, error:erro};
+    }
+  }
   let body = limparColunas(rows, tabela);
   let res = await sb.from(tabela).upsert(body, opts);
   let tentativas = 0;
@@ -6637,7 +6769,12 @@ async function upsertSafe(tabela, rows, opts){
 function prodFromDB(r){return{id:r.id,polo:r.polo,name:r.name,updatedAt:r.updated_at||'',category:r.category,categories:prodCategorias({categories:r.categories,category:r.category}),price:parseFloat(r.price),cost:parseFloat(r.cost),stock:r.stock,minStock:r.min_stock,sku:r.sku,photo:r.photo,description:r.description};}
 function prodToDB(p,polo){const _cats=prodCategorias(p);return{id:String(p.id),polo,name:p.name,category:_cats[0]||p.category||'',categories:_cats.length?_cats:null,price:parseFloat(p.price)||0,cost:parseFloat(p.cost)||0,stock:parseInt(p.stock)||0,min_stock:parseInt(p.minStock)||5,sku:p.sku||'',photo:p.photo||'',description:p.description||''};}
 function custFromDB(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone,cpf:r.cpf,rg:r.rg,birthdate:r.birthdate,school:r.school,grade:r.grade,enrollment:r.enrollment,address:r.address,neighborhood:r.neighborhood,city:r.city,state:r.state,cep:r.cep,parentName:r.parent_name,parentPhone:r.parent_phone,parentEmail:r.parent_email,parentCpf:r.parent_cpf,password:r.password,totalPurchases:r.total_purchases,createdAt:r.created_at};}
-function custToDB(c,polo){return{id:String(c.id),polo,name:c.name||'',email:c.email||'',phone:c.phone||'',cpf:c.cpf||'',rg:c.rg||'',birthdate:c.birthdate||'',school:c.school||'',grade:c.grade||'',enrollment:c.enrollment||'',address:c.address||'',neighborhood:c.neighborhood||'',city:c.city||'',state:c.state||'',cep:c.cep||'',parent_name:c.parentName||'',parent_phone:c.parentPhone||'',parent_email:c.parentEmail||'',parent_cpf:c.parentCpf||'',password:c.password||'123456',total_purchases:c.totalPurchases||0,created_at:c.createdAt||''};}
+// A senha só entra na gravação quando alguém realmente digitou uma.
+// Antes ia sempre `c.password || '123456'` — e como a senha não volta mais do
+// banco (o servidor a esconde), editar o cadastro de um cliente jogava
+// "123456" por cima da senha que ele usava. Sem o campo, o banco preserva a
+// senha atual; quando há uma nova, o servidor a guarda já protegida.
+function custToDB(c,polo){const linha={id:String(c.id),polo,name:c.name||'',email:c.email||'',phone:c.phone||'',cpf:c.cpf||'',rg:c.rg||'',birthdate:c.birthdate||'',school:c.school||'',grade:c.grade||'',enrollment:c.enrollment||'',address:c.address||'',neighborhood:c.neighborhood||'',city:c.city||'',state:c.state||'',cep:c.cep||'',parent_name:c.parentName||'',parent_phone:c.parentPhone||'',parent_email:c.parentEmail||'',parent_cpf:c.parentCpf||'',total_purchases:c.totalPurchases||0,created_at:c.createdAt||''};if(c.password) linha.password=String(c.password);return linha;}
 function saleFromDB(r){return{id:r.id,productId:r.product_id,productName:r.product_name,qty:r.qty,unitPrice:parseFloat(r.unit_price),total:parseFloat(r.total),cost:parseFloat(r.cost),month:r.month,week:r.week,date:r.date,ts:r.ts,payment:r.payment,payments:normPayments(r.payments),histPagamento:salePagHist({histPagamento:r.hist_pagamento}),type:r.type,status:r.status,customer:r.customer,orderNum:r.order_num,orderTs:r.order_ts,pedidoStatus:r.pedido_status};}
 function saleToDB(s,polo){const _h=salePagHist(s);return{id:String(s.id),polo,product_id:String(s.productId||''),product_name:s.productName||'',qty:s.qty||1,unit_price:parseFloat(s.unitPrice||s.total/s.qty)||0,total:parseFloat(s.total)||0,cost:parseFloat(s.cost)||0,month:s.month||0,week:s.week||0,date:s.date||'',ts:s.ts||0,payment:s.payment||'',payments:normPayments(s.payments),hist_pagamento:_h.length?_h:null,type:s.type||'loja',status:s.status||'Concluído',customer:s.customer||'',order_num:s.orderNum||'',order_ts:s.orderTs||0,pedido_status:s.pedidoStatus||''};}
 function encFromDB(r){return{...r,clientePhone:r.cliente_phone,clienteEmail:r.cliente_email,precoTotal:r.preco_total,sinalPago:r.sinal_pago,payments:normPayments(r.payments),prazoEntrega:r.prazo_entrega,dataPedido:r.data_pedido};}
@@ -6827,8 +6964,10 @@ function bpReadCache(polo,modo){ try{ return JSON.parse(localStorage.getItem('bp
 function bpWriteCache(polo,data,modo){
   const chave='bp_cache_'+(modo==='loja'?'loja_':'')+polo;
   try{ localStorage.setItem(chave, JSON.stringify(data)); return; }catch(e){}
-  // fallback leve se estourar a cota (sem fotos, vendas recentes)
-  try{ localStorage.setItem(chave, JSON.stringify({...data, products:(data.products||[]).map(p=>({...p,photo:''})), sales:(data.sales||[]).slice(0,300)})); }catch(e){}
+  // fallback leve se estourar a cota (sem fotos, vendas recentes).
+  // Sem o histórico completo, `salesSync` é removido: assim a próxima abertura
+  // refaz a leitura inteira em vez de juntar em cima de uma base incompleta.
+  try{ localStorage.setItem(chave, JSON.stringify({...data, salesSync:'', products:(data.products||[]).map(p=>({...p,photo:''})), sales:(data.sales||[]).slice(0,300)})); }catch(e){}
 }
 
 // ── hook principal por polo ───────────────────────────────────────────────────
@@ -6876,13 +7015,32 @@ function usePoloData(polo, modo='painel'){
       // SEED_DEMO_ATIVO estiver ligado manualmente.
       if(!cached && SEED_DEMO_ATIVO) await seedIfEmpty(polo);
       const vazio={data:[],error:null};
+      // ── vendas: só o que mudou desde a última vez ──────────────────────────
+      // O histórico do ano era rebaixado inteiro a cada abertura. Agora, se já
+      // temos as vendas guardadas no aparelho, pedimos apenas as que foram
+      // gravadas ou corrigidas depois da última sincronização.
+      // Sem a coluna `updated_at` no banco (migração 8), `marcoVendas` fica
+      // nulo e tudo funciona como antes.
+      const marcoVendas = (!soCatalogo && cached && cached.salesSync
+                           && Array.isArray(cached.sales) && cached.sales.length)
+                          ? String(cached.salesSync) : null;
+      const consultaVendas = soCatalogo ? vazio
+        : marcoVendas
+          ? sb.from('sales').select('*').eq('polo',polo).gt('updated_at',marcoVendas).order('ts',{ascending:false})
+          : sb.from('sales').select('*').eq('polo',polo).gte('ts',INICIO_HISTORICO_VENDAS()).order('ts',{ascending:false});
+      // Conferência barata: quantas vendas o banco tem no período. Se não bater
+      // com o que temos no aparelho (uma venda apagada, por exemplo), refazemos
+      // a leitura completa.
+      const conferencia = marcoVendas
+        ? sb.from('sales').select('*',{count:'exact',head:true}).eq('polo',polo).gte('ts',INICIO_HISTORICO_VENDAS())
+        : Promise.resolve({count:null,error:null});
       let [p,s,c,cat,enc,orc,cred] = await Promise.all([
         // Sem a foto: ela vem do aparelho e só é rebaixada quando o produto muda
         sb.from('products'  ).select(PROD_CAMPOS_LEVES).eq('polo',polo),
         // Limita ao ano anterior em diante: o histórico completo cresce sem fim e
         // era rebaixado inteiro a cada abertura do sistema. Todas as telas de
         // relatório trabalham dentro do ano corrente.
-        soCatalogo ? vazio : sb.from('sales'     ).select('*').eq('polo',polo).gte('ts',INICIO_HISTORICO_VENDAS()).order('ts',{ascending:false}),
+        consultaVendas,
         soCatalogo ? vazio : sb.from('customers' ).select('*').eq('polo',polo),
         sb.from('categories').select('*').eq('polo',polo),
         soCatalogo ? vazio : sb.from('encomendas').select('*').eq('polo',polo).order('created_at',{ascending:false}),
@@ -6900,6 +7058,14 @@ function usePoloData(polo, modo='painel'){
         console.warn('[Boina Preta] Coluna de versão ausente — rode a migração 5 para reduzir o tráfego.');
         p = await sb.from('products').select('*').eq('polo',polo);
       }
+      // Mesma proteção para as vendas: sem a coluna `updated_at` (migração 8),
+      // volta para a leitura completa do período em vez de falhar.
+      let usouIncremental = !!marcoVendas;
+      if(usouIncremental && s.error && /updated_at|column|42703/i.test(String(s.error.message||''))){
+        console.warn('[Boina Preta] Vendas sem coluna de versão — rode a migração 8 para reduzir o tráfego.');
+        usouIncremental = false;
+        s = await sb.from('sales').select('*').eq('polo',polo).gte('ts',INICIO_HISTORICO_VENDAS()).order('ts',{ascending:false});
+      }
       // Se a leitura falhou, NÃO zera a tela nem grava cache vazio: mantém o que
       // já estava e continua bloqueando a gravação até conseguir confirmar.
       // Identificamos QUAIS tabelas falharam, para o problema não ficar invisível.
@@ -6916,15 +7082,40 @@ function usePoloData(polo, modo='painel'){
         return;
       }
       setErroCarga(null);
-      // Completa as fotos a partir do cache do aparelho
-      let linhasProd=p.data||[];
-      try{
-        const r=await preencherFotos(linhasProd);
-        linhasProd=r.rows;
-        if(r.baixadas>0) console.info('[Boina Preta] fotos: '+r.doCache+' do aparelho, '+r.baixadas+' baixadas');
-      }catch(e){ console.warn('[Boina Preta] cache de fotos indisponível:',e&&e.message); }
-      const nproducts=linhasProd.map(prodFromDB);
-      const nsales=(s.data||[]).map(saleFromDB);
+      // As fotos NÃO vêm aqui. Cada tela busca apenas as dos produtos que estão
+      // sendo exibidos naquele momento — o que mantém a abertura leve mesmo com
+      // o catálogo crescendo para milhares de itens.
+      const nproducts=(p.data||[]).map(prodFromDB);
+      // ── junta as vendas novas com as que já estavam no aparelho ────────────
+      let linhasVendas = s.data||[];
+      let marcoNovo = (linhasVendas).reduce(
+        (m,r)=> (r && r.updated_at && String(r.updated_at)>m ? String(r.updated_at) : m),
+        marcoVendas||'');
+      let nsales;
+      if(usouIncremental){
+        const porId=new Map();
+        (cached.sales||[]).forEach(v=>porId.set(String(v.id), v));
+        linhasVendas.map(saleFromDB).forEach(v=>porId.set(String(v.id), v)); // a versão nova manda
+        const corte=INICIO_HISTORICO_VENDAS();
+        nsales=[...porId.values()]
+          .filter(v=>Number(v.ts||0)>=corte)
+          .sort((a,b)=>Number(b.ts||0)-Number(a.ts||0));
+        // Confere a quantidade. Se alguém apagou uma venda em outro computador,
+        // a conta não fecha e refazemos a leitura completa.
+        const conf = await conferencia;
+        if(conf && conf.count!=null && conf.count!==nsales.length){
+          console.warn('[Boina Preta] Contagem de vendas divergente ('+conf.count+' no banco, '+nsales.length+' no aparelho). Recarregando o histórico.');
+          const completo = await sb.from('sales').select('*').eq('polo',polo).gte('ts',INICIO_HISTORICO_VENDAS()).order('ts',{ascending:false});
+          if(!completo.error){
+            linhasVendas = completo.data||[];
+            nsales = linhasVendas.map(saleFromDB);
+            marcoNovo = linhasVendas.reduce(
+              (m,r)=> (r && r.updated_at && String(r.updated_at)>m ? String(r.updated_at) : m), '');
+          }
+        }
+      } else {
+        nsales = linhasVendas.map(saleFromDB);
+      }
       const ncustomers=(c.data||[]).map(custFromDB);
       // categoriasUnicas evita que linhas repetidas no banco virem abas duplicadas
       const ncategories=categoriasUnicas((cat.data||[]).map(r=>r.name));
@@ -6942,7 +7133,9 @@ function usePoloData(polo, modo='painel'){
       dadosConfirmados.current=true;   // a partir daqui é seguro gravar
       // Guarda o catálogo sem as fotos: elas vivem no cache próprio (IndexedDB),
       // o que evita estourar a cota e perder o cache inteiro.
-      bpWriteCache(polo,{products:nproducts.map(x=>({...x,photo:''})),sales:nsales,customers:ncustomers,categories:ncategories,encomendas:nencomendas,orcamentos:norcamentos,creditos:ncreditos},modo);
+      // `salesSync` é a marca d'água: na próxima abertura pedimos ao banco
+      // apenas as vendas alteradas depois deste instante.
+      bpWriteCache(polo,{products:nproducts.map(x=>({...x,photo:''})),sales:nsales,customers:ncustomers,categories:ncategories,encomendas:nencomendas,orcamentos:norcamentos,creditos:ncreditos,salesSync:marcoNovo||''},modo);
     })();
     return ()=>{ alive=false; };
   },[polo]);
@@ -7012,7 +7205,7 @@ function usePoloData(polo, modo='painel'){
     const nextIds = new Set(next.map(c=>String(c.id)));
     const toDelete = prev.filter(c=>!nextIds.has(String(c.id))).map(c=>String(c.id));
     let error=null;
-    if(toUpsert.length>0){ const r=await sb.from('customers').upsert(toUpsert.map(c=>custToDB(c,polo))); error=r.error; }
+    if(toUpsert.length>0){ const r=await upsertSafe('customers', toUpsert.map(c=>custToDB(c,polo))); error=r.error; }
     if(toDelete.length>0){ await sb.from('customers').eq('polo',polo).in('id',toDelete).delete(); }
     flash(!error);
   }
