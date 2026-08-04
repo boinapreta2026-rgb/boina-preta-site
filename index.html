@@ -860,6 +860,34 @@ function clienteParecido(customers, novo, idAtual){
   return null;
 }
 
+// ── numeração de encomendas e orçamentos ─────────────────────────────────────
+//
+// O número era 'ENC-' + os 6 últimos dígitos do relógio em milissegundos. Esse
+// valor volta ao início a cada 16 minutos e 40 segundos, então dois pedidos
+// podiam nascer com o mesmo número. As consequências eram silenciosas:
+//
+//   • uma encomenda paga com número repetido NÃO era lançada nas vendas —
+//     o dinheiro entrava e não aparecia no relatório nem no fechamento;
+//   • ao receber o pagamento no caixa, o sistema marcava como paga a primeira
+//     encomenda daquele número, que podia ser a de outro aluno.
+//
+// Agora o número inclui a data e um sufixo, e é conferido contra os que já
+// existem antes de ser usado.
+function numeroPedido(prefixo, existentes){
+  const usados = new Set((existentes||[]).map(x=>String(x && x.numero||'').trim().toUpperCase()));
+  const d = new Date();
+  const dia = String(d.getFullYear()).slice(-2)
+            + String(d.getMonth()+1).padStart(2,'0')
+            + String(d.getDate()).padStart(2,'0');
+  for(let tentativa=0; tentativa<200; tentativa++){
+    const sufixo = Math.random().toString(36).slice(2,6).toUpperCase();
+    const n = prefixo + '-' + dia + '-' + sufixo;
+    if(!usados.has(n)) return n;
+  }
+  // Improvável chegar aqui; ainda assim, devolve algo único.
+  return prefixo + '-' + dia + '-' + String(Date.now()).slice(-7);
+}
+
 function findCustomerById(customers, id){
   if(id===null||id===undefined||id==='') return null;
   return (customers||[]).find(c=>String(c.id)===String(id)) || null;
@@ -1410,7 +1438,7 @@ function PartialStockModal({product, requested, available, onClose, onBuyAvailab
 
 
 // ====== QUICK ENCOMENDA MODAL (used from PDV and Store) ======
-function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, qty: initialQty}){
+function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, qty: initialQty, encomendas}){
   const [cliente, setCliente] = React.useState(currentUser ? currentUser.name : '');
   const [clientePhone, setClientePhone] = React.useState(currentUser ? (currentUser.phone||'') : '');
   const [escola, setEscola] = React.useState(currentUser ? (currentUser.school||'') : '');
@@ -1428,7 +1456,7 @@ function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, 
     const now = new Date();
     const enc = {
       id: Date.now(),
-      numero: 'ENC-' + String(Date.now()).slice(-6),
+      numero: numeroPedido('ENC', encomendas),
       tipo: 'Encomenda de Produto',
       status: 'Novo Pedido',
       prioridade: 'Normal',
@@ -2806,6 +2834,7 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
       product={quickEncModal.product}
       qty={quickEncModal.qty||1}
       customers={customers}
+      encomendas={encomendas}
       onClose={()=>setQuickEncModal(null)}
       onSave={(enc)=>{
           setEncomendas(prev=>[...prev,enc]);
@@ -3632,7 +3661,7 @@ function MeusPedidos({sales, currentUser, onBack}){
 }
 
 // ====== CUSTOMER STORE ======
-function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,setEncomendas,onShowAuth,notify}){
+function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,notify}){
   const [cart,setCart]=useState([]),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pix"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
@@ -3868,6 +3897,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       product={storeQuickEncModal.product}
       qty={storeQuickEncModal.qty||1}
       customers={customers}
+      encomendas={encomendas}
       currentUser={currentUser}
       onClose={()=>setStoreQuickEncModal(null)}
       onSave={(enc)=>{
@@ -4486,7 +4516,7 @@ const ORC_STATUS_COLORS = {
 
 function OrcamentoModal({orc, products, customers, onClose, onSave, onConvert, notify}){
   const [form, setForm] = useState(orc ? {...orc} : {
-    numero: 'ORC-' + String(Date.now()).slice(-6),
+    numero: numeroPedido('ORC', orcamentos),
     cliente: '', clienteEmail: '', clientePhone: '', escola: '',
     status: 'Rascunho', validade: '', obs: '',
     items: [], desconto: 0, createdAt: new Date().toLocaleDateString('pt-BR')
@@ -4710,6 +4740,12 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
 
   function saveOrc(form){
     if(!form.cliente){ notify('Informe o cliente','error'); return; }
+    const numero=String(form.numero||'').trim();
+    if(!numero){ notify('O orçamento precisa de um número','error'); return; }
+    const conflito=(orcamentos||[]).find(o=>String(o.id)!==String(form.id) &&
+      String(o.numero||'').trim().toUpperCase()===numero.toUpperCase());
+    if(conflito){ notify('Já existe um orçamento com o número '+numero+' ('+conflito.cliente+')','error'); return; }
+    form={...form, numero};
     if(editOrc){
       setOrcamentos(prev => prev.map(o => o.id === form.id ? {...form} : o));
       notify('Orçamento atualizado!','success');
@@ -4984,7 +5020,7 @@ function EncomendaItensTab({form, setForm, products}){
 function EncomendaModal({enc, customers, products, onClose, onSave, notify}){
   const isNew = !enc;
   const [form, setForm] = useState(enc ? {...enc} : {
-    numero: 'ENC-' + String(Date.now()).slice(-6),
+    numero: numeroPedido('ENC', encomendas),
     tipo: ENC_TIPOS[0],
     status: 'Novo Pedido',
     prioridade: 'Normal',
@@ -5395,6 +5431,15 @@ function Encomendas({customers, products, encomendas, setEncomendas, sales, setS
 
   function saveEnc(form){
     if(!form.cliente){ notify('Informe o cliente','error'); return; }
+    // O número identifica a encomenda no lançamento da venda e no recebimento
+    // pelo caixa. Em branco ou repetido, o dinheiro recebido pode não entrar no
+    // relatório, ou o pagamento pode ser creditado à encomenda de outro aluno.
+    const numero=String(form.numero||'').trim();
+    if(!numero){ notify('A encomenda precisa de um número','error'); return; }
+    const conflito=(encomendas||[]).find(e=>String(e.id)!==String(form.id) &&
+      String(e.numero||'').trim().toUpperCase()===numero.toUpperCase());
+    if(conflito){ notify('Já existe uma encomenda com o número '+numero+' ('+conflito.cliente+')','error'); return; }
+    form={...form, numero};
     // Valida o rateio quando o pagamento foi dividido em várias formas
     if(form.sinalPago && form.multiPay){
       const err=validarSplits(parseFloat(form.precoTotal)||0, form.splits);
@@ -7669,7 +7714,7 @@ function App(){
       setSales={setSales} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar}
       currentUser={currentUser} setCurrentUser={setCurrentUser}
       customers={customers} setCustomers={setCustomers}
-      setEncomendas={setEncomendas}
+      encomendas={encomendas} setEncomendas={setEncomendas}
       onShowAuth={()=>setMode("auth")} notify={notify}/>}
     {mode==="auth"&&<AuthScreen
       polo={polo}
