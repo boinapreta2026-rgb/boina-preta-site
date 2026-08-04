@@ -941,6 +941,26 @@ function trocoSplits(total, splits){
   const s=somaSplits(splitsLimpos(splits)), t=r2(total);
   return s>t ? r2(s-t) : 0;
 }
+
+// O que a venda REALMENTE recebeu, já descontado o troco.
+//
+// Antes, a venda guardava o valor entregue pelo cliente. Numa venda de R$100
+// paga com R$150 em dinheiro, ficavam gravados R$150 — e o troco de R$50 virava
+// receita. No fechamento, o caixa era cobrado por um dinheiro que já tinha
+// saído da gaveta, e sempre parecia estar faltando.
+//
+// O troco só existe em dinheiro, então é da linha de dinheiro que ele sai.
+function splitsAplicados(total, splits){
+  const lim = splitsLimpos(splits);
+  let sobra = r2(somaSplits(lim) - r2(total));
+  if(sobra <= 0.005) return lim;
+  return lim.map(s=>{
+    if(sobra <= 0.005 || s.tipo !== 'Dinheiro') return s;
+    const desconto = Math.min(sobra, s.valor);
+    sobra = r2(sobra - desconto);
+    return {tipo:s.tipo, valor:r2(s.valor - desconto)};
+  }).filter(s=>s.valor > 0.005);
+}
 // Distribui o valor de cada forma de pagamento entre os itens da venda,
 // para que o relatório por forma de pagamento continue somando corretamente.
 function ratearPagamentos(payments, itemTotals){
@@ -2476,7 +2496,7 @@ function encSaleRecord({numero, customer, customerId, total, payment, payments})
   };
 }
 
-function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,customers,notify,polo,operador,creditos,addCreditos}){
+function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomendas,setEncomendas,customers,notify,polo,operador,creditos,addCreditos}){
   const {caixa, abrir, fechar, addMovimento, totalCaixa} = useCaixaSession(polo, operador);
   const [movModal,setMovModal]=useState(null); // 'sangria'|'suprimento'|null
   const [fechModal,setFechModal]=useState(false);
@@ -2499,7 +2519,8 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
   const troco=multiPay ? trocoSplits(total,splits) : (payment==="Dinheiro"&&paid?Math.max(0,parseFloat(paid)-total):0);
   // Descrição e parcelas do pagamento conforme o modo escolhido
   const pagamentoDesc = multiPay ? PGTO_MULTIPLO : payment;
-  const pagamentoParcelas = multiPay ? splitsLimpos(splits) : null;
+  // Guarda o que ficou no caixa, não o que o cliente entregou: o troco sai fora.
+  const pagamentoParcelas = multiPay ? splitsAplicados(total, splits) : null;
 
   // ── CREDIÁRIO: saldo do aluno selecionado ──
   const saldoCliente = customerObj ? credSaldo(creditos, customerObj.id) : 0;
@@ -2597,7 +2618,19 @@ function Caixa({products,setProducts,sales,setSales,encomendas,setEncomendas,cus
     const rateio = pagamentoParcelas ? ratearPagamentos(pagamentoParcelas, itemTotals) : null;
     const ns=regularItems.map((item,i)=>({id:Date.now()+Math.random(),productId:item.id.toString().replace('enc_',''),productName:item.name,qty:item.qty,unitPrice:item.price,total:itemTotals[i],cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:pagamentoDesc,payments:rateio?rateio[i]:null,type:"loja",status:"Concluído",customer:customer||"Consumidor Final",customerId:customerObj?String(customerObj.id):"",orderNum:caixaOrderNum,orderTs:now.getTime()}));
     setSales(prev=>[...prev,...ns]);
-    setProducts(prev=>prev.map(p=>{const ci=regularItems.find(x=>x.id===p.id);return ci?{...p,stock:Math.max(0,p.stock-ci.qty)}:p;}));
+    // A baixa é pedida ao banco, que desconta do valor real daquele instante.
+    // Se a migração 10 ainda não estiver aplicada, cai no modo antigo.
+    (async()=>{
+      const baixado = await baixarEstoqueNoBanco(regularItems.map(x=>({id:x.id, qtd:x.qty})));
+      if(baixado){
+        const porId = Object.fromEntries(baixado.map(x=>[String(x.id), x.estoque]));
+        const faltou = baixado.filter(x=>Number(x.faltou)>0);
+        if(faltou.length) notify('Atenção: '+faltou.length+' item(ns) tinham menos peças do que o vendido. Confira o estoque.','error');
+        setProductsSemGravar(prev=>prev.map(p=>porId[String(p.id)]!==undefined?{...p,stock:porId[String(p.id)]}:p));
+      } else {
+        setProducts(prev=>prev.map(p=>{const ci=regularItems.find(x=>x.id===p.id);return ci?{...p,stock:Math.max(0,p.stock-ci.qty)}:p;}));
+      }
+    })();
     // registra movimentação de cada item vendido
     regularItems.forEach(item=>{
       const p=products.find(x=>x.id===item.id);
@@ -3070,7 +3103,8 @@ function CorrigirPagamentoModal({pedido, operador, setSales, notify, onClose}){
     if(semMudanca){ notify('A forma de pagamento é a mesma','error'); return; }
     setSalvando(true);
     const agora=new Date();
-    const parcelas = multi ? splitsLimpos(splits) : null;
+    // Também aqui o troco fica de fora do que é registrado como recebido.
+    const parcelas = multi ? splitsAplicados(total, splits) : null;
     const itemTotals = pedido.itens.map(i=>r2(i.total));
     const rateio = parcelas ? ratearPagamentos(parcelas, itemTotals) : null;
     const registro = {
@@ -3598,7 +3632,7 @@ function MeusPedidos({sales, currentUser, onBack}){
 }
 
 // ====== CUSTOMER STORE ======
-function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,currentUser,setCurrentUser,customers,setCustomers,setEncomendas,onShowAuth,notify}){
+function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,setEncomendas,onShowAuth,notify}){
   const [cart,setCart]=useState([]),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pix"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
@@ -3645,7 +3679,16 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
     const now=new Date(),date=now.toLocaleDateString("pt-BR"),orderNum="BP"+String(now.getTime()).slice(-6)+Math.floor(Math.random()*9);
     const ns=cart.map(item=>({id:Date.now()+Math.random(),productId:item.id,productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:orderForm.payment,type:"online",status:"Concluído",pedidoStatus:"Separar",customer:currentUser.name,customerId:String(currentUser.id||""),orderNum,orderTs:now.getTime()}));
     setSales(prev=>[...prev,...ns]);
-    setProducts(prev=>prev.map(p=>{const c=cart.find(x=>x.id===p.id&&!x.isEncomenda);return c?{...p,stock:Math.max(0,p.stock-c.qty)}:p;}));
+    (async()=>{
+      const itens=cart.filter(x=>!x.isEncomenda).map(x=>({id:x.id, qtd:x.qty}));
+      const baixado = await baixarEstoqueNoBanco(itens);
+      if(baixado){
+        const porId = Object.fromEntries(baixado.map(x=>[String(x.id), x.estoque]));
+        setProductsSemGravar(prev=>prev.map(p=>porId[String(p.id)]!==undefined?{...p,stock:porId[String(p.id)]}:p));
+      } else {
+        setProducts(prev=>prev.map(p=>{const c=cart.find(x=>x.id===p.id&&!x.isEncomenda);return c?{...p,stock:Math.max(0,p.stock-c.qty)}:p;}));
+      }
+    })();
     // registra movimentação online
     cart.filter(x=>!x.isEncomenda).forEach(item=>{
       const p=products.find(x=>x.id===item.id);
@@ -4695,7 +4738,7 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
       const err=validarSplits(total, convertSplits);
       if(err){ notify(err,'error'); return; }
     }
-    const parcelas = convertMulti ? splitsLimpos(convertSplits) : null;
+    const parcelas = convertMulti ? splitsAplicados(total, convertSplits) : null;
     const itemTotals = orc.items.map(item=>parseFloat((item.price*item.qty).toFixed(2)));
     const rateio = parcelas ? ratearPagamentos(parcelas, itemTotals) : null;
 
@@ -6632,7 +6675,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,sales,setSales,custo
       </div>
       <div className="admin-content">
         {page==="dashboard"&&<Dashboard products={products} sales={sales} role={role}/>}
-        {page==="caixa"&&<Caixa products={products} setProducts={setProducts} sales={sales} setSales={setSales} encomendas={encomendas} setEncomendas={setEncomendas} customers={customers} notify={notify} polo={polo.id} operador={operador} creditos={creditos} addCreditos={addCreditos}/>}
+        {page==="caixa"&&<Caixa products={products} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar} sales={sales} setSales={setSales} encomendas={encomendas} setEncomendas={setEncomendas} customers={customers} notify={notify} polo={polo.id} operador={operador} creditos={creditos} addCreditos={addCreditos}/>}
         {page==="estoque"&&<Estoque products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} notify={notify} polo={polo.id} poloInfo={polo}/>}
         {page==="gestao"&&(role==='dono'||role==='gerente')&&<GestaoEstoque activePolo={polo.id} categories={categories} setCategories={setCategories} reloadProducts={reloadProducts} notify={notify} operador={operador}/>}
         {page==="vendas"&&<Vendas sales={sales} polo={polo.id}/>}
@@ -6763,7 +6806,10 @@ async function apiPost(rota, corpo){
       headers:{'Content-Type':'application/json', ...(bpToken()?{'x-bp-token':bpToken()}:{})},
       body: JSON.stringify(corpo||{}) });
     const d = await r.json().catch(()=>({}));
-    return r.ok ? {ok:true, ...d} : {erro: d.message || 'Não foi possível concluir.'};
+    // `dados` guarda a resposta crua — rotas que devolvem LISTA precisam dela,
+    // porque espalhar um array em objeto vira {0:..., 1:...}.
+    return r.ok ? {ok:true, dados:d, ...(Array.isArray(d)?{}:d)}
+                : {erro: (d && d.message) || 'Não foi possível concluir.'};
   }catch(e){ return {erro:'Sem conexão com o servidor.'}; }
 }
 
@@ -7134,6 +7180,32 @@ function bpWriteCache(polo,data,modo){
   try{ localStorage.setItem(chave, JSON.stringify({...data, sync:null, salesSync:'', products:(data.products||[]).map(p=>({...p,photo:''})), sales:(data.sales||[]).slice(0,300)})); }catch(e){}
 }
 
+// ── baixa de estoque feita pelo banco ────────────────────────────────────────
+//
+// Vender gravava o número final do estoque por cima do que estivesse no banco.
+// Isso perdia informação em três situações reais: dois caixas vendendo a mesma
+// peça ao mesmo tempo, um caixa com a tela aberta desde cedo apagando o ajuste
+// do gerente, e uma venda desfazendo uma transferência entre polos.
+//
+// Agora quem faz a conta é o banco, de forma relativa: "tire 2 do que houver
+// agora". Duas vendas simultâneas baixam duas peças.
+//
+// Se a migração 10 ainda não tiver sido aplicada, devolve null e quem chamou
+// segue pelo caminho antigo — o sistema não para.
+async function baixarEstoqueNoBanco(itens, {devolver=false}={}){
+  const limpos=(itens||[])
+    .map(i=>({id:String(i && i.id || ''), qtd:parseInt(i && i.qtd,10)}))
+    .filter(i=>i.id && i.qtd>0);
+  if(limpos.length===0) return [];
+  const r = await apiPost('/estoque/baixar', {itens:limpos, devolver:!!devolver});
+  if(!r.ok){
+    console.warn('[Boina Preta] Baixa de estoque pelo banco indisponível — usando o modo antigo. '+
+                 'Rode a migração 10 para evitar perda de baixa quando dois caixas vendem ao mesmo tempo.');
+    return null;
+  }
+  return Array.isArray(r.dados) ? r.dados : [];
+}
+
 // ── leitura incremental: "o que mudou desde a última vez?" ───────────────────
 //
 // Antes, cada abertura do sistema rebaixava as tabelas inteiras. Agora o
@@ -7494,6 +7566,9 @@ function usePoloData(polo, modo='painel'){
   return {products,sales,customers,categories,encomendas,orcamentos,creditos,loading,syncStatus,erroCarga,
           setProducts,setSales,setCustomers,setCategories,setEncomendas,setOrcamentos,addCreditos,
           reloadProducts,
+          // Atualiza a tela SEM gravar: usado depois que o banco já fez a baixa
+          // de estoque. Regravar aqui desfaria a conta que o banco acabou de fazer.
+          setProductsSemGravar: setProductsLocal,
           addCustomerLocal: (c)=>setCustomersLocal(prev=>[...prev,c])};
 }
 
@@ -7582,7 +7657,7 @@ function App(){
 
   const {products,sales,customers,categories,encomendas,orcamentos,creditos,syncStatus,erroCarga,
          setProducts,setSales,setCustomers,setCategories,setEncomendas,setOrcamentos,addCreditos,
-         reloadProducts,addCustomerLocal} = poloHook;
+         reloadProducts,addCustomerLocal,setProductsSemGravar} = poloHook;
   const poloInfo = POLOS[polo];
 
   return <div>
@@ -7591,7 +7666,7 @@ function App(){
       onTrocarPolo={()=>{apiLogout();setPolo(null);setMode("store");setCurrentUser(null);}}
       products={products} categories={categories}
       sales={modoDados==='loja' ? vendasCliente : sales}
-      setSales={setSales} setProducts={setProducts}
+      setSales={setSales} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar}
       currentUser={currentUser} setCurrentUser={setCurrentUser}
       customers={customers} setCustomers={setCustomers}
       setEncomendas={setEncomendas}
