@@ -6844,6 +6844,45 @@ async function apiLogin(tipo, email, senha, polo){
 }
 function apiLogout(){ bpSetToken(''); }
 
+// ── validade da sessão ───────────────────────────────────────────────────────
+//
+// O token do login vale por um tempo. Passado esse prazo, o servidor recusa
+// tudo o que é interno (vendas, clientes, encomendas, orçamentos) com
+// "Acesso restrito. Faça login." — enquanto a tela continuava mostrando a
+// pessoa logada, porque o nome dela é lido do próprio aparelho.
+//
+// O resultado era uma tarja vermelha técnica no meio do expediente, sem dizer
+// a única coisa que resolvia: entrar de novo.
+//
+// O corpo do token é legível (não é segredo; o que é secreto é a assinatura),
+// então dá para conferir o prazo aqui mesmo, antes de qualquer pedido.
+function bpDecodificarBase64Url(v){
+  const b = String(v||'').replace(/-/g,'+').replace(/_/g,'/');
+  const falta = (4 - (b.length % 4)) % 4;
+  const bruto = (typeof atob==='function') ? atob(b + '='.repeat(falta)) : '';
+  try{
+    // Nome de aluno pode ter acento: decodifica como UTF-8 quando der.
+    return new TextDecoder().decode(Uint8Array.from(bruto, c=>c.charCodeAt(0)));
+  }catch(e){ return bruto; }
+}
+function bpTokenExpirado(){
+  const t = bpToken();
+  if(!t) return true;
+  try{
+    const dados = JSON.parse(bpDecodificarBase64Url(String(t).split('.')[0]));
+    if(!dados || !dados.exp) return true;
+    return Number(dados.exp) < Math.floor(Date.now()/1000);
+  }catch(e){ return true; }
+}
+
+// Avisado quando o servidor recusa por sessão inválida.
+let aoPerderSessao = null;
+function definirPerdaDeSessao(fn){ aoPerderSessao = fn; }
+function sessaoCaiu(){
+  bpSetToken('');
+  if(typeof aoPerderSessao==='function') aoPerderSessao();
+}
+
 // Atendimentos públicos da loja (não expõem o cadastro)
 async function apiPost(rota, corpo){
   try{
@@ -6851,6 +6890,7 @@ async function apiPost(rota, corpo){
       headers:{'Content-Type':'application/json', ...(bpToken()?{'x-bp-token':bpToken()}:{})},
       body: JSON.stringify(corpo||{}) });
     const d = await r.json().catch(()=>({}));
+    if(r.status===401) sessaoCaiu();
     // `dados` guarda a resposta crua — rotas que devolvem LISTA precisam dela,
     // porque espalhar um array em objeto vira {0:..., 1:...}.
     return r.ok ? {ok:true, dados:d, ...(Array.isArray(d)?{}:d)}
@@ -6915,7 +6955,9 @@ const sb = {
       if(body!==undefined) opts.body = JSON.stringify(body);
       const res = await fetch(this._url(), opts);
       if(this._head||method==='DELETE'){
-        if(!res.ok){ let t=''; try{t=await res.text();}catch(e){} return {data:null, error:{message:t||res.statusText}, count:null}; }
+        if(!res.ok){ let t=''; try{t=await res.text();}catch(e){}
+          if(res.status===401) sessaoCaiu();
+          return {data:null, error:{message:t||res.statusText}, count:null}; }
         // CORREÇÃO: antes devolvia count:0 fixo, sem ler o cabeçalho content-range.
         // Isso fazia qualquer contagem parecer "zero registros".
         let cnt=null;
@@ -6929,7 +6971,10 @@ const sb = {
       const text = await res.text();
       let data = null;
       try{ data = text ? JSON.parse(text) : null; }catch(e){ data=null; }
-      if(!res.ok){ return {data:null, error:{message:text||res.statusText}}; }
+      if(!res.ok){
+        if(res.status===401) sessaoCaiu();
+        return {data:null, error:{message:text||res.statusText}};
+      }
       if(this._count){ const c=res.headers.get('content-range'); return {data,error:null,count:c?parseInt(c.split('/')[1]||0):0}; }
       if(this._single) return {data: Array.isArray(data)?data[0]||null : data, error:null};
       return {data: data||[], error:null};
@@ -7662,9 +7707,37 @@ function App(){
     }catch(e){ return 'store'; }
   });
 
+  // ── sessão vencida ────────────────────────────────────────────────────────
+  //
+  // O nome do operador é guardado no próprio aparelho, então a tela continuava
+  // mostrando "logado" mesmo depois de o prazo do login terminar. O servidor
+  // recusava tudo o que é interno e aparecia uma tarja vermelha técnica no meio
+  // do expediente, sem dizer o que resolvia: entrar de novo.
+  //
+  // Agora conferimos o prazo ANTES de pedir qualquer coisa, e também reagimos
+  // caso o servidor recuse no meio do caminho.
+  function encerrarSessao(motivo){
+    apiLogout();
+    setOperador(null);
+    setMode('admin-login');
+    notify(motivo || 'Sua sessão expirou. Entre novamente para continuar.','error');
+  }
+  useEffect(()=>{
+    definirPerdaDeSessao(()=>encerrarSessao('Sua sessão expirou. Entre novamente para continuar.'));
+    return ()=>definirPerdaDeSessao(null);
+  },[]);
+  // Confere na abertura e a cada minuto, para o aviso chegar antes do erro.
+  useEffect(()=>{
+    if(!operador) return;
+    const conferir=()=>{ if(bpTokenExpirado()) encerrarSessao('Sua sessão expirou. Entre novamente para continuar.'); };
+    conferir();
+    const id=setInterval(conferir, 60000);
+    return ()=>clearInterval(id);
+  },[operador]);
+
   // Visitante da loja carrega só o catálogo. Os dados internos só entram
   // depois que um operador faz login no painel.
-  const modoDados = (mode==='admin' && operador) ? 'painel' : 'loja';
+  const modoDados = (mode==='admin' && operador && !bpTokenExpirado()) ? 'painel' : 'loja';
   const poloHook = usePoloData(polo, modoDados);
 
   // Pedidos do próprio cliente na loja online. O Worker devolve só os dele.
