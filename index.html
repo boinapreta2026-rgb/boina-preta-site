@@ -345,6 +345,15 @@ td strong{color:var(--t1);font-weight:600;}
 .page-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:3px;}
 .page-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1.5px;color:var(--t3);margin-top:1px;}
 .topbar-badge{background:#f5f5f5;color:#666;padding:3px 10px;border-radius:2px;font-family:"Share Tech Mono",monospace;font-size:11px;border:1px solid #e0e0e0;}
+/* ── Alerta piscando: pedidos a separar / encomendas a produzir ── */
+@keyframes bpAlertaPisca{0%,100%{background:#cc2222;box-shadow:0 0 0 0 rgba(204,34,34,.55);}50%{background:#e34b3b;box-shadow:0 0 0 6px rgba(204,34,34,0);}}
+.bp-alerta-topo{display:inline-flex;align-items:center;gap:7px;cursor:pointer;border:none;color:#fff;padding:6px 12px;border-radius:4px;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;animation:bpAlertaPisca 1s ease-in-out infinite;transition:transform .12s;}
+.bp-alerta-topo:hover{transform:scale(1.04);}
+.bp-alerta-topo .bp-alerta-ico{font-size:15px;line-height:1;}
+.bp-alerta-topo .bp-alerta-num{background:rgba(255,255,255,.9);color:#a01414;border-radius:10px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-family:"Share Tech Mono",monospace;font-size:11px;font-weight:700;}
+.bp-alerta-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+@media(max-width:768px){.bp-alerta-topo{padding:5px 9px;font-size:11px;}.bp-alerta-topo .bp-alerta-txt{display:none;}}
+.nav-item .bp-nav-num{margin-left:auto;background:#cc2222;color:#fff;border-radius:10px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-family:"Share Tech Mono",monospace;font-size:10px;font-weight:700;animation:bpAlertaPisca 1s ease-in-out infinite;}
 .admin-content{padding:22px 26px;}
 .caixa-grid{display:grid;grid-template-columns:1fr 310px;gap:16px;}
 .pdv-item{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .15s;background:#fff;margin-bottom:7px;}
@@ -3844,7 +3853,7 @@ function MeusPedidos({sales, currentUser, onBack}){
 
 // ====== CUSTOMER STORE ======
 function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,notify}){
-  const [cart,setCart]=useState([]),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pix"}),[orderResult,setOrderResult]=useState(null);
+  const [cart,setCart]=useState([]),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pagar na Loja"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
@@ -3888,7 +3897,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   function placeOrder(){
     if(!currentUser){onShowAuth();return;}
     const now=new Date(),date=now.toLocaleDateString("pt-BR"),orderNum="BP"+String(now.getTime()).slice(-6)+Math.floor(Math.random()*9);
-    const ns=cart.map(item=>({id:Date.now()+Math.random(),productId:item.id,productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:orderForm.payment,type:"online",status:"Concluído",pedidoStatus:"Separar",customer:currentUser.name,customerId:String(currentUser.id||""),orderNum,orderTs:now.getTime()}));
+    const ns=cart.map(item=>({id:Date.now()+Math.random(),productId:item.id,productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:"Pagar na Loja",type:"online",status:"Aguardando Pagamento",pedidoStatus:"Separar",customer:currentUser.name,customerId:String(currentUser.id||""),orderNum,orderTs:now.getTime()}));
     setSales(prev=>[...prev,...ns]);
     (async()=>{
       const itens=cart.filter(x=>!x.isEncomenda).map(x=>({id:x.id, qtd:x.qty}));
@@ -3905,7 +3914,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       const p=products.find(x=>x.id===item.id);
       if(p) registrarMov(polo?.id||'',p,'saida_venda_online',p.stock,-item.qty,orderNum,currentUser.name,'Loja Online');
     });
-    setOrderResult({orderNum,delivery:orderForm.delivery,payment:orderForm.payment,total:cartTotal+frete,items:[...cart],date});
+    setOrderResult({orderNum,delivery:orderForm.delivery,payment:"Pagar na Loja",total:cartTotal+frete,items:[...cart],date});
     setCart([]);setStep("confirmed");
   }
   if(step==="meus-pedidos") return <div className="store-root">
@@ -3937,13 +3946,11 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
           <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",marginTop:4}}><span style={{fontFamily:"Oswald",fontSize:13,fontWeight:600,letterSpacing:1}}>TOTAL</span><span style={{fontFamily:"Bebas Neue",fontSize:22,letterSpacing:2}}>{fmt(orderResult.total)}</span></div>
         </div>
         <div style={{background:'rgba(26,110,46,.08)',border:'1px solid rgba(26,110,46,.2)',borderRadius:4,padding:14,fontSize:13,color:'#1a6e2e',margin:'0 0 10px'}}>
-                📍 Retire na loja no horário de funcionamento.
+                📍 Avisaremos quando estiver pronto. Retire na loja no horário de funcionamento.
               </div>
-              {["Pagar na Retirada","Integra Card — Bolsa Uniforme (Pagar na Loja)"].some(x=>orderResult.payment===x||orderResult.payment.includes(x))?(
-                <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:14,fontSize:13,color:'#bf360c',margin:'0 0 10px'}}>
-                  ⚠ <strong>Pagamento na loja</strong> ao retirar.{orderResult.payment.includes('Integra')?' Traga seu Integra Card.':''}
-                </div>
-              ):null}
+              <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:14,fontSize:13,color:'#bf360c',margin:'0 0 10px'}}>
+                💵 <strong>Pagamento na loja</strong>, na hora da retirada — em dinheiro, cartão, Pix ou Integra Card.
+              </div>
         <button className="btn btn-primary" onClick={()=>setStep("catalog")}>Continuar Comprando</button>
         <button className="btn" style={{marginTop:8,width:'100%',justifyContent:'center'}} onClick={()=>setStep("meus-pedidos")}>📋 Ver Meus Pedidos</button>
       </div>
@@ -3974,12 +3981,13 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
         </div>
         {orderForm.delivery==="envio"&&<div className="form-group mt-3"><label>Endereço de entrega</label><textarea value={orderForm.address} onChange={e=>setOrderForm({...orderForm,address:e.target.value})} placeholder="Rua, número, bairro, cidade, CEP"/></div>}
       </div>
-      <div className="card mb-3"><div className="card-title">Forma de Pagamento</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-          {["Pix","Cartão Crédito","Cartão Débito","Integra Card — Bolsa Uniforme (Pagar na Loja)","Pagar na Retirada"].map(p=><div key={p} style={{border:"2px solid "+(orderForm.payment===p?"#111":"#e0e0e0"),borderRadius:3,padding:"10px 8px",cursor:"pointer",textAlign:"center",background:orderForm.payment===p?"#fafafa":"#fff",transition:"all .15s"}} onClick={()=>setOrderForm({...orderForm,payment:p})}>
-            <div style={{fontFamily:"Oswald",fontSize:11,fontWeight:500,letterSpacing:1,textTransform:"uppercase"}}>{p==="Integra Card — Bolsa Uniforme"?"Integra Card":p}</div>
-            {p==="Integra Card — Bolsa Uniforme"&&<div style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#00643c",marginTop:2,letterSpacing:1}}>BOLSA UNIFORME</div>}
-          </div>)}
+      <div className="card mb-3"><div className="card-title">Pagamento</div>
+        <div style={{background:'#fff8ef',border:'1px solid #e0c9a6',borderRadius:6,padding:'14px 16px',display:'flex',alignItems:'flex-start',gap:12}}>
+          <div style={{fontSize:26,lineHeight:1}}>🏪</div>
+          <div>
+            <div style={{fontFamily:"Oswald",fontSize:14,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:'#7a4b00',marginBottom:4}}>Pagamento na loja, na retirada</div>
+            <div style={{fontSize:13,color:'#5f6368',lineHeight:1.5}}>Você faz o pedido agora e recebe um aviso quando ele estiver pronto. É só ir até a loja, retirar e pagar na hora — em dinheiro, cartão, Pix ou Integra Card, como preferir.</div>
+          </div>
         </div>
       </div>
       <div className="order-summary-box">
@@ -7108,10 +7116,18 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
         }));
       }
     }
+    // Faturamento presencial: o pedido só entra na receita quando é pago na
+    // retirada. Enquanto está sendo separado/aguardando o cliente, fica como
+    // 'Aguardando Pagamento' e NÃO conta no caixa. Ao marcar 'Pago' (ou
+    // 'Entregue'), vira 'Concluído' e é contabilizado.
+    const statusVenda =
+      (newStatus === 'Pago' || newStatus === 'Entregue') ? 'Concluído'
+      : (newStatus === 'Cancelado') ? 'Cancelado'
+      : 'Aguardando Pagamento';
     setSales(prev => prev.map(s => {
       if(pedido.saleIds.includes(s.id)){
         return {...s,
-          status: newStatus === 'Entregue' ? 'Concluído' : newStatus,
+          status: statusVenda,
           pedidoStatus: newStatus
         };
       }
@@ -7548,6 +7564,41 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
   const secs=[...new Set(pages.map(p=>p.section))];
   const titles={dashboard:"Painel de Controle",caixa:"Frente de Caixa",estoque:"Controle de Estoque",vendas:"Relatório de Vendas",fechamento:"Fechamento de Caixa",clientes:"Cadastro de Clientes",orcamentos:"Orçamentos e Pedidos",crediario:"Crediário — Saldo dos Alunos",encomendas:"Encomendas e Pedidos Personalizados",pedidos:"Pedidos Online — Retirada na Loja",config:"Configurações do Sistema"};
   function navTo(id){setPage(id);setSideOpen(false);}
+
+  // ── Alertas de trabalho pendente (piscam no topo, por polo) ──────────────
+  // Pedidos da loja online ainda na coluna "Separar" (o cliente pediu e ninguém
+  // começou a separar) e encomendas novas que precisam ir para a produção.
+  // Os dados de sales/encomendas já chegam filtrados pelo polo, então a contagem
+  // é local — sem consulta nova ao banco e sem custo no plano gratuito.
+  const pedidosParaSeparar = React.useMemo(()=>{
+    const nums = new Set();
+    (sales||[]).forEach(s=>{
+      if(s.type==='online' && (s.pedidoStatus||'Separar')==='Separar'){
+        nums.add(s.orderNum || (s.customer+'|'+s.date));
+      }
+    });
+    return nums.size;
+  },[sales]);
+  const encomendasParaProduzir = React.useMemo(()=>
+    (encomendas||[]).filter(e=>e.status==='Novo Pedido').length
+  ,[encomendas]);
+  const podePedidos   = ADMIN_PAGES.some(p=>p.id==='pedidos'   && p.roles.includes(role));
+  const podeEncomendas= ADMIN_PAGES.some(p=>p.id==='encomendas'&& p.roles.includes(role));
+  const alertaPedidos    = podePedidos    && pedidosParaSeparar>0;
+  const alertaEncomendas = podeEncomendas && encomendasParaProduzir>0;
+
+  // Título da aba pisca junto, para quem está com o sistema aberto em outra aba.
+  useEffect(()=>{
+    const baseTitulo = 'Boina Preta — Painel';
+    const totalPend = (alertaPedidos?pedidosParaSeparar:0) + (alertaEncomendas?encomendasParaProduzir:0);
+    if(totalPend<=0){ document.title = baseTitulo; return; }
+    let ligado=false;
+    const t=setInterval(()=>{ ligado=!ligado;
+      document.title = ligado ? ('🔴 ('+totalPend+') Pendências — Boina Preta') : baseTitulo;
+    },1000);
+    return ()=>{ clearInterval(t); document.title = baseTitulo; };
+  },[alertaPedidos,alertaEncomendas,pedidosParaSeparar,encomendasParaProduzir]);
+
   return <div>
     <div className={`sidebar-overlay ${sideOpen?"open":""}`} onClick={()=>setSideOpen(false)}/>
     <div className={`sidebar ${sideOpen?"open":""}`}>
@@ -7566,7 +7617,11 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
       <nav className="sidebar-nav">
         {secs.map(sec=><div key={sec}>
           <div className="nav-section">{sec}</div>
-          {pages.filter(p=>p.section===sec).map(p=><div key={p.id} className={`nav-item ${page===p.id?"active":""}`} onClick={()=>navTo(p.id)}><span className="nav-icon">{p.icon}</span><span>{p.label}</span></div>)}
+          {pages.filter(p=>p.section===sec).map(p=>{
+            const numAlerta = p.id==='pedidos' && alertaPedidos ? pedidosParaSeparar
+                            : p.id==='encomendas' && alertaEncomendas ? encomendasParaProduzir : 0;
+            return <div key={p.id} className={`nav-item ${page===p.id?"active":""}`} onClick={()=>navTo(p.id)}><span className="nav-icon">{p.icon}</span><span>{p.label}</span>{numAlerta>0&&<span className="bp-nav-num">{numAlerta}</span>}</div>;
+          })}
         </div>)}
         <div style={{padding:"12px 0 0"}}>
           <div className="nav-item" onClick={()=>setSenhaModal(true)} style={{color:"#525252"}}><span className="nav-icon">🔑</span><span>Alterar Senha</span></div>
@@ -7589,6 +7644,18 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
           <div><div className="page-title">{titles[page]}</div><div className="page-sub">BOINA PRETA · {polo.nome.toUpperCase()} · PAINEL ADMINISTRATIVO</div></div>
         </div>
         <div className="flex gap-2 items-center">
+          {(alertaPedidos||alertaEncomendas)&&<div className="bp-alerta-wrap">
+            {alertaPedidos&&<button className="bp-alerta-topo" title="Pedidos da loja online aguardando separação" onClick={()=>navTo('pedidos')}>
+              <span className="bp-alerta-ico">🛒</span>
+              <span className="bp-alerta-txt">Separar pedido{pedidosParaSeparar>1?'s':''}</span>
+              <span className="bp-alerta-num">{pedidosParaSeparar}</span>
+            </button>}
+            {alertaEncomendas&&<button className="bp-alerta-topo" title="Encomendas novas para enviar à produção" onClick={()=>navTo('encomendas')}>
+              <span className="bp-alerta-ico">🧵</span>
+              <span className="bp-alerta-txt">Produzir encomenda{encomendasParaProduzir>1?'s':''}</span>
+              <span className="bp-alerta-num">{encomendasParaProduzir}</span>
+            </button>}
+          </div>}
           {operador&&<span className="topbar-badge" style={{background:roleMeta(role).badgeBg,color:roleMeta(role).badgeBg?roleMeta(role).color:undefined,borderColor:roleMeta(role).badgeBorder}}>
             {roleMeta(role).icon} {operador.nome.split(' ')[0]}
           </span>}
