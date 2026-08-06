@@ -4274,9 +4274,21 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
         email:form.email, senha:form.password
       });
       if(r.ok && r.cliente){
+        // Guarda o crachá da sessão ANTES de entrar.
+        //
+        // Sem esta linha o aluno entrava "logado" na tela, mas sem token: a
+        // primeira coisa que o sistema fosse buscar levava um "acesso negado",
+        // que é tratado como sessão expirada — e ele era jogado na tela de
+        // login do painel. O login normal sempre fez isso; a ativação não fazia.
+        if(r.token) bpSetToken(r.token);
         const u=custFromDB(r.cliente);
         onLogin(u);
         notify("Acesso ativado! Bem-vindo(a) de volta, "+u.name.split(" ")[0]+"!","success");
+      } else if(r.semColuna){
+        // Banco ainda sem a migração 17. Mensagem para o aluno não ficar
+        // adivinhando, e recado no console para quem for conferir depois.
+        console.error('[Boina Preta] Ativação indisponível: falta a coluna origem_cadastro. Rode a MIGRACAO-17.');
+        setErr("A ativação de acesso está temporariamente indisponível. Procure a loja para liberar seu acesso.");
       } else {
         setErr(r.message || r.erro || "Não foi possível ativar. Procure a loja.");
       }
