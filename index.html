@@ -4171,6 +4171,10 @@ function StoreFooter(){
 // ====== AUTH SCREEN ======
 function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
   const [tab,setTab]=useState("login"),[form,setForm]=useState({}),[err,setErr]=useState(""),[loading,setLoading]=useState(false);
+  // O servidor decide se a data de nascimento é exigida: só é pedida de quem
+  // tem esse campo no cadastro. Cadastros antigos vieram sem, e travar o aluno
+  // por isso seria puni-lo por um dado que ele nunca deixou de dar.
+  const [pedeNasc,setPedeNasc]=useState(false);
 
   async function login(){
     setLoading(true);setErr("");
@@ -4197,8 +4201,11 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
   // Aqui ele confirma telefone e data de nascimento e assume o cadastro que
   // já existe, definindo e-mail e senha. Nada é criado, só atualizado.
   async function ativar(){
-    if(!form.telefoneConf||!form.nascimentoConf||!form.email||!form.password){
-      setErr("Preencha telefone, data de nascimento, e-mail e senha.");return;
+    if(!form.telefoneConf||!form.email||!form.password){
+      setErr("Preencha telefone, e-mail e senha.");return;
+    }
+    if(pedeNasc && !form.nascimentoConf){
+      setErr("Preencha a data de nascimento.");return;
     }
     setLoading(true);setErr("");
     try{
@@ -4232,7 +4239,16 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
       const cpfCheck = await apiPost('/loja/conferir-cpf',{cpf:form.cpf, polo});
       if(cpfCheck && cpfCheck.existe){
         if(cpfCheck.podeAtivar){
-          // Já existe, feito pelo gerente: leva para a confirmação de identidade
+          if(cpfCheck.semTelefone){
+            // Cadastro sem telefone: não há como confirmar quem é pelo site.
+            setErr("Você já tem cadastro na loja, mas ele está incompleto e não pode ser "+
+                   "ativado pelo site. Procure a loja com um documento com foto para liberar seu acesso.");
+            setLoading(false);return;
+          }
+          // Já existe, feito pelo gerente: leva para a confirmação de identidade.
+          // O servidor diz se aquele cadastro tem data de nascimento; só então
+          // o campo é pedido.
+          setPedeNasc(!!cpfCheck.pedeNascimento);
           setForm(f=>({...f, telefoneConf:f.phone||'', nascimentoConf:f.birthdate||''}));
           setTab("ativar");
           setErr("");
@@ -4287,15 +4303,15 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
           assim você mantém seu histórico de compras e seu saldo, sem criar outra conta.
         </div>
         <div className="form-grid" style={{gridTemplateColumns:"1fr 1fr"}}>
-          <div className="form-group"><label>Telefone cadastrado *</label><input placeholder="(00) 00000-0000" value={form.telefoneConf||""} onChange={e=>setForm({...form,telefoneConf:e.target.value})}/></div>
-          <div className="form-group"><label>Data de Nascimento *</label><input placeholder="DD/MM/AAAA" value={form.nascimentoConf||""} onChange={e=>setForm({...form,nascimentoConf:e.target.value.replace(/\D/g,'').slice(0,8).replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2')})}/></div>
+          <div className={pedeNasc?"form-group":"form-group full"}><label>Telefone cadastrado *</label><input placeholder="(00) 00000-0000" value={form.telefoneConf||""} onChange={e=>setForm({...form,telefoneConf:e.target.value})}/></div>
+          {pedeNasc&&<div className="form-group"><label>Data de Nascimento *</label><input placeholder="DD/MM/AAAA" value={form.nascimentoConf||""} onChange={e=>setForm({...form,nascimentoConf:e.target.value.replace(/\D/g,'').slice(0,8).replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2')})}/></div>}
           <div className="form-group full"><label>Seu e-mail (para entrar) *</label><input type="email" placeholder="seu@email.com" value={form.email||""} onChange={e=>setForm({...form,email:e.target.value})}/></div>
           <div className="form-group full"><label>Crie uma senha *</label><input type="password" placeholder="Crie uma senha" value={form.password||""} onChange={e=>setForm({...form,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&ativar()}/></div>
         </div>
         <button className="btn btn-primary w-full" style={{justifyContent:"center",padding:"11px",marginTop:16}} onClick={ativar} disabled={loading}>{loading?"Ativando...":"Ativar meu acesso →"}</button>
         <div style={{background:'#fff8e8',border:'1px solid #e6c800',borderRadius:3,padding:'9px 12px',fontSize:11.5,color:'#7a5500',marginTop:12,lineHeight:1.5}}>
-          Não lembra o telefone ou a data que estão no cadastro? Procure a loja com um
-          documento com foto — o gerente libera seu acesso na hora.
+          Não lembra {pedeNasc?'o telefone ou a data que estão':'o telefone que está'} no cadastro?
+          Procure a loja com um documento com foto — o gerente libera seu acesso na hora.
         </div>
         <div style={{textAlign:"center",marginTop:12}}>
           <span onClick={()=>{setTab("register");setErr("");}} style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:1,color:"#5f6368",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>← Voltar</span>
