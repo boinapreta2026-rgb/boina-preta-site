@@ -3726,8 +3726,7 @@ const ORDER_STEPS = [
   {key:"Separar",           label:"Pedido\nRecebido",   icon:"🛒"},
   {key:"Em Separação",      label:"Em\nSeparação",      icon:"📦"},
   {key:"Pronto p/ Retirar", label:"Pronto p/\nRetirar", icon:"🏪"},
-  {key:"Pago",              label:"Pago",                icon:"✅"},
-  {key:"Entregue",          label:"Entregue",            icon:"🎉"},
+  {key:"Entregue",          label:"Retirado\ne Pago",    icon:"🎉"},
 ];
 
 function MeusPedidos({sales, currentUser, onBack}){
@@ -3735,7 +3734,16 @@ function MeusPedidos({sales, currentUser, onBack}){
 
   // Build orders grouped by orderNum or fallback customer+date
   const pedidosMap = {};
-  sales.filter(s => s.type==='online' && s.customer===currentUser?.name).forEach(s=>{
+  // Casa pelo CÓDIGO do cadastro quando ele existe, e só cai no nome como
+  // reserva. Comparar nome dava dois problemas: dois alunos de mesmo nome viam
+  // as compras um do outro, e uma diferença boba de maiúscula ou de espaço
+  // fazia o pedido não aparecer para o dono dele.
+  const meuId = String(currentUser?.id||'');
+  const meuNome = String(currentUser?.name||'').trim().toLowerCase();
+  sales.filter(s => s.type==='online' && (
+    (meuId && String(s.customerId||'')) ? String(s.customerId)===meuId
+                                        : String(s.customer||'').trim().toLowerCase()===meuNome
+  )).forEach(s=>{
     const key = s.orderNum || (s.customer+'|'+s.date);
     if(!pedidosMap[key]){
       pedidosMap[key]={
@@ -3756,9 +3764,9 @@ function MeusPedidos({sales, currentUser, onBack}){
   function statusInfo(status){
     if(status==='Separar')           return {cls:'separando',  msg:'🛒 Pedido recebido! Estamos preparando a separação.'};
     if(status==='Em Separação')      return {cls:'separando',  msg:'📦 Estamos separando os itens do seu pedido.'};
-    if(status==='Pronto p/ Retirar') return {cls:'pronto',     msg:'🏪 Seu pedido está pronto! Pode vir retirar na loja.'};
-    if(status==='Pago')              return {cls:'separando',  msg:'✅ Pagamento confirmado na retirada. Obrigado!'};
-    if(status==='Entregue')          return {cls:'entregue',   msg:'🎉 Pedido entregue. Obrigado pela preferência!'};
+    if(status==='Pronto p/ Retirar') return {cls:'pronto',     msg:'🏪 Seu pedido está pronto! Venha retirar na loja e pagar na hora.'};
+    if(status==='Pago')              return {cls:'pronto',     msg:'🏪 Seu pedido está pronto! Venha retirar na loja e pagar na hora.'};
+    if(status==='Entregue')          return {cls:'entregue',   msg:'🎉 Pedido retirado e pago. Obrigado pela preferência!'};
     if(status==='Cancelado')         return {cls:'cancelado',  msg:'❌ Este pedido foi cancelado. Entre em contato com a loja.'};
     return {cls:'separando', msg:''};
   }
@@ -3862,7 +3870,7 @@ function MeusPedidos({sales, currentUser, onBack}){
 }
 
 // ====== CUSTOMER STORE ======
-function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,notify}){
+function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,onPedidoFeito,notify}){
   const [cart,setCart]=useState([]),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pagar na Loja"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
@@ -3904,26 +3912,77 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
     if(p&&q>p.stock){setStoreOutModal({...p,_overQty:q});return;}
     setCart(prev=>prev.map(x=>x.id===id?{...x,qty:q}:x));
   }
-  function placeOrder(){
+  // O pedido reserva a mercadoria: o estoque é baixado assim que o aluno
+  // confirma. Vender o que já foi prometido a outro é pior do que segurar uma
+  // peça de um pedido que talvez não seja retirado — e o operador pode
+  // cancelar o pedido abandonado, o que devolve tudo ao estoque.
+  //
+  // A ordem importa e é esta:
+  //   1. baixa o estoque no BANCO (que trava a linha e avisa se faltou);
+  //   2. se faltou peça, devolve o que saiu e não cria pedido nenhum;
+  //   3. só então grava a venda, e só então mostra "pedido confirmado".
+  //
+  // O histórico de movimentação quem grava é o servidor. Tentar gravá-lo pelo
+  // navegador do aluno — que não tem permissão nessa tabela — era o que
+  // derrubava a sessão dele no meio da compra e fazia o pedido se perder.
+  const [enviando,setEnviando]=useState(false);
+  async function placeOrder(){
     if(!currentUser){onShowAuth();return;}
+    if(enviando) return;                       // evita pedido em duplicidade no clique duplo
+    setEnviando(true);
     const now=new Date(),date=now.toLocaleDateString("pt-BR"),orderNum="BP"+String(now.getTime()).slice(-6)+Math.floor(Math.random()*9);
-    const ns=cart.map(item=>({id:Date.now()+Math.random(),productId:item.id,productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:"Pagar na Loja",type:"online",status:"Aguardando Pagamento",pedidoStatus:"Separar",customer:currentUser.name,customerId:String(currentUser.id||""),orderNum,orderTs:now.getTime()}));
-    setSales(prev=>[...prev,...ns]);
-    (async()=>{
-      const itens=cart.filter(x=>!x.isEncomenda).map(x=>({id:x.id, qtd:x.qty}));
-      const baixado = await baixarEstoqueNoBanco(itens);
-      if(baixado){
-        const porId = Object.fromEntries(baixado.map(x=>[String(x.id), x.estoque]));
-        setProductsSemGravar(prev=>prev.map(p=>porId[String(p.id)]!==undefined?{...p,stock:porId[String(p.id)]}:p));
-      } else {
-        setProducts(prev=>prev.map(p=>{const c=cart.find(x=>x.id===p.id&&!x.isEncomenda);return c?{...p,stock:Math.max(0,p.stock-c.qty)}:p;}));
+    const itensFisicos=cart.filter(x=>!x.isEncomenda).map(x=>({id:x.id, qtd:x.qty}));
+
+    // 1 e 2 — reserva no estoque
+    let baixado=null;
+    if(itensFisicos.length>0){
+      baixado = await baixarEstoqueNoBanco(itensFisicos, {ref:orderNum});
+      if(baixado===null){
+        // Banco sem a migração 10: sem trava confiável, é mais seguro não
+        // deixar o pedido passar do que prometer peça que pode não existir.
+        setEnviando(false);
+        notify("A loja está temporariamente indisponível para novos pedidos. Tente mais tarde.","error");
+        return;
       }
-    })();
-    // registra movimentação online
-    cart.filter(x=>!x.isEncomenda).forEach(item=>{
-      const p=products.find(x=>x.id===item.id);
-      if(p) registrarMov(polo?.id||'',p,'saida_venda_online',p.stock,-item.qty,orderNum,currentUser.name,'Loja Online');
-    });
+      const semEstoque = baixado.filter(x=>Number(x.faltou)>0);
+      if(semEstoque.length>0){
+        // Alguém levou a última peça entre o carrinho e o clique.
+        //
+        // Devolvemos apenas o que REALMENTE saiu (pedido menos o que faltou).
+        // Devolver a quantidade cheia criaria peça do nada: se o aluno pediu 2
+        // e só havia 1, o banco baixou 1 — devolver 2 deixaria o estoque com
+        // uma unidade que não existe na prateleira.
+        const paraDevolver = baixado.map(x=>{
+          const pedido = (itensFisicos.find(i=>String(i.id)===String(x.id))||{}).qtd || 0;
+          return {id:x.id, qtd: pedido - Number(x.faltou||0)};
+        }).filter(x=>x.qtd>0);
+        if(paraDevolver.length>0) await baixarEstoqueNoBanco(paraDevolver, {devolver:true, ref:orderNum});
+        const nomes=semEstoque.map(x=>{
+          const it=cart.find(c=>String(c.id)===String(x.id));
+          return it?it.name:'um item';
+        });
+        setEnviando(false);
+        notify("Estoque acabou para: "+nomes.join(", ")+". Ajuste o carrinho e tente de novo.","error");
+        return;
+      }
+      // Espelha na tela o estoque que o banco devolveu
+      const porId=Object.fromEntries(baixado.map(x=>[String(x.id), x.estoque]));
+      setProductsSemGravar&&setProductsSemGravar(prev=>prev.map(p=>porId[String(p.id)]!==undefined?{...p,stock:porId[String(p.id)]}:p));
+    }
+
+    // 3 — grava a venda
+    const ns=cart.map(item=>({id:Date.now()+Math.random(),productId:item.id,productName:item.name,qty:item.qty,unitPrice:item.price,total:parseFloat((item.price*item.qty).toFixed(2)),cost:parseFloat((item.cost*item.qty).toFixed(2)),month:now.getMonth(),week:getWeekNum(now),date,ts:now.getTime(),payment:"Pagar na Loja",type:"online",status:"Aguardando Pagamento",pedidoStatus:"Separar",customer:currentUser.name,customerId:String(currentUser.id||""),orderNum,orderTs:now.getTime()}));
+    const ok = await setSales(prev=>[...prev,...ns]);
+    setEnviando(false);
+    if(ok===false){
+      // A venda não entrou: devolve a reserva para não sumir mercadoria do
+      // estoque por um pedido que não existe. Aqui a baixa foi integral (se
+      // tivesse faltado peça, não teríamos chegado até aqui).
+      if(itensFisicos.length>0) await baixarEstoqueNoBanco(itensFisicos, {devolver:true, ref:orderNum});
+      notify("Não foi possível registrar seu pedido. Confira sua conexão e tente de novo.","error");
+      return;
+    }
+    if(typeof onPedidoFeito==='function') onPedidoFeito();   // atualiza "Meus Pedidos"
     setOrderResult({orderNum,delivery:orderForm.delivery,payment:"Pagar na Loja",total:cartTotal+frete,items:[...cart],date});
     setCart([]);setStep("confirmed");
   }
@@ -6132,11 +6191,9 @@ function waMensagem(status, pedido, polo){
     'Em Separação':
       `Olá, ${nome}! 👋\n\nSeu pedido na *Boina Preta - ${loja}* está sendo separado.\n\n${itens}\n\n💰 Total: R$${pedido.total.toFixed(2)}\n\nEm breve estará pronto para retirada!`,
     'Pronto p/ Retirar':
-      `Olá, ${nome}! 🎉\n\nSeu pedido na *Boina Preta - ${loja}* está *PRONTO PARA RETIRADA!*\n\n${itens}\n\n💰 Total: R$${pedido.total.toFixed(2)}\n\n📍 Pode vir buscar no horário de funcionamento.\n${!pedido.pagoOnline?'⚠ Lembre de trazer o pagamento.':'✅ Pagamento já confirmado.'}`,
-    'Pago':
-      `Olá, ${nome}! ✅\n\nPagamento *confirmado* do seu pedido na *Boina Preta - ${loja}*.\n\n${itens}\n\n💰 Total: R$${pedido.total.toFixed(2)}\n\nObrigado!`,
+      `Olá, ${nome}! 🎉\n\nSeu pedido na *Boina Preta - ${loja}* está *PRONTO PARA RETIRADA!*\n\n${itens}\n\n💰 Total: R$${pedido.total.toFixed(2)}\n\n📍 Pode vir buscar no horário de funcionamento.\n💵 O pagamento é feito aqui na loja, na hora da retirada.`,
     'Entregue':
-      `Olá, ${nome}! 🙏\n\nSeu pedido foi *entregue* com sucesso!\n\n*Boina Preta - ${loja}*\nObrigado pela preferência! 😊`,
+      `Olá, ${nome}! 🙏\n\nSeu pedido foi *retirado e pago* com sucesso!\n\n*Boina Preta - ${loja}*\nObrigado pela preferência! 😊`,
     'Cancelado':
       `Olá, ${nome}.\n\nInfelizmente seu pedido na *Boina Preta - ${loja}* foi *cancelado*.\n\nEntre em contato para mais informações. Pedimos desculpas.`,
   };
@@ -6164,22 +6221,24 @@ function BtnWA({pedido,status,customers,polo,sm}){
 
 // ====== PEDIDOS ONLINE ======
 // Status em ordem do fluxo
-const PEDIDO_STATUS = ["Separar","Em Separação","Pronto p/ Retirar","Pago","Entregue","Cancelado"];
+// O pagamento deixou de ser uma coluna do quadro.
+//
+// "Pago" como etapa dizia que alguém recebeu, mas não dizia como, nem lançava
+// no caixa, nem baixava o estoque. Agora a cobrança acontece dentro do pedido,
+// com a mesma tela da Frente de Caixa — e é ela que fecha a venda e leva o
+// pedido para "Entregue".
+const PEDIDO_STATUS = ["Separar","Em Separação","Pronto p/ Retirar","Entregue","Cancelado"];
 const PEDIDO_STATUS_CLS = {
   "Separar":           "tag-online",
   "Em Separação":      "tag-low",
   "Pronto p/ Retirar": "tag-done",
-  "Pago":              "tag-integra",
   "Entregue":          "tag-done",
   "Cancelado":         "tag-out"
 };
 
-// Pagamentos que já foram pagos online (fundo verde)
-function isPagoOnline(payment){
-  if(!payment) return false;
-  const pagarNaLoja = ["Pagar na Retirada","Integra Card","pagar na loja","Pagar na loja"];
-  return !pagarNaLoja.some(p=>payment.toLowerCase().includes(p.toLowerCase()));
-}
+// (Aqui existia isPagoOnline, que adivinhava pela forma de pagamento se a
+//  compra já tinha sido paga. Não existe mais pagamento online: o que diz se
+//  o pedido foi pago é a venda estar 'Concluído', registrada no recebimento.)
 
 // ── Arquivamento de cartões finalizados (Entregue/Cancelado) após 2 dias úteis ──
 const ARQUIV_DIAS_UTEIS = 2;
@@ -6991,28 +7050,130 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
   </div>;
 }
 
-function PedidosOnline({sales, setSales, products, setProducts, notify, customers, polo}){
+// ── Recebimento do pedido, com a mesma tela da Frente de Caixa ──────────────
+//
+// Reaproveita PagamentoMultiplo: formas de pagamento, divisão entre formas,
+// troco e crediário funcionam igual ao balcão, para o operador não precisar
+// aprender duas telas diferentes para a mesma coisa.
+function ReceberPedidoModal({pedido, onConfirmar, onClose}){
+  const totalBruto = r2(pedido.items.reduce((a,it)=>a+(it.total||0),0));
+  const [desconto,setDesconto] = useState('');
+  const [payment,setPayment]   = useState(PMTS[0]);
+  const [splits,setSplits]     = useState([]);
+  const [multi,setMulti]       = useState(false);
+  const [recebido,setRecebido] = useState('');
+  const [salvando,setSalvando] = useState(false);
+
+  const desc  = Math.max(0, Math.min(totalBruto, parseFloat(String(desconto).replace(',','.'))||0));
+  const total = r2(totalBruto - desc);
+  const lim   = splitsLimpos(splits);
+  const soma  = somaSplits(splits);
+  const falta = r2(total - soma);
+  const troco = multi ? (soma>total ? r2(soma-total) : 0)
+                      : (payment==='Dinheiro' && recebido ? Math.max(0, r2((parseFloat(String(recebido).replace(',','.'))||0) - total)) : 0);
+
+  async function confirmar(){
+    if(multi){
+      if(lim.length===0){ alert('Informe ao menos uma forma de pagamento.'); return; }
+      if(falta > 0.009){ alert('Ainda faltam '+fmt(falta)+' para fechar o pagamento.'); return; }
+    } else if(payment==='Dinheiro' && recebido && (parseFloat(String(recebido).replace(',','.'))||0) < total){
+      alert('O valor recebido é menor que o total.'); return;
+    }
+    setSalvando(true);
+    await onConfirmar({
+      payment: multi ? PGTO_MULTIPLO : payment,
+      payments: multi ? lim : null,
+      desconto: desc
+    });
+    setSalvando(false);
+  }
+
+  return <Modal title={"Receber pagamento — "+pedido.customer} onClose={onClose} wide
+    actions={[
+      <button key="c" className="btn" onClick={onClose} disabled={salvando}>Cancelar</button>,
+      <button key="ok" className="btn btn-primary" onClick={confirmar} disabled={salvando}>
+        {salvando?'Registrando...':'✓ Confirmar pagamento e entregar'}
+      </button>
+    ]}>
+    <div style={{background:'#fff8ef',border:'1px solid #e0c9a6',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#7a4b00',lineHeight:1.55}}>
+      Ao confirmar, a venda entra no faturamento de hoje e o pedido vai para
+      <strong> Entregue</strong>. O estoque já foi baixado quando o aluno fez o pedido.
+    </div>
+
+    <div style={{border:'1px solid #eee',borderRadius:4,padding:'10px 12px',marginBottom:14}}>
+      {pedido.items.map((it,i)=>(
+        <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:12.5,padding:'3px 0'}}>
+          <span><strong>{it.qty}×</strong> {it.productName}</span>
+          <span className="text-mono" style={{fontSize:11}}>{fmt(it.total)}</span>
+        </div>
+      ))}
+      <hr className="divider" style={{margin:'8px 0'}}/>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#5f6368'}}>
+        <span>Subtotal</span><span className="text-mono">{fmt(totalBruto)}</span>
+      </div>
+      {desc>0&&<div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#cc2222'}}>
+        <span>Desconto</span><span className="text-mono">− {fmt(desc)}</span>
+      </div>}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:6}}>
+        <span style={{fontFamily:'Oswald',fontSize:14,fontWeight:600,letterSpacing:1}}>TOTAL A RECEBER</span>
+        <span style={{fontFamily:'Bebas Neue',fontSize:26,letterSpacing:2}}>{fmt(total)}</span>
+      </div>
+    </div>
+
+    <div className="form-group mb-2">
+      <label>Desconto (R$)</label>
+      <input type="number" step="0.01" min="0" placeholder="0,00" value={desconto}
+        onChange={e=>setDesconto(e.target.value)}/>
+    </div>
+
+    <PagamentoMultiplo total={total} payment={payment} setPayment={setPayment}
+      splits={splits} setSplits={setSplits} multi={multi} setMulti={setMulti}
+      label="Forma de pagamento"/>
+
+    {!multi && payment==='Dinheiro' && <div className="form-group mb-2">
+      <label>Valor recebido</label>
+      <input type="number" step="0.01" min="0" placeholder="0,00" value={recebido}
+        onChange={e=>setRecebido(e.target.value)}/>
+    </div>}
+
+    {multi && falta>0.009 && <div style={{fontSize:12,color:'#bf360c',fontFamily:'Share Tech Mono',letterSpacing:1}}>
+      Faltam {fmt(falta)}
+    </div>}
+    {troco>0 && <div style={{background:'#e8f5e9',border:'1px solid #a5d6a7',borderRadius:4,padding:'8px 12px',marginTop:8,fontSize:13,color:'#1a6e2e'}}>
+      💵 Troco: <strong>{fmt(troco)}</strong>
+    </div>}
+  </Modal>;
+}
+
+function PedidosOnline({sales, setSales, products, setProducts, setProductsSemGravar, notify, customers, polo}){
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [showArchived, setShowArchived] = useState(false);
+  const [pagando, setPagando] = useState(null);   // pedido em recebimento
 
   const pedidosMap = {};
   sales.filter(s => s.type === 'online').forEach(s => {
     const key = s.orderNum || (s.customer + '|' + s.date);
     if(!pedidosMap[key]){
-      const cli = customers.find(c=>c.name===s.customer);
+      const cli = customers.find(c=>String(c.id)===String(s.customerId||'')) ||
+                  customers.find(c=>c.name===s.customer);
       let initialStatus = 'Separar';
       if(s.pedidoStatus) initialStatus = s.pedidoStatus;
       else if(s.status === 'Concluído') initialStatus = 'Entregue';
+      // Quadros antigos ainda podem trazer 'Pago', que deixou de ser coluna.
+      if(initialStatus === 'Pago') initialStatus = 'Pronto p/ Retirar';
       pedidosMap[key] = {
         id: key,
         customer: s.customer,
+        customerId: s.customerId||'',
         phone: cli ? cli.phone : '',
         date: s.date,
         ts: s.ts || 0,
         payment: s.payment,
-        pagoOnline: isPagoOnline(s.payment),
+        // Pago = a venda foi fechada no caixa. É o que separa "pedido" de
+        // "venda": antes disso não há dinheiro nem baixa de estoque.
+        pago: s.status === 'Concluído',
         items: [],
         total: 0,
         status: initialStatus,
@@ -7022,7 +7183,10 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
     pedidosMap[key].items.push(s);
     pedidosMap[key].total += s.total;
     pedidosMap[key].saleIds.push(s.id);
-    if(s.pedidoStatus) pedidosMap[key].status = s.pedidoStatus;
+    if(s.status === 'Concluído') pedidosMap[key].pago = true;
+    if(s.payment && s.payment !== 'Pagar na Loja') pedidosMap[key].payment = s.payment;
+    if(s.payments) pedidosMap[key].payments = s.payments;
+    if(s.pedidoStatus) pedidosMap[key].status = (s.pedidoStatus==='Pago') ? 'Pronto p/ Retirar' : s.pedidoStatus;
   });
 
   const pedidos = Object.values(pedidosMap).sort((a,b) => b.ts - a.ts);
@@ -7040,63 +7204,85 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
     total:   pedidos.length,
     separar: pedidos.filter(p => ['Separar','Em Separação'].includes(p.status)).length,
     prontos: pedidos.filter(p => p.status === 'Pronto p/ Retirar').length,
-    pagos:   pedidos.filter(p => p.status === 'Pago').length,
+    pagos:   pedidos.filter(p => p.pago).length,
   };
 
-  function updateStatus(pedido, newStatus){
-    const wasCancelled = pedido.status === 'Cancelado';
-    const willCancel   = newStatus === 'Cancelado';
-    // Quantidade total por produto deste pedido (ignora linhas de encomenda)
-    function unidadesPorProduto(prodId){
-      return pedido.items
-        .filter(it=>!it.isEncomenda)
-        .reduce((sum,it)=> String(it.productId)===String(prodId) ? sum+(it.qty||0) : sum, 0);
+  // Muda a etapa da separação. O dinheiro entra no recebimento; o estoque só
+  // se mexe aqui no cancelamento, para devolver a reserva do pedido.
+  async function updateStatus(pedido, newStatus){
+    // Entregar sem receber deixaria a mercadoria sair sem venda registrada.
+    // Em vez de recusar, abrimos o recebimento.
+    if(newStatus === 'Entregue' && !pedido.pago){
+      setPagando(pedido);
+      return;
     }
-    if(setProducts){
-      if(willCancel && !wasCancelled){
-        // Cancelar: devolve as unidades ao estoque
-        setProducts(prev => prev.map(p => {
-          const restore = unidadesPorProduto(p.id);
-          return restore>0 ? {...p, stock:(p.stock||0)+restore} : p;
-        }));
-      } else if(wasCancelled && !willCancel){
-        // Reativar pedido cancelado: retira novamente do estoque
-        setProducts(prev => prev.map(p => {
-          const take = unidadesPorProduto(p.id);
-          return take>0 ? {...p, stock:Math.max(0,(p.stock||0)-take)} : p;
-        }));
+    // Cancelar um pedido já pago é estorno, não é mudança de etapa: mexe em
+    // caixa e em estoque. Isso é assunto para o gerente, no relatório.
+    if(newStatus === 'Cancelado' && pedido.pago){
+      notify('Este pedido já foi pago. Para cancelar, faça a devolução pela Frente de Caixa.','error');
+      return;
+    }
+    // Cancelar libera a mercadoria que estava reservada desde o pedido.
+    if(newStatus === 'Cancelado' && pedido.status !== 'Cancelado'){
+      const itens = pedido.items.filter(it=>!it.isEncomenda).map(it=>({id:it.productId, qtd:it.qty}));
+      if(itens.length>0){
+        const devolvido = await baixarEstoqueNoBanco(itens, {devolver:true, ref:pedido.id});
+        if(devolvido && devolvido.length){
+          const porId = Object.fromEntries(devolvido.map(x=>[String(x.id), x.estoque]));
+          setProductsSemGravar && setProductsSemGravar(prev=>prev.map(p=>porId[String(p.id)]!==undefined?{...p,stock:porId[String(p.id)]}:p));
+        }
       }
     }
-    // Faturamento presencial: o pedido só entra na receita quando é pago na
-    // retirada. Enquanto está sendo separado/aguardando o cliente, fica como
-    // 'Aguardando Pagamento' e NÃO conta no caixa. Ao marcar 'Pago' (ou
-    // 'Entregue'), vira 'Concluído' e é contabilizado.
-    const statusVenda =
-      (newStatus === 'Pago' || newStatus === 'Entregue') ? 'Concluído'
-      : (newStatus === 'Cancelado') ? 'Cancelado'
-      : 'Aguardando Pagamento';
+    const statusVenda = pedido.pago ? 'Concluído'
+                      : (newStatus === 'Cancelado') ? 'Cancelado'
+                      : 'Aguardando Pagamento';
     setSales(prev => prev.map(s => {
       if(pedido.saleIds.includes(s.id)){
-        return {...s,
-          status: statusVenda,
-          pedidoStatus: newStatus
-        };
+        return {...s, status: statusVenda, pedidoStatus: newStatus};
       }
       return s;
     }));
     if(isStatusFinal(newStatus)){ if(!bpGetTermTs(polo,pedido.id)) bpSetTermTs(polo,pedido.id,Date.now()); }
     else { bpSetTermTs(polo,pedido.id,0); }
     if(selected && selected.id === pedido.id) setSelected({...selected, status: newStatus});
-    const extra = (willCancel && !wasCancelled) ? ' · estoque devolvido' : '';
+    const extra = (newStatus==='Cancelado') ? ' · estoque devolvido' : '';
     notify(`Pedido de ${pedido.customer} → ${newStatus}${extra}`, 'success');
   }
 
+  // ── recebimento do pedido ────────────────────────────────────────────────
+  //
+  // É aqui que o pedido vira venda: entra no faturamento com a forma de
+  // pagamento usada no balcão e vai para 'Entregue'.
+  //
+  // O estoque NÃO é mexido aqui — ele já saiu quando o aluno fez o pedido,
+  // justamente para a peça não ser vendida duas vezes. Baixar de novo agora
+  // tiraria a mesma mercadoria duas vezes do estoque.
+  async function receberPagamento(pedido, {payment, payments, desconto}){
+    // Desconto é rateado entre os itens, para o relatório continuar fechando.
+    const totalBruto = pedido.items.reduce((a,it)=>a+(it.total||0),0);
+    const fator = (desconto>0 && totalBruto>0) ? (totalBruto-desconto)/totalBruto : 1;
+    setSales(prev => prev.map(s => {
+      if(!pedido.saleIds.includes(s.id)) return s;
+      return {...s,
+        status:'Concluído',
+        pedidoStatus:'Entregue',
+        payment,
+        payments: normPayments(payments),
+        desconto: r2((s.total||0) * (1-fator)),
+        total: r2((s.total||0) * fator)
+      };
+    }));
+    if(!bpGetTermTs(polo,pedido.id)) bpSetTermTs(polo,pedido.id,Date.now());
+    setPagando(null);
+    setSelected(null);
+    notify(`Pagamento recebido — pedido de ${pedido.customer} entregue.`,'success');
+  }
+
   // próximo status lógico no fluxo
-  function nextStatus(current, pagoOnline){
-    if(current==='Separar')          return 'Em Separação';
-    if(current==='Em Separação')     return 'Pronto p/ Retirar';
-    if(current==='Pronto p/ Retirar') return pagoOnline ? 'Entregue' : 'Pago';
-    if(current==='Pago')             return 'Entregue';
+  function nextStatus(current){
+    if(current==='Separar')           return 'Em Separação';
+    if(current==='Em Separação')      return 'Pronto p/ Retirar';
+    if(current==='Pronto p/ Retirar') return 'Entregue';   // passa pelo recebimento
     return null;
   }
 
@@ -7104,10 +7290,12 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
     "Separar":           "#1a4e8e",
     "Em Separação":      "#996622",
     "Pronto p/ Retirar": "#1a6e2e",
-    "Pago":              "#00643c",
     "Entregue":          "#444",
     "Cancelado":         "#cc2222"
   };
+
+  const aReceber = pedidos.filter(p=>!p.pago && p.status!=='Cancelado')
+                          .reduce((a,p)=>a+(p.total||0),0);
 
   return (
     <div>
@@ -7115,7 +7303,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
         <div className="stat-card"><div className="stat-icon">🛒</div><div className="stat-label">Total Pedidos Online</div><div className="stat-value">{stats.total}</div></div>
         <div className="stat-card blue"><div className="stat-icon">📦</div><div className="stat-label">Para Separar</div><div className="stat-value">{stats.separar}</div></div>
         <div className="stat-card green"><div className="stat-icon">✅</div><div className="stat-label">Prontos p/ Retirada</div><div className="stat-value">{stats.prontos}</div></div>
-        <div className="stat-card"><div className="stat-icon">💰</div><div className="stat-label">Pagos / Aguard. Pgto</div><div className="stat-value">{stats.pagos}</div></div>
+        <div className="stat-card gold"><div className="stat-icon">💰</div><div className="stat-label">A Receber na Retirada</div><div className="stat-value">{fmt(aReceber)}</div><div className="stat-change">reservado, fora do caixa</div></div>
       </div>
 
       {/* Busca + Kanban */}
@@ -7135,19 +7323,23 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
         onMove={(p,to)=>updateStatus(p,to)}
         onCardClick={p=>setSelected(p)}
         renderCard={p=>(
-          <div style={{borderLeft:p.pagoOnline?'3px solid #66bb6a':'3px solid transparent',paddingLeft:p.pagoOnline?7:0,marginLeft:p.pagoOnline?-4:0}}>
+          <div style={{borderLeft:p.pago?'3px solid #66bb6a':'3px solid transparent',paddingLeft:p.pago?7:0,marginLeft:p.pago?-4:0}}>
             <div className="kb-card-title">{p.customer}</div>
-            <div className="kb-card-sub">{p.date} · {p.payment}</div>
+            <div className="kb-card-sub">{p.date}{p.pago?' · '+p.payment:''}</div>
             {p.phone && <div className="kb-card-sub" style={{marginTop:2,color:'#1a6e2e'}}>📱 {p.phone}</div>}
             <div style={{margin:'7px 0 2px',borderTop:'1px dashed #ececec',paddingTop:6}}>
               {p.items.map((it,i)=><div key={i} style={{fontSize:11,color:'#555',lineHeight:1.55,display:'flex',justifyContent:'space-between',gap:6}}><span><strong style={{color:'#111'}}>{it.qty}×</strong> {it.productName}</span><span style={{color:'#5f6368',whiteSpace:'nowrap'}}>R${it.total.toFixed(2)}</span></div>)}
             </div>
             <div className="kb-card-row">
               <span className="kb-card-total">R${p.total.toFixed(2)}</span>
-              {p.pagoOnline
+              {p.pago
                 ? <span className="kb-pill" style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #a5d6a7'}}>PAGO</span>
                 : <span className="kb-pill" style={{background:'#fff3e0',color:'#bf360c',border:'1px solid #f0c39a'}}>PAGAR NA LOJA</span>}
             </div>
+            {/* Atalho do balcão: o cliente chegou, pagou, levou. */}
+            {!p.pago && p.status==='Pronto p/ Retirar' &&
+              <button className="btn btn-sm btn-primary" style={{width:'100%',justifyContent:'center',marginTop:8}}
+                onClick={(e)=>{e.stopPropagation();setPagando(p);}}>💵 Receber e entregar</button>}
           </div>
         )}
       />
@@ -7157,19 +7349,23 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
         <Modal title={"Pedido — "+selected.customer} onClose={()=>setSelected(null)} wide
           actions={[
             <button key="c" className="btn" onClick={()=>setSelected(null)}>Fechar</button>,
-            ...PEDIDO_STATUS.filter(s=>s!==selected.status&&s!=='Cancelado').map(s=>(
-              <button key={s} className="btn btn-sm btn-primary" onClick={()=>updateStatus(selected,s)}>{s}</button>
+            !selected.pago&&selected.status!=='Cancelado'&&
+              <button key="pg" className="btn btn-primary" onClick={()=>setPagando(selected)}>💵 Receber pagamento</button>,
+            ...PEDIDO_STATUS.filter(s=>s!==selected.status&&s!=='Cancelado'&&s!=='Entregue').map(s=>(
+              <button key={s} className="btn btn-sm" onClick={()=>updateStatus(selected,s)}>{s}</button>
             )),
-            selected.status!=='Cancelado'&&<button key="x" className="btn btn-sm btn-danger" onClick={()=>{updateStatus(selected,'Cancelado');setSelected(null);}}>Cancelar pedido</button>
+            !selected.pago&&selected.status!=='Cancelado'&&<button key="x" className="btn btn-sm btn-danger" onClick={()=>{updateStatus(selected,'Cancelado');setSelected(null);}}>Cancelar pedido</button>
           ].filter(Boolean)}>
 
           {/* Banner pago/não pago */}
-          {selected.pagoOnline
+          {selected.pago
             ? <div style={{background:'#e8f5e9',border:'1px solid #a5d6a7',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#1a6e2e',display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:16}}>✅</span> <strong>Pagamento já confirmado</strong> — realizado online via {selected.payment}
+                <span style={{fontSize:16}}>✅</span> <strong>Pago na retirada</strong> — {paymentLabel({payment:selected.payment,payments:selected.payments})} · já lançado no caixa e baixado do estoque
               </div>
-            : <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#bf360c',display:'flex',alignItems:'center',gap:8}}>
-                <span style={{fontSize:16}}>⚠</span> <strong>Pagamento pendente na retirada</strong> — cobrar na entrega
+            : <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#bf360c',lineHeight:1.55}}>
+                <strong>⚠ Ainda não pago.</strong> A mercadoria já está reservada (saiu do estoque), mas o valor
+                ainda não entrou no caixa. Use <strong>Receber pagamento</strong> quando o cliente retirar.
+                Se ele desistir, cancele o pedido para devolver as peças ao estoque.
               </div>
           }
 
@@ -7189,7 +7385,7 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
             </div>
             {selected.phone ? (
               <div className="flex gap-2" style={{flexWrap:'wrap'}}>
-                {['Em Separação','Pronto p/ Retirar','Pago','Entregue','Cancelado'].map(s=>{
+                {['Em Separação','Pronto p/ Retirar','Entregue','Cancelado'].map(s=>{
                   const msg = waMensagem(s, selected, polo);
                   if(!msg) return null;
                   const isCurrentStatus = s === selected.status;
@@ -7231,6 +7427,12 @@ function PedidosOnline({sales, setSales, products, setProducts, notify, customer
           </div>
         </Modal>
       )}
+
+      {/* Recebimento na retirada: é aqui que o pedido vira venda */}
+      {pagando&&<ReceberPedidoModal
+        pedido={pagando}
+        onClose={()=>setPagando(null)}
+        onConfirmar={(dados)=>receberPagamento(pagando,dados)}/>}
     </div>
   );
 }
@@ -7625,7 +7827,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
         {page==="crediario"&&<RedeDeSeguranca tela="Crediário"><Crediario customers={customers} creditos={creditos} addCreditos={addCreditos} operador={operador} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="orcamentos"&&<RedeDeSeguranca tela="Orçamentos"><Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} notify={notify}/></RedeDeSeguranca>}
         {page==="encomendas"&&<RedeDeSeguranca tela="Encomendas"><Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
-        {page==="pedidos"&&<RedeDeSeguranca tela="Pedidos Online"><PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} notify={notify} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
+        {page==="pedidos"&&<RedeDeSeguranca tela="Pedidos Online"><PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar} notify={notify} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
         {page==="despesas"&&role==='dono'&&<RedeDeSeguranca tela="Despesas"><Despesas operador={operador} notify={notify}/></RedeDeSeguranca>}
         {page==="despesas"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#6b6b6b'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,marginTop:6}}>As despesas da operação são visíveis apenas ao administrador</div></div>}
         {page==="config"&&role==='dono'&&<RedeDeSeguranca tela="Usuários & Acessos"><Configuracoes polo={polo.id} notify={notify}/></RedeDeSeguranca>}
@@ -8214,12 +8416,14 @@ async function enviarFotoParaGaleria(nomeDoProduto, imagemDataURL){
 //
 // Se a migração 10 ainda não tiver sido aplicada, devolve null e quem chamou
 // segue pelo caminho antigo — o sistema não para.
-async function baixarEstoqueNoBanco(itens, {devolver=false}={}){
+async function baixarEstoqueNoBanco(itens, {devolver=false, ref=''}={}){
   const limpos=(itens||[])
     .map(i=>({id:String(i && i.id || ''), qtd:parseInt(i && i.qtd,10)}))
     .filter(i=>i.id && i.qtd>0);
   if(limpos.length===0) return [];
-  const r = await apiPost('/estoque/baixar', {itens:limpos, devolver:!!devolver});
+  // `ref` acompanha a movimentação no histórico: é o número do pedido, para
+  // depois se saber de qual compra veio aquela saída.
+  const r = await apiPost('/estoque/baixar', {itens:limpos, devolver:!!devolver, ref});
   if(!r.ok){
     console.warn('[Boina Preta] Baixa de estoque pelo banco indisponível — usando o modo antigo. '+
                  'Rode a migração 10 para evitar perda de baixa quando dois caixas vendem ao mesmo tempo.');
@@ -8600,8 +8804,10 @@ function usePoloData(polo, modo='painel'){
     flash(!error);
   }
 
+  // Devolve true/false para quem precisa saber se a gravação chegou ao banco.
+  // A loja online usa isso: só mostra "pedido confirmado" depois do sim.
   async function setSales(val){
-    if(!podeGravar('vendas')) return;
+    if(!podeGravar('vendas')) return false;
     const next = typeof val==='function' ? val(sales) : val;
     setSalesLocal(next);
     setSyncStatus('saving');
@@ -8618,8 +8824,8 @@ function usePoloData(polo, modo='painel'){
       return false;
     });
     const all=[...toUpsert,...changed];
-    if(all.length>0){ const {error}=await upsertSafe('sales', all.map(s=>saleToDB(s,polo))); flash(!error); }
-    else flash(true);
+    if(all.length>0){ const {error}=await upsertSafe('sales', all.map(s=>saleToDB(s,polo))); flash(!error); return !error; }
+    flash(true); return true;
   }
 
   async function setCustomers(val){
@@ -8792,7 +8998,12 @@ function App(){
   const poloHook = usePoloData(polo, modoDados);
 
   // Pedidos do próprio cliente na loja online. O Worker devolve só os dele.
+  //
+  // `recarga` existe porque a busca só acontecia ao trocar de usuário: quem
+  // acabava de comprar abria "Meus Pedidos" e não via o pedido que tinha
+  // acabado de fazer. Agora a loja avisa aqui depois de gravar.
   const [vendasCliente,setVendasCliente]=useState([]);
+  const [recargaPedidos,setRecargaPedidos]=useState(0);
   useEffect(()=>{
     let ativo=true;
     if(modoDados!=='loja' || !currentUser || !polo){ setVendasCliente([]); return; }
@@ -8801,7 +9012,7 @@ function App(){
       if(ativo && !error) setVendasCliente((data||[]).map(saleFromDB));
     })();
     return ()=>{ ativo=false; };
-  },[currentUser,polo,modoDados]);
+  },[currentUser,polo,modoDados,recargaPedidos]);
 
   // mantém a sessão ao recarregar a página
   useEffect(()=>{ try{ polo?localStorage.setItem('bp_polo',polo):localStorage.removeItem('bp_polo'); }catch(e){} },[polo]);
@@ -8839,6 +9050,7 @@ function App(){
       currentUser={currentUser} setCurrentUser={setCurrentUser}
       customers={customers} setCustomers={setCustomers}
       encomendas={encomendas} setEncomendas={setEncomendas}
+      onPedidoFeito={()=>setRecargaPedidos(n=>n+1)}
       onShowAuth={()=>setMode("auth")} notify={notify}/>}
     {mode==="auth"&&<AuthScreen
       polo={polo}
