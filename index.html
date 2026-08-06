@@ -3670,7 +3670,13 @@ function Clientes({customers,setCustomers,notify,sales,encomendas,creditos}){
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar por nome ou escola..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="table-wrap"><table><thead><tr>{["Nome","Escola","Telefone","Responsável","Cadastro","Crediário","Ações"].map(h=><th key={h}>{h}</th>)}</tr></thead>
         <tbody>{filtered.map(c=><tr key={c.id}>
-          <td><strong>{c.name}</strong><div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:2}}>Matrícula: {c.enrollment||"—"}</div></td>
+          <td>
+            <strong>{c.name}</strong>
+            {c.origemCadastro==='site'
+              ? <span title="O aluno já ativou o acesso à loja online. Se ele perdeu a senha, é preciso liberar aqui pelo painel." style={{marginLeft:6,fontSize:10,fontFamily:'Share Tech Mono',letterSpacing:1,background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #a5d6a7',borderRadius:2,padding:'1px 5px',whiteSpace:'nowrap'}}>🌐 ONLINE</span>
+              : <span title="Cadastrado no balcão. O aluno ainda pode ativar o acesso sozinho pelo site, confirmando telefone e data de nascimento." style={{marginLeft:6,fontSize:10,fontFamily:'Share Tech Mono',letterSpacing:1,background:'#f5f5f5',color:'#777',border:'1px solid #e0e0e0',borderRadius:2,padding:'1px 5px',whiteSpace:'nowrap'}}>SEM ACESSO</span>}
+            <div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:2}}>Matrícula: {c.enrollment||"—"}</div>
+          </td>
           <td style={{fontSize:12}}>{c.school}<div className="text-mono" style={{fontSize:11,color:"#5f6368",marginTop:2}}>{c.grade||""}</div></td>
           <td className="text-mono" style={{fontSize:11}}>{c.phone}</td>
           <td style={{fontSize:12}}>{c.parentName||"—"}</td>
@@ -3686,7 +3692,11 @@ function Clientes({customers,setCustomers,notify,sales,encomendas,creditos}){
         {fg("name","Nome Completo *","text","Nome completo")}{fg("cpf","CPF *","text","000.000.000-00")}{fg("birthdate","Nascimento","text","DD/MM/AAAA")}{fg("phone","Telefone *","text","(00) 00000-0000")}{fg("email","E-mail","email","email@exemplo.com")}{fg("school","Escola","text","Nome da escola")}{fg("grade","Série/Turma","text","1º Ano A")}
         <div className="section-divider">🔐 Acesso à Loja Virtual</div>
         {fg("password","Senha de Acesso","password",form.id?"Deixe em branco para manter a senha atual":"Senha para o cliente entrar na loja")}
-        <div className="form-group full"><div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#1a4e8e',fontFamily:'Share Tech Mono',letterSpacing:1}}>O cliente usa o e-mail e esta senha para entrar na loja virtual e acompanhar pedidos.{form.id?" A senha guardada não pode ser lida por ninguém, nem por você: este campo aparece vazio de propósito. Só preencha se for definir uma senha nova.":""}</div></div>
+        <div className="form-group full"><div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#1a4e8e',fontFamily:'Share Tech Mono',letterSpacing:1,lineHeight:1.6}}>O cliente usa o e-mail e esta senha para entrar na loja virtual e acompanhar pedidos.{form.id?" A senha guardada não pode ser lida por ninguém, nem por você: este campo aparece vazio de propósito. Só preencha se for definir uma senha nova.":""}</div></div>
+        {form.id&&<div className="form-group full"><div style={{background:'#fff8ef',border:'1px solid #e0c9a6',borderRadius:3,padding:'10px 12px',fontSize:11.5,color:'#7a4b00',lineHeight:1.6}}>
+          <strong>🔑 Aluno esqueceu a senha?</strong> É aqui que se resolve — a loja online não tem mais recuperação de senha por conta própria.<br/>
+          Confira um <strong>documento com foto</strong>, digite uma senha nova no campo acima, salve e informe ao aluno. Peça que ele troque depois, ao entrar.
+        </div></div>}
         <div className="section-divider">🏠 Endereço</div>
         {fg("cep","CEP","text","00000-000")}{fg("address","Logradouro","text","Rua, número")}{fg("neighborhood","Bairro","text","Bairro")}{fg("city","Cidade","text","Cidade")}{fg("state","Estado","text","MG")}
         <div className="section-divider">👨‍👩‍👧 Dados do Responsável</div>
@@ -4159,157 +4169,8 @@ function StoreFooter(){
 }
 
 // ====== AUTH SCREEN ======
-// ====== RECUPERAÇÃO DE SENHA SEGURA ======
-// Verifica: e-mail + CPF + data de nascimento (só para clientes da loja)
-// Operadores: recuperação só pelo dono via painel Configurações
-
-function RecuperarSenhaModal({onClose, polo, onSuccess}){
-  const [step, setStep]     = useState('verificar'); // 'verificar' | 'nova'
-  const [form, setForm]     = useState({email:'', cpf:'', birthdate:''});
-  const [clienteId, setClienteId] = useState(null);
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmar, setConfirmar] = useState('');
-  const [err,  setErr]      = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Normaliza CPF para comparação (remove pontos e traços)
-  function normCPF(v){ return (v||'').replace(/\D/g,''); }
-  // Normaliza data: aceita DD/MM/AAAA ou AAAA-MM-DD
-  function normData(v){
-    if(!v) return '';
-    v = v.trim();
-    if(/^\d{2}\/\d{2}\/\d{4}$/.test(v)){
-      const [d,m,a] = v.split('/');
-      return `${a}-${m}-${d}`;
-    }
-    return v; // já no formato ISO
-  }
-
-  async function verificarIdentidade(){
-    setErr('');
-    if(!form.email||!form.cpf||!form.birthdate){
-      setErr('Preencha todos os campos.');return;
-    }
-    setLoading(true);
-    try{
-      // A conferência acontece no servidor. O navegador não recebe o cadastro.
-      const r = await apiPost('/loja/recuperar',{
-        email: form.email, polo,
-        cpf: form.cpf, nascimento: form.birthdate
-      });
-      if(!r.ok){
-        // Mensagem genérica — não revela se o e-mail existe
-        setErr('Dados não conferem. Verifique e tente novamente.');
-        setLoading(false);return;
-      }
-      setClienteId(r.token);   // token curto que autoriza a troca
-      setStep('nova');
-    } catch(e){
-      setErr('Dados não conferem. Verifique e tente novamente.');
-    }
-    setLoading(false);
-  }
-
-  async function salvarNovaSenha(){
-    setErr('');
-    if(novaSenha.length < 4){ setErr('A senha deve ter pelo menos 4 caracteres.'); return; }
-    if(novaSenha !== confirmar){ setErr('As senhas não coincidem.'); return; }
-    if(!clienteId){ setErr('Sessão inválida. Comece novamente.'); return; }
-    setLoading(true);
-    try{
-      const r = await apiPost('/loja/redefinir',{ token: clienteId, senha: novaSenha });
-      if(!r.ok){ setErr(r.erro || 'Erro ao salvar. Tente novamente.'); setLoading(false); return; }
-      onSuccess && onSuccess();
-      onClose();
-    } catch(e){ setErr('Erro ao salvar. Tente novamente.'); }
-    setLoading(false);
-  }
-
-  // Máscara simples de CPF
-  function mascaraCPF(v){
-    return v.replace(/\D/g,'').slice(0,11)
-      .replace(/(\d{3})(\d)/,'$1.$2')
-      .replace(/(\d{3})(\d)/,'$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-  }
-  function mascaraData(v){
-    return v.replace(/\D/g,'').slice(0,8)
-      .replace(/(\d{2})(\d)/,'$1/$2')
-      .replace(/(\d{2})(\d)/,'$1/$2');
-  }
-
-  return (
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal" style={{maxWidth:420}}>
-        <div className="modal-title">
-          {step==='verificar'?'Recuperar Senha':'Nova Senha'}
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        {err&&<div style={{background:'rgba(204,34,34,.08)',border:'1px solid rgba(204,34,34,.2)',borderRadius:3,padding:'9px 12px',fontSize:12,color:'var(--danger)',marginBottom:14}}>{err}</div>}
-
-        {step==='verificar'&&<>
-          <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'10px 14px',marginBottom:16,fontSize:12,color:'#1a4e8e'}}>
-            Para sua segurança, confirme os dados cadastrados. Todos os três campos precisam conferir exatamente.
-          </div>
-          <div className="form-group mb-3">
-            <label>E-mail cadastrado *</label>
-            <input type="email" placeholder="seu@email.com"
-              value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/>
-          </div>
-          <div className="form-group mb-3">
-            <label>CPF *</label>
-            <input placeholder="000.000.000-00"
-              value={form.cpf}
-              onChange={e=>setForm({...form,cpf:mascaraCPF(e.target.value)})}/>
-          </div>
-          <div className="form-group mb-4">
-            <label>Data de Nascimento *</label>
-            <input placeholder="DD/MM/AAAA"
-              value={form.birthdate}
-              onChange={e=>setForm({...form,birthdate:mascaraData(e.target.value)})}/>
-          </div>
-          <div className="modal-actions">
-            <button className="btn" onClick={onClose}>Cancelar</button>
-            <button className="btn btn-primary" onClick={verificarIdentidade} disabled={loading}>
-              {loading?'Verificando...':'Verificar Identidade →'}
-            </button>
-          </div>
-          <div style={{marginTop:14,padding:'10px 12px',background:'#f9f9f9',borderRadius:4,fontSize:11,color:'#525252',lineHeight:1.6}}>
-            Não lembra os dados? Entre em contato com a loja para que um atendente redefina sua senha.
-          </div>
-        </>}
-
-        {step==='nova'&&<>
-          <div style={{background:'#e8f5e9',border:'1px solid #a5d6a7',borderRadius:4,padding:'10px 14px',marginBottom:16,fontSize:12,color:'#1a6e2e'}}>
-            ✓ Identidade confirmada. Defina sua nova senha.
-          </div>
-          <div className="form-group mb-3">
-            <label>Nova Senha *</label>
-            <input type="password" placeholder="Mínimo 4 caracteres"
-              value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
-          </div>
-          <div className="form-group mb-4">
-            <label>Confirmar Nova Senha *</label>
-            <input type="password" placeholder="Repita a senha"
-              value={confirmar} onChange={e=>setConfirmar(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&salvarNovaSenha()}/>
-          </div>
-          <div className="modal-actions">
-            <button className="btn" onClick={()=>{setStep('verificar');setErr('');}}>← Voltar</button>
-            <button className="btn btn-primary" onClick={salvarNovaSenha} disabled={loading}>
-              {loading?'Salvando...':'✓ Salvar Nova Senha'}
-            </button>
-          </div>
-        </>}
-      </div>
-    </div>
-  );
-}
-
 function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
   const [tab,setTab]=useState("login"),[form,setForm]=useState({}),[err,setErr]=useState(""),[loading,setLoading]=useState(false);
-  const [recovModal,setRecovModal]=useState(false);
 
   async function login(){
     setLoading(true);setErr("");
@@ -4326,6 +4187,37 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
     setLoading(false);
   }
 
+  // ── Ativar cadastro que já existe ──────────────────────────────────────
+  //
+  // O aluno cadastrado no balcão pelo gerente não sabe que já está no
+  // sistema, e não tem como entrar (nunca definiu e-mail nem senha). Se ele
+  // simplesmente criasse conta, nasceria um segundo cadastro do mesmo CPF —
+  // e o histórico de compras e o saldo de crediário dele ficariam partidos.
+  //
+  // Aqui ele confirma telefone e data de nascimento e assume o cadastro que
+  // já existe, definindo e-mail e senha. Nada é criado, só atualizado.
+  async function ativar(){
+    if(!form.telefoneConf||!form.nascimentoConf||!form.email||!form.password){
+      setErr("Preencha telefone, data de nascimento, e-mail e senha.");return;
+    }
+    setLoading(true);setErr("");
+    try{
+      const r = await apiPost('/loja/ativar',{
+        cpf:form.cpf, polo,
+        telefone:form.telefoneConf, nascimento:form.nascimentoConf,
+        email:form.email, senha:form.password
+      });
+      if(r.ok && r.cliente){
+        const u=custFromDB(r.cliente);
+        onLogin(u);
+        notify("Acesso ativado! Bem-vindo(a) de volta, "+u.name.split(" ")[0]+"!","success");
+      } else {
+        setErr(r.message || r.erro || "Não foi possível ativar. Procure a loja.");
+      }
+    } catch(e){ setErr("Não foi possível ativar agora. Tente de novo em instantes."); }
+    setLoading(false);
+  }
+
   async function register(){
     if(!form.name||!form.email||!form.phone||!form.password||!form.cpf||!form.birthdate){
       setErr("Preencha todos os campos obrigatórios, incluindo CPF e data de nascimento.");return;
@@ -4335,6 +4227,22 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
     }
     setLoading(true);setErr("");
     try{
+      // O CPF é a identidade do aluno. A conferência é no servidor porque a
+      // loja (com razão) não recebe o cadastro de ninguém.
+      const cpfCheck = await apiPost('/loja/conferir-cpf',{cpf:form.cpf, polo});
+      if(cpfCheck && cpfCheck.existe){
+        if(cpfCheck.podeAtivar){
+          // Já existe, feito pelo gerente: leva para a confirmação de identidade
+          setForm(f=>({...f, telefoneConf:f.phone||'', nascimentoConf:f.birthdate||''}));
+          setTab("ativar");
+          setErr("");
+          setLoading(false);
+          return;
+        }
+        setErr("Este CPF já tem acesso à loja online. Faça login com seu e-mail. "+
+               "Se esqueceu a senha, procure a loja para redefinir.");
+        setLoading(false);return;
+      }
       const jaTem = await apiPost('/loja/email-existe',{email:form.email, polo});
       if(jaTem.erro){setErr(jaTem.erro);setLoading(false);return;}
       if(jaTem.existe){setErr("E-mail já cadastrado.");setLoading(false);return;}
@@ -4347,7 +4255,15 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
         parentCpf:"",totalPurchases:0,createdAt:new Date().toLocaleDateString("pt-BR")
       };
       const {error}=await sb.from('customers').insert(custToDB(newUser,polo));
-      if(error){setErr("Erro ao cadastrar: "+error.message);setLoading(false);return;}
+      if(error){
+        // Rede de segurança do servidor/banco: se dois cliques chegarem juntos,
+        // ou a conferência acima tiver sido pulada, a trava do CPF age aqui.
+        const m=String(error.message||'');
+        if(/cpf/i.test(m) && /(existe|unico|único|duplicate|customers_polo_cpf)/i.test(m)){
+          setErr("Este CPF já está cadastrado. Volte e tente novamente para ativar seu acesso, ou procure a loja.");
+        } else setErr("Erro ao cadastrar: "+m);
+        setLoading(false);return;
+      }
       setCustomers(newUser);
       onLogin(newUser);
       notify("Cadastro realizado! Bem-vindo(a)!","success");
@@ -4359,21 +4275,42 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
       <div className="auth-logo"><img src={LOGO} alt="Boina Preta"/></div>
       <div className="auth-title">Minha Conta</div>
       <div className="auth-sub">Acesse ou crie sua conta para comprar</div>
-      <div className="auth-tabs">
+      {tab!=="ativar"&&<div className="auth-tabs">
         <div className={`auth-tab ${tab==="login"?"active":""}`} onClick={()=>{setTab("login");setErr("");}}>Entrar</div>
         <div className={`auth-tab ${tab==="register"?"active":""}`} onClick={()=>{setTab("register");setErr("");}}>Cadastrar</div>
-      </div>
+      </div>}
       {err&&<div style={{background:"rgba(204,34,34,.08)",border:"1px solid rgba(204,34,34,.2)",borderRadius:3,padding:"9px 12px",fontSize:12,color:"var(--danger)",marginBottom:12,fontFamily:"Barlow",letterSpacing:.5}}>{err}</div>}
-      {tab==="login"?<div>
+      {tab==="ativar"?<div>
+        <div style={{background:'#eef6ff',border:'1px solid #b9d6f2',borderRadius:4,padding:'12px 14px',fontSize:12.5,color:'#1a4e8e',marginBottom:14,lineHeight:1.55}}>
+          👋 <strong>Você já tem cadastro na Boina Preta!</strong><br/>
+          A loja já tinha você registrado. Confirme seus dados para ativar o acesso —
+          assim você mantém seu histórico de compras e seu saldo, sem criar outra conta.
+        </div>
+        <div className="form-grid" style={{gridTemplateColumns:"1fr 1fr"}}>
+          <div className="form-group"><label>Telefone cadastrado *</label><input placeholder="(00) 00000-0000" value={form.telefoneConf||""} onChange={e=>setForm({...form,telefoneConf:e.target.value})}/></div>
+          <div className="form-group"><label>Data de Nascimento *</label><input placeholder="DD/MM/AAAA" value={form.nascimentoConf||""} onChange={e=>setForm({...form,nascimentoConf:e.target.value.replace(/\D/g,'').slice(0,8).replace(/(\d{2})(\d)/,'$1/$2').replace(/(\d{2})(\d)/,'$1/$2')})}/></div>
+          <div className="form-group full"><label>Seu e-mail (para entrar) *</label><input type="email" placeholder="seu@email.com" value={form.email||""} onChange={e=>setForm({...form,email:e.target.value})}/></div>
+          <div className="form-group full"><label>Crie uma senha *</label><input type="password" placeholder="Crie uma senha" value={form.password||""} onChange={e=>setForm({...form,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&ativar()}/></div>
+        </div>
+        <button className="btn btn-primary w-full" style={{justifyContent:"center",padding:"11px",marginTop:16}} onClick={ativar} disabled={loading}>{loading?"Ativando...":"Ativar meu acesso →"}</button>
+        <div style={{background:'#fff8e8',border:'1px solid #e6c800',borderRadius:3,padding:'9px 12px',fontSize:11.5,color:'#7a5500',marginTop:12,lineHeight:1.5}}>
+          Não lembra o telefone ou a data que estão no cadastro? Procure a loja com um
+          documento com foto — o gerente libera seu acesso na hora.
+        </div>
+        <div style={{textAlign:"center",marginTop:12}}>
+          <span onClick={()=>{setTab("register");setErr("");}} style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:1,color:"#5f6368",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>← Voltar</span>
+        </div>
+      </div>:tab==="login"?<div>
         <div className="form-group mb-2"><label>E-mail</label><input type="email" placeholder="seu@email.com" value={form.email||""} onChange={e=>setForm({...form,email:e.target.value})}/></div>
         <div className="form-group mb-3"><label>Senha</label><input type="password" placeholder="••••••" value={form.password||""} onChange={e=>setForm({...form,password:e.target.value})} onKeyDown={e=>e.key==="Enter"&&login()}/></div>
         <button className="btn btn-primary w-full" style={{justifyContent:"center",padding:"11px"}} onClick={login} disabled={loading}>{loading?"Entrando...":"Entrar →"}</button>
-        <div style={{textAlign:"center",marginTop:10}}>
-          <span onClick={()=>setRecovModal(true)} style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:1,color:"#5f6368",cursor:"pointer",textDecoration:"underline",textTransform:"uppercase"}}>Esqueci minha senha</span>
+        <div style={{background:'#f7f7f7',border:'1px solid #e0e0e0',borderRadius:3,padding:'10px 12px',fontSize:11.5,color:'#5f6368',marginTop:12,lineHeight:1.55,textAlign:'center'}}>
+          Esqueceu sua senha? Por segurança, a troca é feita presencialmente.<br/>
+          <strong style={{color:'#111'}}>Procure a loja com um documento com foto</strong> para redefinir seu acesso.
         </div>
       </div>:<div>
         <div style={{background:'#fff8e8',border:'1px solid #e6c800',borderRadius:3,padding:'8px 12px',fontSize:11,color:'#7a5500',marginBottom:12}}>
-          ⚠ CPF e data de nascimento são obrigatórios para recuperação de senha.
+          ⚠ CPF, telefone e data de nascimento são obrigatórios — é por eles que a loja confirma quem você é.
         </div>
         <div className="form-grid" style={{gridTemplateColumns:"1fr 1fr"}}>
           <div className="form-group full"><label>Nome Completo *</label><input placeholder="Seu nome completo" value={form.name||""} onChange={e=>setForm({...form,name:e.target.value})}/></div>
@@ -4388,7 +4325,6 @@ function AuthScreen({customers,setCustomers,onLogin,onClose,notify,polo}){
       </div>}
       <div className="admin-link">Administrador? <span onClick={onClose}>Acessar painel admin</span></div>
     </div>
-    {recovModal&&<RecuperarSenhaModal polo={polo} onClose={()=>setRecovModal(false)} onSuccess={()=>notify('Senha alterada! Faça login com a nova senha.','success')}/>}
   </div>;
 }
 
@@ -4398,7 +4334,6 @@ function AdminLogin({onLogin, onBackToStore, notify, polo}){
   const [pass,setPass]=useState('');
   const [err,setErr]=useState('');
   const [loading,setLoading]=useState(false);
-  const [recovModal,setRecovModal]=useState(false);
 
   async function login(){
     if(!email||!pass){setErr('Preencha e-mail e senha.');return;}
@@ -8026,12 +7961,16 @@ function prodToDB(p,polo){const _cats=prodCategorias(p);const linha={id:String(p
   if(p.fotoUrl!==undefined) linha.foto_url=p.fotoUrl||'';
   if(p.fotoModelo!==undefined) linha.foto_modelo=p.fotoModelo||'';
   return linha;}
-function custFromDB(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone,cpf:r.cpf,rg:r.rg,birthdate:r.birthdate,school:r.school,grade:r.grade,enrollment:r.enrollment,address:r.address,neighborhood:r.neighborhood,city:r.city,state:r.state,cep:r.cep,parentName:r.parent_name,parentPhone:r.parent_phone,parentEmail:r.parent_email,parentCpf:r.parent_cpf,password:r.password,totalPurchases:r.total_purchases,createdAt:r.created_at};}
+function custFromDB(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone,cpf:r.cpf,rg:r.rg,birthdate:r.birthdate,school:r.school,grade:r.grade,enrollment:r.enrollment,address:r.address,neighborhood:r.neighborhood,city:r.city,state:r.state,cep:r.cep,parentName:r.parent_name,parentPhone:r.parent_phone,parentEmail:r.parent_email,parentCpf:r.parent_cpf,password:r.password,totalPurchases:r.total_purchases,createdAt:r.created_at,origemCadastro:r.origem_cadastro||'loja'};}
 // A senha só entra na gravação quando alguém realmente digitou uma.
 // Antes ia sempre `c.password || '123456'` — e como a senha não volta mais do
 // banco (o servidor a esconde), editar o cadastro de um cliente jogava
 // "123456" por cima da senha que ele usava. Sem o campo, o banco preserva a
 // senha atual; quando há uma nova, o servidor a guarda já protegida.
+// origem_cadastro NÃO entra aqui de propósito: salvar a ficha de um aluno no
+// painel é um upsert, e mandar a coluna junto poderia rebaixar de 'site' para
+// 'loja' quem já ativou o acesso online — deixando outra pessoa assumir a conta
+// dele. Quem escreve nessa coluna é só o servidor, no cadastro e na ativação.
 function custToDB(c,polo){const linha={id:String(c.id),polo,name:c.name||'',email:c.email||'',phone:c.phone||'',cpf:c.cpf||'',rg:c.rg||'',birthdate:c.birthdate||'',school:c.school||'',grade:c.grade||'',enrollment:c.enrollment||'',address:c.address||'',neighborhood:c.neighborhood||'',city:c.city||'',state:c.state||'',cep:c.cep||'',parent_name:c.parentName||'',parent_phone:c.parentPhone||'',parent_email:c.parentEmail||'',parent_cpf:c.parentCpf||'',total_purchases:c.totalPurchases||0,created_at:c.createdAt||''};if(c.password) linha.password=String(c.password);return linha;}
 function saleFromDB(r){return{id:r.id,desconto:parseFloat(r.desconto)||0,productId:r.product_id,productName:r.product_name,qty:r.qty,unitPrice:parseFloat(r.unit_price),total:parseFloat(r.total),cost:parseFloat(r.cost),month:r.month,week:r.week,date:r.date,ts:r.ts,payment:r.payment,payments:normPayments(r.payments),histPagamento:salePagHist({histPagamento:r.hist_pagamento}),type:r.type,status:r.status,customer:r.customer,customerId:r.customer_id||'',orderNum:r.order_num,orderTs:r.order_ts,pedidoStatus:r.pedido_status};}
 function saleToDB(s,polo){const _h=salePagHist(s);return{id:String(s.id),polo,desconto:r2(s.desconto||0),product_id:String(s.productId||''),product_name:s.productName||'',qty:s.qty||1,unit_price:parseFloat(s.unitPrice||s.total/s.qty)||0,total:parseFloat(s.total)||0,cost:parseFloat(s.cost)||0,month:s.month||0,week:s.week||0,date:s.date||'',ts:s.ts||0,payment:s.payment||'',payments:normPayments(s.payments),hist_pagamento:_h.length?_h:null,type:s.type||'loja',status:s.status||'Concluído',customer:s.customer||'',customer_id:s.customerId?String(s.customerId):null,order_num:s.orderNum||'',order_ts:s.orderTs||0,pedido_status:s.pedidoStatus||''};}
