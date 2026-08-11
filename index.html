@@ -1335,6 +1335,82 @@ function EnviarComprovanteWA({venda, polo, onClose, notify}){
   </Modal>;
 }
 
+// ====== REIMPRESSÃO DO CUPOM ======
+// Monta um cupom imprimível (58/80mm ou PDF) de uma venda já realizada e
+// abre a caixa de impressão do navegador numa janela dedicada.
+function imprimirCupom(venda, poloId, notify){
+  const loja = (POLOS[poloId] && POLOS[poloId].nome) || 'Boina Preta';
+  const esc = s => String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const itens = (venda.cart||[]).map(i=>
+    `<tr><td class="p">${esc(i.name)}</td><td class="q">${i.qty}x</td><td class="v">${esc(fmt(i.price*i.qty))}</td></tr>`
+  ).join('');
+  const pagto = (venda.payments&&venda.payments.length)
+    ? venda.payments.map(p=>`<div class="row"><span>${esc(p.tipo)}</span><span>${esc(fmt(p.valor))}</span></div>`).join('')
+    : `<div class="row"><span>${esc(venda.payment||'—')}</span><span></span></div>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Cupom ${esc(venda.orderNum||'')}</title>
+    <style>
+      @media print{@page{margin:4mm;}}
+      *{box-sizing:border-box;}
+      body{font-family:'Courier New',monospace;color:#000;width:280px;margin:0 auto;padding:10px 8px;font-size:12px;line-height:1.5;}
+      h1{font-size:15px;text-align:center;margin:0 0 2px;letter-spacing:1px;}
+      .sub{text-align:center;font-size:11px;margin:0 0 8px;}
+      .sep{border-top:1px dashed #000;margin:8px 0;}
+      .meta{font-size:11px;}
+      .meta div{display:flex;justify-content:space-between;gap:8px;}
+      table{width:100%;border-collapse:collapse;font-size:11px;}
+      td.p{padding:2px 4px 2px 0;}
+      td.q{white-space:nowrap;text-align:center;padding:2px 4px;}
+      td.v{white-space:nowrap;text-align:right;}
+      .row{display:flex;justify-content:space-between;font-size:11px;}
+      .total{display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin-top:4px;}
+      .foot{text-align:center;font-size:11px;margin-top:10px;}
+    </style></head><body>
+      <h1>BOINA PRETA</h1>
+      <div class="sub">${esc(loja)}</div>
+      <div class="sep"></div>
+      <div class="meta">
+        ${venda.orderNum?`<div><span>Pedido</span><span>${esc(venda.orderNum)}</span></div>`:''}
+        <div><span>Data</span><span>${esc(venda.date||'')}</span></div>
+        <div><span>Cliente</span><span>${esc(venda.customer||'')}</span></div>
+      </div>
+      <div class="sep"></div>
+      <table>${itens}</table>
+      <div class="sep"></div>
+      ${venda.desconto>0?`<div class="row"><span>Subtotal</span><span>${esc(fmt(venda.subtotal))}</span></div><div class="row"><span>Desconto</span><span>- ${esc(fmt(venda.desconto))}</span></div>`:''}
+      <div class="total"><span>TOTAL</span><span>${esc(fmt(venda.total))}</span></div>
+      <div class="sep"></div>
+      <div class="meta">${pagto}${venda.troco>0?`<div class="row"><span>Troco</span><span>${esc(fmt(venda.troco))}</span></div>`:''}</div>
+      <div class="sep"></div>
+      <div class="foot">Obrigado pela preferencia!<br>Boina Preta - Shopping Tatico Militar</div>
+    </body></html>`;
+  const w = window.open('', '_blank', 'width=360,height=640');
+  if(!w){ if(notify) notify('Permita pop-ups para imprimir o cupom','error'); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>{ try{ w.print(); }catch(e){} }, 350);
+}
+
+// Converte uma venda já registrada (itens agrupados do pedido) no formato
+// esperado por imprimirCupom / montarComprovanteWA.
+function vendaParaComprovante(orderItems, pedidoAgrupado, sale){
+  const total = (orderItems||[]).reduce((a,b)=>a+(parseFloat(b.total)||0),0);
+  const desconto = (orderItems||[]).reduce((a,b)=>a+(parseFloat(b.desconto)||0),0);
+  return {
+    cart: (orderItems||[]).map(i=>({name:i.productName, qty:i.qty, price:(i.unitPrice!=null?i.unitPrice:(i.price||0))})),
+    payments: pedidoAgrupado&&pedidoAgrupado.payments ? pedidoAgrupado.payments : null,
+    payment: sale.payment,
+    orderNum: sale.orderNum || (pedidoAgrupado&&pedidoAgrupado.orderNum) || '',
+    date: sale.date,
+    customer: sale.customer || 'Consumidor Final',
+    total: r2(total),
+    subtotal: r2(total + desconto),
+    desconto: r2(desconto),
+    troco: 0,
+    customerObj: null
+  };
+}
+
 function Notif({msg,type,onClose}){useEffect(()=>{const t=setTimeout(onClose,3200);return()=>clearTimeout(t);},[]);return <div className={`notif ${type}`}>{msg}</div>;}
 function Modal({title,children,onClose,actions,wide}){
   return <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -1744,8 +1820,9 @@ function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, 
 
 
 // ====== SALE DETAIL MODAL ======
-function SaleDetailModal({sale, allSales, onClose, operador, onCorrigirPagamento}){
+function SaleDetailModal({sale, allSales, onClose, operador, onCorrigirPagamento, notify, polo, customers}){
   const [view, setView] = React.useState('sale');
+  const [waModal, setWaModal] = React.useState(false);
   const customerSales = allSales.filter(s => s.customer === sale.customer)
     .sort((a,b) => b.ts - a.ts);
   const customerTotal = customerSales.reduce((a,b) => a+b.total, 0);
@@ -1773,13 +1850,26 @@ function SaleDetailModal({sale, allSales, onClose, operador, onCorrigirPagamento
   // monta o pedido no mesmo formato usado pelo modal de correção
   const pedidoAgrupado = agruparVendas(orderItems)[0];
 
+  const vendaComp = vendaParaComprovante(orderItems, pedidoAgrupado, sale);
+  // Preenche o telefone a partir do cadastro do cliente (por id, com fallback por nome)
+  const clienteCad = findCustomerById(customers, sale.customerId)
+    || (customers||[]).find(c=>c.name===sale.customer) || null;
+  if(clienteCad) vendaComp.customerObj = clienteCad;
+  const notif = notify || (typeof avisarNaTela==='function'?avisarNaTela:function(){});
+
   return (
     <Modal title={"Detalhe do Pedido"} onClose={onClose} wide
-      actions={onCorrigirPagamento?[
+      actions={[
         <button key="f" className="btn" onClick={onClose}>Fechar</button>,
-        <button key="p" className="btn" style={{color:'#1a4e8e',borderColor:'#1a4e8e'}}
-          onClick={()=>onCorrigirPagamento(pedidoAgrupado)}>💳 Corrigir pagamento</button>
-      ]:null}>
+        <button key="i" className="btn" style={{color:'#111',borderColor:'#111'}}
+          onClick={()=>imprimirCupom(vendaComp, polo, notif)}>🖨 Reimprimir cupom</button>,
+        <button key="w" className="btn" style={{color:'#1a6e2e',borderColor:'#1a6e2e'}}
+          onClick={()=>setWaModal(true)}>📱 Enviar por WhatsApp</button>,
+        ...(onCorrigirPagamento?[
+          <button key="p" className="btn" style={{color:'#1a4e8e',borderColor:'#1a4e8e'}}
+            onClick={()=>onCorrigirPagamento(pedidoAgrupado)}>💳 Corrigir pagamento</button>
+        ]:[])
+      ]}>
       <div style={{display:'flex', borderBottom:'2px solid #e0e0e0', marginBottom:18, gap:0}}>
         {tabBtn('sale', '📋 Este Pedido')}
         {tabBtn('customer', '👤 Histórico de '+sale.customer.split(' ')[0]+' ('+customerSales.length+')')}
@@ -1897,12 +1987,13 @@ function SaleDetailModal({sale, allSales, onClose, operador, onCorrigirPagamento
           </div>
         </div>
       )}
+    {waModal && <EnviarComprovanteWA venda={vendaComp} polo={polo} onClose={()=>setWaModal(false)} notify={notif}/>}
     </Modal>
   );
 }
 
 // ====== ADMIN COMPONENTS ======
-function Dashboard({products,sales,role}){
+function Dashboard({products,sales,role,customers,polo,notify}){
   const [selectedSale,setSelectedSale]=useState(null);
   const now=new Date(),cm=now.getMonth(),ano=now.getFullYear();
   const PAID_ST=["Concluído","Pago — Separar","Em Separação","Pronto p/ Retirada","Entregue"];
@@ -1953,7 +2044,7 @@ function Dashboard({products,sales,role}){
         </tr>)}</tbody>
       </table></div>
     </div>
-    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} onClose={()=>setSelectedSale(null)}/>}
+    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} customers={customers} polo={polo} notify={notify} onClose={()=>setSelectedSale(null)}/>}
   </div>;
 }
 
@@ -3319,7 +3410,7 @@ function BtnExport({sales, label, polo}){
   </div>;
 }
 
-function Vendas({sales, polo}){
+function Vendas({sales, polo, customers, notify}){
   const [selectedSale,setSelectedSale]=useState(null);
   const [tab,setTab]=useState("mensal"),[month,setMonth]=useState(new Date().getMonth()),[search,setSearch]=useState(""),[type,setType]=useState("Todos");
   const now=new Date(),todayStr=now.toLocaleDateString("pt-BR"),thisWeek=getWeekNum(now),ano=now.getFullYear();
@@ -3370,7 +3461,7 @@ function Vendas({sales, polo}){
         {!top.length&&<div className="text-faint" style={{textAlign:"center",padding:16,fontSize:12}}>Sem dados</div>}
       </div>
     </div>
-    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} onClose={()=>setSelectedSale(null)}/>}
+    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} customers={customers} polo={polo} notify={notify} onClose={()=>setSelectedSale(null)}/>}
   </div>;
 }
 
@@ -3463,7 +3554,7 @@ function CorrigirPagamentoModal({pedido, operador, setSales, notify, onClose}){
   </Modal>;
 }
 
-function Fechamento({sales,setSales,notify,operador,creditos}){
+function Fechamento({sales,setSales,notify,operador,creditos,customers,polo}){
   const [selectedSale,setSelectedSale]=useState(null);
   const [editPgto,setEditPgto]=useState(null);
   // Corrigir forma de pagamento: só gerente e administrador
@@ -3623,8 +3714,8 @@ function Fechamento({sales,setSales,notify,operador,creditos}){
       </table></div>
         <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#6b6b6b',textAlign:'center',padding:'6px 0'}}>Clique em uma venda para ver os produtos{podeEditarPgto?' e corrigir o pagamento':''}</div>
       </div>
-    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} onClose={()=>setSelectedSale(null)}
-      operador={operador} onCorrigirPagamento={podeEditarPgto?(g=>{setSelectedSale(null);setEditPgto(g);}):null}/>}
+    {selectedSale&&<SaleDetailModal sale={selectedSale} allSales={sales} customers={customers} polo={polo} onClose={()=>setSelectedSale(null)}
+      operador={operador} notify={notify} onCorrigirPagamento={podeEditarPgto?(g=>{setSelectedSale(null);setEditPgto(g);}):null}/>}
     {editPgto&&<CorrigirPagamentoModal pedido={editPgto} operador={operador} setSales={setSales} notify={notify}
       onClose={()=>setEditPgto(null)}/>}
   </div>;
@@ -7972,12 +8063,12 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
         </div>
       </div>
       <div className="admin-content">
-        {page==="dashboard"&&<RedeDeSeguranca tela="Dashboard"><Dashboard products={products} sales={sales} role={role}/></RedeDeSeguranca>}
+        {page==="dashboard"&&<RedeDeSeguranca tela="Dashboard"><Dashboard products={products} sales={sales} role={role} customers={customers} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="caixa"&&<RedeDeSeguranca tela="Frente de Caixa"><Caixa products={products} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar} sales={sales} setSales={setSales} encomendas={encomendas} setEncomendas={setEncomendas} customers={customers} notify={notify} polo={polo.id} operador={operador} creditos={creditos} addCreditos={addCreditos}/></RedeDeSeguranca>}
         {page==="estoque"&&<RedeDeSeguranca tela="Estoque"><Estoque products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} notify={notify} polo={polo.id} poloInfo={polo}/></RedeDeSeguranca>}
         {page==="gestao"&&(role==='dono'||role==='gerente')&&<RedeDeSeguranca tela="Gestão de Estoque"><GestaoEstoque activePolo={polo.id} categories={categories} setCategories={setCategories} reloadProducts={reloadProducts} notify={notify} operador={operador}/></RedeDeSeguranca>}
-        {page==="vendas"&&<RedeDeSeguranca tela="Relatório de Vendas"><Vendas sales={sales} polo={polo.id}/></RedeDeSeguranca>}
-        {page==="fechamento"&&<RedeDeSeguranca tela="Fechamento de Caixa"><Fechamento sales={sales} setSales={setSales} notify={notify} operador={operador} creditos={creditos}/></RedeDeSeguranca>}
+        {page==="vendas"&&<RedeDeSeguranca tela="Relatório de Vendas"><Vendas sales={sales} polo={polo.id} customers={customers} notify={notify}/></RedeDeSeguranca>}
+        {page==="fechamento"&&<RedeDeSeguranca tela="Fechamento de Caixa"><Fechamento sales={sales} setSales={setSales} notify={notify} operador={operador} creditos={creditos} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
         {page==="clientes"&&<RedeDeSeguranca tela="Clientes"><Clientes customers={customers} setCustomers={setCustomers} notify={notify} sales={sales} encomendas={encomendas} creditos={creditos}/></RedeDeSeguranca>}
         {page==="crediario"&&<RedeDeSeguranca tela="Crediário"><Crediario customers={customers} creditos={creditos} addCreditos={addCreditos} operador={operador} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="orcamentos"&&<RedeDeSeguranca tela="Orçamentos"><Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} notify={notify}/></RedeDeSeguranca>}
