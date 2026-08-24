@@ -4833,22 +4833,41 @@ function SeletorDeFoto({valorUrl, valorImagem, nomeProduto, onEscolher, notify})
   </div>;
 }
 
-// ====== DESPESAS — contas a pagar da operação (só o dono) ======
+// ====== DESPESAS — o que sai de dinheiro (só o dono) ======
 //
-// Onde o dono acompanha o que cada polo custa: salários, aluguel, água, luz,
-// fornecedores. Não passa pelo carregamento por polo porque ele precisa ver
-// todos de uma vez para comparar.
+// Duas contas que nunca devem se misturar, na mesma tela:
+//
+//   Empresa  → salários, aluguel, água, luz, fornecedores. Cada uma
+//              pertence a um polo, e é a soma disso que diz quanto
+//              cada loja custa por mês.
+//   Pessoal  → o que sai do bolso do dono: casa, mercado, escola,
+//              plano de saúde. Não pertence a polo nenhum e fica
+//              fora do custo da operação.
+//
+// As abas escolhem qual lado está na tela. Não passa pelo carregamento
+// por polo porque o dono precisa ver todos de uma vez para comparar.
 const DESP_CATEGORIAS = ['Aluguel','Água','Luz','Internet/Telefone','Salário',
                          'Impostos','Fornecedor','Manutenção','Marketing','Outros'];
+// O gasto de casa não cabe nas categorias da loja — ninguém lança o mercado do
+// mês como "Fornecedor". Cada lado tem a sua própria lista.
+const DESP_CATEGORIAS_PESSOAL = ['Casa','Mercado','Saúde','Educação','Transporte',
+                                 'Lazer','Cartão','Família','Outros'];
+const catsDoTipo = t => t==='pessoal' ? DESP_CATEGORIAS_PESSOAL : DESP_CATEGORIAS;
+const ehPessoal  = d => d && d.tipo==='pessoal';
 
 function despFromDB(r){
-  return {id:r.id, polo:r.polo, descricao:r.descricao||'', categoria:r.categoria||'',
+  return {id:r.id, polo:r.polo||'', tipo:(r.tipo==='pessoal'?'pessoal':'empresa'),
+          descricao:r.descricao||'', categoria:r.categoria||'',
           valor:parseFloat(r.valor)||0, vencimento:r.vencimento||'', pago:!!r.pago,
           recorrente:!!r.recorrente, recorrenciaId:r.recorrencia_id||'',
           pagoEm:r.pago_em||'', forma:r.forma||'', obs:r.obs||'', operador:r.operador||''};
 }
-function despToDB(d, polo){
-  return {id:String(d.id), polo:polo||d.polo, descricao:d.descricao||'', categoria:d.categoria||'',
+// Gasto pessoal vai para o banco sem polo. É o que garante que ele nunca
+// apareça no custo de loja nenhuma.
+function despToDB(d){
+  const pessoal = ehPessoal(d);
+  return {id:String(d.id), tipo:pessoal?'pessoal':'empresa', polo:pessoal?null:(d.polo||null),
+          descricao:d.descricao||'', categoria:d.categoria||'',
           valor:r2(d.valor), vencimento:d.vencimento||null, pago:!!d.pago,
           recorrente:!!d.recorrente, recorrencia_id:d.recorrenciaId||d.id,
           pago_em:d.pagoEm||null, forma:d.forma||'', obs:d.obs||'', operador:d.operador||''};
@@ -4887,6 +4906,9 @@ function Despesas({operador, notify}){
   const [carregando,setCarregando]=useState(true);
   const [erro,setErro]=useState('');
   const [mes,setMes]=useState(mesAtual());
+  // 'empresa' | 'pessoal' | 'todos'. Abre na conta da operação, que é o que o
+  // dono consulta todo dia.
+  const [tipo,setTipo]=useState('empresa');
   const [poloFiltro,setPoloFiltro]=useState('Todos');
   const [situacao,setSituacao]=useState('Todas');   // Todas | Em aberto | Pagas
   const [modal,setModal]=useState(false);
@@ -4903,22 +4925,40 @@ function Despesas({operador, notify}){
   useEffect(()=>{ carregar(); },[]);
 
   const doMes = useMemo(()=>linhas.filter(d=>!d.vencimento || mesDe(d.vencimento)===mes),[linhas,mes]);
-  const filtradas = useMemo(()=>doMes.filter(d=>
-    (poloFiltro==='Todos' || d.polo===poloFiltro) &&
-    (situacao==='Todas' || (situacao==='Pagas' ? d.pago : !d.pago))
-  ).sort((a,b)=>String(a.vencimento||'').localeCompare(String(b.vencimento||''))),[doMes,poloFiltro,situacao]);
 
-  const resumo = useMemo(()=>{
-    const base = doMes.filter(d=>poloFiltro==='Todos' || d.polo===poloFiltro);
+  // O lado escolhido nas abas. Em "Pessoal" o filtro de polo não faz sentido:
+  // gasto de casa não pertence a loja nenhuma.
+  const doLado = useMemo(()=>doMes.filter(d=>tipo==='todos' || d.tipo===tipo),[doMes,tipo]);
+  const usaPolo = tipo!=='pessoal';
+
+  const filtradas = useMemo(()=>doLado.filter(d=>
+    (!usaPolo || poloFiltro==='Todos' || d.polo===poloFiltro) &&
+    (situacao==='Todas' || (situacao==='Pagas' ? d.pago : !d.pago))
+  ).sort((a,b)=>String(a.vencimento||'').localeCompare(String(b.vencimento||''))),[doLado,usaPolo,poloFiltro,situacao]);
+
+  function somar(base){
     const pago = r2(base.filter(d=>d.pago).reduce((a,d)=>a+d.valor,0));
     const aberto = r2(base.filter(d=>!d.pago).reduce((a,d)=>a+d.valor,0));
     const vencido = r2(base.filter(estaVencida).reduce((a,d)=>a+d.valor,0));
-    return {pago, aberto, vencido, total:r2(pago+aberto), qtdVencidas:base.filter(estaVencida).length};
-  },[doMes,poloFiltro]);
+    return {pago, aberto, vencido, total:r2(pago+aberto), qtd:base.length,
+            qtdVencidas:base.filter(estaVencida).length};
+  }
 
-  // Quanto cada polo custou no mês — é a comparação que o dono quer ver
+  const resumo = useMemo(()=>somar(
+    doLado.filter(d=>!usaPolo || poloFiltro==='Todos' || d.polo===poloFiltro)
+  ),[doLado,usaPolo,poloFiltro]);
+
+  // Na aba "Tudo" os dois lados aparecem somados em separado. Um total único
+  // misturaria o dinheiro da loja com o de casa, que é justamente o que se
+  // quer parar de fazer.
+  const porLado = useMemo(()=>({
+    empresa: somar(doMes.filter(d=>!ehPessoal(d))),
+    pessoal: somar(doMes.filter(ehPessoal))
+  }),[doMes]);
+
+  // Quanto cada polo custou no mês — só a conta da empresa entra aqui
   const porPolo = useMemo(()=>Object.keys(POLOS).map(pid=>{
-    const dele=doMes.filter(d=>d.polo===pid);
+    const dele=doMes.filter(d=>!ehPessoal(d) && d.polo===pid);
     return {pid, sigla:(POLOS[pid]&&POLOS[pid].sigla)||pid,
             pago:r2(dele.filter(d=>d.pago).reduce((a,d)=>a+d.valor,0)),
             aberto:r2(dele.filter(d=>!d.pago).reduce((a,d)=>a+d.valor,0)),
@@ -4950,8 +4990,8 @@ function Despesas({operador, notify}){
       polo:base.polo, descricao:base.descricao, categoria:base.categoria,
       valor:base.valor, vencimento:vencimentoNovo, pago:false, pagoEm:'',
       forma:'', obs:base.obs, operador:base.operador,
-      recorrente:true, recorrenciaId:grupo(base)
-    }, base.polo);
+      recorrente:true, recorrenciaId:grupo(base), tipo:base.tipo
+    });
     return await sb.from('despesas').upsert([nova]);
   }
 
@@ -4962,12 +5002,13 @@ function Despesas({operador, notify}){
     const ultima = new Map();
     linhas.forEach(d=>{
       if(!d.recorrente) return;
+      if(tipo!=='todos' && d.tipo!==tipo) return;   // só o lado que está na tela
       const g = grupo(d), atual = ultima.get(g);
       if(!atual || String(d.vencimento||'') > String(atual.vencimento||'')) ultima.set(g, d);
     });
     const jaTem = new Set(linhas.filter(d=>mesDe(d.vencimento)===mes).map(grupo));
     return [...ultima.values()].filter(d=>!jaTem.has(grupo(d)) && mesDe(d.vencimento) < mes);
-  },[linhas,mes]);
+  },[linhas,mes,tipo]);
 
   const [gerando,setGerando]=useState(false);
   async function gerarMensais(){
@@ -4986,7 +5027,10 @@ function Despesas({operador, notify}){
 
   function novo(){
     const hoje=new Date().toISOString().slice(0,10);
-    setForm({id:'D'+Date.now(), polo:Object.keys(POLOS)[0], descricao:'', categoria:'Aluguel',
+    // Abre já no lado da aba em que o dono está — em "Tudo", na empresa.
+    const lado = tipo==='todos' ? 'empresa' : tipo;
+    setForm({id:'D'+Date.now(), tipo:lado, polo:Object.keys(POLOS)[0], descricao:'',
+             categoria:catsDoTipo(lado)[0],
              valor:'', vencimento:hoje, pago:false, pagoEm:'', forma:'', obs:'',
              recorrente:false, recorrenciaId:''});
     setModal(true);
@@ -4997,9 +5041,9 @@ function Despesas({operador, notify}){
     if(!form.descricao.trim()){ notify('Descreva a despesa','error'); return; }
     const v=parseFloat(String(form.valor).replace(',','.'))||0;
     if(v<=0){ notify('Informe um valor maior que zero','error'); return; }
-    if(!form.polo){ notify('Escolha o polo','error'); return; }
+    if(!ehPessoal(form) && !form.polo){ notify('Escolha o polo','error'); return; }
     setSalvando(true);
-    const linha=despToDB({...form, valor:v, operador:form.operador||(operador&&operador.nome)||''}, form.polo);
+    const linha=despToDB({...form, valor:v, operador:form.operador||(operador&&operador.nome)||''});
     const {error}=await sb.from('despesas').upsert([linha]);
     setSalvando(false);
     if(error){ notify('Não foi possível salvar: '+error.message,'error'); return; }
@@ -5041,9 +5085,19 @@ function Despesas({operador, notify}){
     notify('Despesa excluída','success'); carregar();
   }
 
+  const rotulo = {empresa:'🏪 Empresa', pessoal:'🏠 Pessoal', todos:'Tudo'};
+
   return <div>
+    <div className="tabs">
+      {['empresa','pessoal','todos'].map(t=>
+        <div key={t} className={'tab '+(tipo===t?'active':'')} onClick={()=>setTipo(t)}>{rotulo[t]}</div>
+      )}
+    </div>
+
     <div className="stats-grid">
-      <div className="stat-card"><div className="stat-icon">📄</div><div className="stat-label">Total do mês</div><div className="stat-value">{fmt(resumo.total)}</div></div>
+      <div className="stat-card"><div className="stat-icon">📄</div>
+        <div className="stat-label">{tipo==='empresa'?'Total da empresa':tipo==='pessoal'?'Total pessoal':'Total do mês'}</div>
+        <div className="stat-value">{fmt(resumo.total)}</div></div>
       <div className="stat-card blue"><div className="stat-icon">✓</div><div className="stat-label">Já pago</div><div className="stat-value">{fmt(resumo.pago)}</div></div>
       <div className="stat-card gold"><div className="stat-icon">⏳</div><div className="stat-label">A pagar</div><div className="stat-value">{fmt(resumo.aberto)}</div></div>
       {resumo.vencido>0 && (
@@ -5060,15 +5114,19 @@ function Despesas({operador, notify}){
         <select value={mes} onChange={e=>setMes(e.target.value)} style={{minWidth:150}}>
           {meses.map(am=><option key={am} value={am}>{nomeDoMes(am)}</option>)}
         </select>
-        <select value={poloFiltro} onChange={e=>setPoloFiltro(e.target.value)}>
-          <option value="Todos">Todos os polos</option>
-          {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
-        </select>
+        {usaPolo && (
+          <select value={poloFiltro} onChange={e=>setPoloFiltro(e.target.value)}>
+            <option value="Todos">Todos os polos</option>
+            {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
+          </select>
+        )}
         <select value={situacao} onChange={e=>setSituacao(e.target.value)}>
           {['Todas','Em aberto','Pagas'].map(x=><option key={x}>{x}</option>)}
         </select>
       </div>
-      <button className="btn btn-primary btn-sm" onClick={novo}>+ Nova Despesa</button>
+      <button className="btn btn-primary btn-sm" onClick={novo}>
+        {tipo==='pessoal' ? '+ Novo Gasto Pessoal' : '+ Nova Despesa'}
+      </button>
     </div>
 
     {mensaisFaltando.length>0 && (
@@ -5086,9 +5144,32 @@ function Despesas({operador, notify}){
       </div>
     )}
 
-    {porPolo.length>0 && poloFiltro==='Todos' && (
+    {tipo==='todos' && (porLado.empresa.total>0 || porLado.pessoal.total>0) && (
+      <div className="card" style={{marginBottom:14}}>
+        <div className="card-title">Empresa × Pessoal · {nomeDoMes(mes)}</div>
+        <div className="table-wrap"><table><thead><tr>
+          {['Lado','Contas','Pago','A pagar','Total'].map(h=><th key={h}>{h}</th>)}
+        </tr></thead><tbody>
+          {[['empresa','🏪 Empresa'],['pessoal','🏠 Pessoal']].map(([k,nome])=>{
+            const x=porLado[k];
+            return <tr key={k}>
+              <td><strong>{nome}</strong></td>
+              <td className="text-mono" style={{fontSize:12}}>{x.qtd}</td>
+              <td className="text-mono" style={{fontSize:12,color:'#1a6e2e'}}>{fmt(x.pago)}</td>
+              <td className="text-mono" style={{fontSize:12,color:x.aberto>0?'#9a6a00':'#8a8a8a'}}>{fmt(x.aberto)}</td>
+              <td className="text-mono" style={{fontSize:13,fontWeight:700}}>{fmt(x.total)}</td>
+            </tr>;
+          })}
+        </tbody></table></div>
+      </div>
+    )}
+
+    {porPolo.length>0 && usaPolo && poloFiltro==='Todos' && (
       <div className="card" style={{marginBottom:14}}>
         <div className="card-title">Quanto cada polo custa · {nomeDoMes(mes)}</div>
+        <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',marginTop:-6,marginBottom:8}}>
+          Só a conta da operação. Gasto pessoal fica de fora.
+        </div>
         <div className="table-wrap"><table><thead><tr>
           {['Polo','Pago','A pagar','Total'].map(h=><th key={h}>{h}</th>)}
         </tr></thead><tbody>
@@ -5103,17 +5184,21 @@ function Despesas({operador, notify}){
     )}
 
     <div className="card">
-      <div className="card-title">Despesas · {nomeDoMes(mes)}</div>
+      <div className="card-title">
+        {tipo==='empresa'?'Despesas da empresa':tipo==='pessoal'?'Gastos pessoais':'Todas as despesas'} · {nomeDoMes(mes)}
+      </div>
       {carregando && <div style={{textAlign:'center',padding:30,fontFamily:'Share Tech Mono',fontSize:12,color:'#5f6368'}}>Carregando...</div>}
       {erro && <div style={{background:'#fde8e8',border:'1px solid #f3c2c2',borderRadius:3,padding:'10px 12px',fontFamily:'Share Tech Mono',fontSize:12,color:'#a01010'}}>{erro}</div>}
       {!carregando && !erro && filtradas.length===0 && (
         <div style={{textAlign:'center',padding:34,fontFamily:'Share Tech Mono',fontSize:12,color:'#8a8a8a',lineHeight:1.9}}>
-          Nenhuma despesa neste filtro.<br/>Use "+ Nova Despesa" para cadastrar a primeira.
+          {tipo==='pessoal' ? 'Nenhum gasto pessoal neste filtro.' : 'Nenhuma despesa neste filtro.'}<br/>
+          Use "{tipo==='pessoal' ? '+ Novo Gasto Pessoal' : '+ Nova Despesa'}" para cadastrar o primeiro.
         </div>
       )}
       {!carregando && filtradas.length>0 && (
         <div className="table-wrap"><table><thead><tr>
-          {['Vencimento','Polo','Descrição','Categoria','Valor','Situação','Ações'].map(h=><th key={h}>{h}</th>)}
+          {['Vencimento', usaPolo?'Polo':null, tipo==='todos'?'Lado':null, 'Descrição','Categoria','Valor','Situação','Ações']
+            .filter(Boolean).map(h=><th key={h}>{h}</th>)}
         </tr></thead><tbody>
           {filtradas.map(d=>{
             const vencida=estaVencida(d);
@@ -5121,7 +5206,10 @@ function Despesas({operador, notify}){
               <td className="text-mono" style={{fontSize:12,color:vencida?'#cc2222':'#333',whiteSpace:'nowrap'}}>
                 {dataBR(d.vencimento)||'—'}
               </td>
-              <td><span className="kb-pill">{(POLOS[d.polo]&&POLOS[d.polo].sigla)||d.polo}</span></td>
+              {usaPolo && <td>{ehPessoal(d)
+                ? <span style={{color:'#8a8a8a'}}>—</span>
+                : <span className="kb-pill">{(POLOS[d.polo]&&POLOS[d.polo].sigla)||d.polo}</span>}</td>}
+              {tipo==='todos' && <td style={{fontSize:12,whiteSpace:'nowrap'}}>{ehPessoal(d)?'🏠 Pessoal':'🏪 Empresa'}</td>}
               <td>
                 <strong>{d.descricao}</strong>
                 {d.recorrente && <span className="tag" style={{marginLeft:6,background:'#eef2fb',
@@ -5152,7 +5240,7 @@ function Despesas({operador, notify}){
     </div>
 
     {modal && form && (
-      <Modal title={linhas.some(x=>x.id===form.id)?'Editar Despesa':'Nova Despesa'}
+      <Modal title={(linhas.some(x=>x.id===form.id)?'Editar ':'Nova ')+(ehPessoal(form)?'· Gasto Pessoal':'Despesa')}
              onClose={()=>{setModal(false);setForm(null);}}
              actions={[
                <button key="c" className="btn" onClick={()=>{setModal(false);setForm(null);}}>Cancelar</button>,
@@ -5161,18 +5249,40 @@ function Despesas({operador, notify}){
                </button>
              ]}>
         <div className="form-grid">
-          <div className="form-group"><label>Polo *</label>
-            <select value={form.polo} onChange={e=>setForm({...form,polo:e.target.value})}>
-              {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
-            </select>
+          <div className="form-group full"><label>Este gasto é da empresa ou seu? *</label>
+            <div className="flex gap-2" style={{flexWrap:'wrap'}}>
+              {[['empresa','🏪 Da empresa'],['pessoal','🏠 Pessoal']].map(([k,nome])=>
+                <button key={k} type="button"
+                  className={'btn btn-sm '+(form.tipo===k?'btn-primary':'')}
+                  onClick={()=>setForm({...form, tipo:k,
+                    // A categoria da loja não serve para o gasto de casa e
+                    // vice-versa: ao trocar de lado, ela volta para a lista certa.
+                    categoria: catsDoTipo(k).includes(form.categoria) ? form.categoria : catsDoTipo(k)[0]
+                  })}>{nome}</button>
+              )}
+            </div>
+            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',marginTop:6,lineHeight:1.7}}>
+              {ehPessoal(form)
+                ? 'Sai do seu bolso. Não entra no custo de nenhum polo.'
+                : 'Custo da operação. Entra na conta de quanto o polo custa no mês.'}
+            </div>
           </div>
+          {!ehPessoal(form) && (
+            <div className="form-group"><label>Polo *</label>
+              <select value={form.polo} onChange={e=>setForm({...form,polo:e.target.value})}>
+                {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-group"><label>Categoria</label>
             <select value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})}>
-              {DESP_CATEGORIAS.map(c=><option key={c}>{c}</option>)}
+              {catsDoTipo(form.tipo).map(c=><option key={c}>{c}</option>)}
             </select>
           </div>
           <div className="form-group full"><label>Descrição *</label>
-            <input placeholder="Ex.: Aluguel da loja · Salário João · Conta de luz"
+            <input placeholder={ehPessoal(form)
+                     ? 'Ex.: Mercado do mês · Escola da Ana · Plano de saúde'
+                     : 'Ex.: Aluguel da loja · Salário João · Conta de luz'}
                    value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})}/>
           </div>
           <div className="form-group"><label>Valor *</label>
@@ -5190,8 +5300,9 @@ function Despesas({operador, notify}){
               <span>Repete todo mês</span>
             </label>
             <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',marginTop:6,lineHeight:1.7}}>
-              Para aluguel, salário, água, luz. Ao marcar esta conta como paga, a do mês
-              seguinte entra sozinha na lista, em aberto e com o mesmo dia de vencimento.
+              {ehPessoal(form)
+                ? 'Para escola, plano de saúde, financiamento. Ao marcar como pago, o do mês seguinte entra sozinho na lista, em aberto e com o mesmo dia de vencimento.'
+                : 'Para aluguel, salário, água, luz. Ao marcar esta conta como paga, a do mês seguinte entra sozinha na lista, em aberto e com o mesmo dia de vencimento.'}
             </div>
           </div>
           <div className="form-group full"><label>Observação</label>
@@ -8075,7 +8186,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
         {page==="encomendas"&&<RedeDeSeguranca tela="Encomendas"><Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="pedidos"&&<RedeDeSeguranca tela="Pedidos Online"><PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar} notify={notify} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
         {page==="despesas"&&role==='dono'&&<RedeDeSeguranca tela="Despesas"><Despesas operador={operador} notify={notify}/></RedeDeSeguranca>}
-        {page==="despesas"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#6b6b6b'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,marginTop:6}}>As despesas da operação são visíveis apenas ao administrador</div></div>}
+        {page==="despesas"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#6b6b6b'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,marginTop:6}}>As despesas da operação e os gastos pessoais são visíveis apenas ao administrador</div></div>}
         {page==="config"&&role==='dono'&&<RedeDeSeguranca tela="Usuários & Acessos"><Configuracoes polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="config"&&role!=='dono'&&<div style={{textAlign:'center',padding:60,color:'#6b6b6b'}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontFamily:'Oswald',fontSize:16,letterSpacing:2,textTransform:'uppercase'}}>Acesso Restrito</div><div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,marginTop:6}}>Apenas o administrador pode gerenciar usuários</div></div>}
       </div>
