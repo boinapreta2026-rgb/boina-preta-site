@@ -264,7 +264,9 @@ textarea{resize:vertical;min-height:70px;}
 .btn-ghost:hover{background:#f0f0f0;border-color:#ddd;}
 .w-full{width:100%;}
 .flex{display:flex;}.gap-2{gap:8px;}.gap-3{gap:12px;}.flex-1{flex:1;}
-.justify-between{justify-content:space-between;}.items-center{align-items:center;}
+.justify-between{justify-content:space-between;}.items-center{align-items:center;}.items-start{align-items:flex-start;}
+/* campo de busca dentro de uma barra: cresce e não empurra os botões */
+.form-group.cresce{flex:2;min-width:180px;}
 .mb-2{margin-bottom:10px;}.mb-3{margin-bottom:16px;}.mb-4{margin-bottom:22px;}
 .mt-2{margin-top:10px;}.mt-3{margin-top:16px;}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
@@ -854,18 +856,36 @@ function buscaNormal(v){
     .trim();
 }
 
-// O texto contém o que foi digitado? Busca vazia combina com tudo.
-function combina(texto, busca){
-  const b = buscaNormal(busca);
-  if(!b) return true;
-  return buscaNormal(texto).includes(b);
+// ── a busca entende o nome inteiro, não só a última palavra ──────────────────
+//
+// O vendedor digita "Yasmin" e aparecem todas as Yasmin — certo. Aí ele
+// continua e digita o sobrenome, e a busca precisa ir FECHANDO a lista até
+// sobrar a aluna certa, não recomeçar do zero atrás de quem se chama "Silva".
+//
+// Por isso o que foi digitado é quebrado em palavras e TODAS precisam bater.
+// "yasmin silva" → precisa ter "yasmin" E "silva".
+// A ordem não importa: "silva yasmin" acha a mesma aluna, e um pedaço de
+// palavra também serve — "yas sil" já encontra "Yasmin Silva".
+function termosBusca(busca){
+  return buscaNormal(busca).split(' ').filter(Boolean);
 }
 
-// Alguma destas informações contém o que foi digitado?
+// O texto contém tudo o que foi digitado? Busca vazia combina com tudo.
+function combina(texto, busca){
+  const termos = termosBusca(busca);
+  if(!termos.length) return true;
+  const t = buscaNormal(texto);
+  return termos.every(w => t.includes(w));
+}
+
+// Idem, mas olhando várias informações juntas (nome, escola, número do pedido...).
+// Elas são juntadas antes de comparar, então dá para digitar "yasmin 3ano" e
+// achar a Yasmin daquela turma, mesmo com o dado espalhado em dois campos.
 function combinaAlgum(valores, busca){
-  const b = buscaNormal(busca);
-  if(!b) return true;
-  return (valores||[]).some(v=>buscaNormal(v).includes(b));
+  const termos = termosBusca(busca);
+  if(!termos.length) return true;
+  const t = (valores||[]).map(buscaNormal).filter(Boolean).join(' · ');
+  return termos.every(w => t.includes(w));
 }
 
 // ── busca de aluno também pelo CPF ───────────────────────────────────────────
@@ -1070,54 +1090,223 @@ function waPhone(phone){
   return d.startsWith('55') ? d : '55'+d;
 }
 
+// ====== CAMPO DE BUSCA COM LISTA (aluno, produto, ...) ======
+//
+// Antes estes campos usavam a lista pronta do navegador (<select> / <datalist>).
+// O navegador tem regra própria: ele guarda as letras digitadas por um instante
+// e, na primeira pausa, joga fora o que já tinha e recomeça a procurar pelas
+// letras novas. Na prática, o vendedor digitava "Yasmin", via as Yasmin na
+// tela, digitava o sobrenome — e a lista pulava para os alunos chamados
+// "Silva", como se a busca tivesse recomeçado do zero.
+//
+// Aqui a lista é nossa. Ela filtra a cada tecla e só vai FECHANDO: cada palavra
+// digitada precisa bater (ver `combinaAlgum`), em qualquer ordem. Digitar mais
+// nunca amplia o resultado.
+//
+// `itens` é uma lista de {chave, titulo, sub, alvos, desabilitado, dado}.
+// `casa(item, q)` é opcional, para quando o filtro precisa de regra própria
+// (o aluno, por exemplo, também é procurado por CPF e telefone).
+function ListaQueFiltra({itens, casa, texto='', onTexto, onEscolher,
+                         label='', placeholder='Digite para procurar',
+                         required=false, limparAoEscolher=false, ajuda='',
+                         rodape=null, className='', maxLista=50,
+                         vazioMsg='Nada encontrado com'}){
+  const [q, setQ] = useState(texto||'');
+  const [aberto, setAberto] = useState(false);
+  const [destaque, setDestaque] = useState(-1);
+  const listaRef = useRef(null);
+  const fecharTimer = useRef(null);
+
+  // Enquanto o campo espelha um valor de fora (o nome já preenchido no
+  // formulário, o produto já escolhido), ele acompanha esse valor.
+  // O seletor que só "puxa" um cadastro e se limpa vive sozinho.
+  useEffect(()=>{ if(!limparAoEscolher) setQ(texto||''); }, [texto, limparAoEscolher]);
+  useEffect(()=>()=>clearTimeout(fecharTimer.current), []);
+
+  const achados = useMemo(()=>
+    (itens||[]).filter(it => casa ? casa(it, q) : combinaAlgum(it.alvos, q))
+  , [itens, q, casa]);
+  const visiveis = achados.slice(0, maxLista);
+
+  // Mantém a linha destacada dentro da parte visível da lista
+  useEffect(()=>{
+    if(!aberto || destaque<0 || !listaRef.current) return;
+    const linha = listaRef.current.children[destaque];
+    if(linha && linha.scrollIntoView) linha.scrollIntoView({block:'nearest'});
+  }, [destaque, aberto]);
+
+  function digitou(v){
+    setQ(v);
+    setDestaque(-1);
+    setAberto(true);
+    if(onTexto) onTexto(v);
+  }
+
+  function escolher(it){
+    if(!it || it.desabilitado) return;
+    clearTimeout(fecharTimer.current);
+    setAberto(false);
+    setDestaque(-1);
+    setQ(limparAoEscolher ? '' : (it.titulo||''));
+    if(onEscolher) onEscolher(it);
+  }
+
+  function tecla(e){
+    if(e.key==='Escape'){ setAberto(false); setDestaque(-1); return; }
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      e.preventDefault();
+      if(!aberto){ setAberto(true); return; }
+      if(!visiveis.length) return;
+      const passo = e.key==='ArrowDown' ? 1 : -1;
+      setDestaque(i=>{
+        const n = i + passo;
+        if(n < 0) return visiveis.length-1;
+        if(n >= visiveis.length) return 0;
+        return n;
+      });
+      return;
+    }
+    if(e.key==='Enter'){
+      // Sem nada destacado, mas só sobrou um na lista? É ele.
+      // Poupa uma tecla no balcão, com o aluno esperando na frente.
+      const alvo = destaque>=0 ? visiveis[destaque] : (visiveis.length===1 ? visiveis[0] : null);
+      if(alvo && !alvo.desabilitado){ e.preventDefault(); escolher(alvo); }
+    }
+  }
+
+  const semResultado = aberto && q.trim() && !visiveis.length;
+
+  return <div className={'form-group'+(className?' '+className:'')} style={{position:'relative'}}>
+    {label ? <label>{label}{required?' *':''}</label> : null}
+    <input value={q} placeholder={placeholder} autoComplete="off"
+      onChange={e=>digitou(e.target.value)}
+      onFocus={()=>{ clearTimeout(fecharTimer.current); setAberto(true); }}
+      onBlur={()=>{ fecharTimer.current = setTimeout(()=>setAberto(false), 150); }}
+      onKeyDown={tecla}/>
+
+    {aberto && visiveis.length>0 && (
+      <div ref={listaRef} style={{marginTop:4,maxHeight:230,overflowY:'auto',background:'#fff',
+        border:'1px solid #d8d8d8',borderRadius:4,boxShadow:'0 4px 14px rgba(0,0,0,.09)'}}>
+        {visiveis.map((it,i)=>(
+          <div key={it.chave}
+            onMouseDown={e=>{ e.preventDefault(); escolher(it); }}
+            onMouseEnter={()=>setDestaque(i)}
+            style={{padding:'7px 11px',cursor:it.desabilitado?'not-allowed':'pointer',
+              borderBottom:'1px solid #f2f2f2',opacity:it.desabilitado?.5:1,
+              background: destaque===i && !it.desabilitado ? '#f0f4f8' : '#fff'}}>
+            <div style={{fontFamily:'Oswald,sans-serif',fontSize:13,letterSpacing:.5,color:'#111'}}>{it.titulo||'(sem nome)'}</div>
+            {it.sub ? <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',marginTop:2}}>{it.sub}</div> : null}
+          </div>
+        ))}
+        {achados.length>visiveis.length && (
+          <div style={{padding:'6px 11px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',background:'#fafafa'}}>
+            +{achados.length-visiveis.length} resultado(s) — continue digitando para diminuir a lista
+          </div>
+        )}
+      </div>
+    )}
+
+    {semResultado && (
+      <div style={{marginTop:4,padding:'8px 11px',background:'#fff',border:'1px solid #e8e8e8',borderRadius:4,
+        fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368'}}>
+        {vazioMsg} "{q.trim()}"
+      </div>
+    )}
+
+    {rodape}
+    {ajuda && !aberto ? <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:4}}>{ajuda}</div> : null}
+  </div>;
+}
+
+// ====== BUSCA DE ALUNO ======
+// Procura por nome, escola, e-mail, CPF ou telefone — ver `clienteCombina`.
+function BuscaAluno({customers, value='', onChange, onPick, label='Aluno',
+                     placeholder='Digite o nome, o CPF ou o telefone',
+                     required=false, limparAoEscolher=false, ajuda='',
+                     rodape=null, className='', maxLista=50}){
+  const itens = useMemo(()=>
+    [...(customers||[])]
+      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR'))
+      .map(c=>({
+        chave: String(c.id),
+        titulo: c.name||'(sem nome)',
+        sub: [c.school, c.phone, c.cpf].filter(Boolean).join(' · '),
+        dado: c
+      }))
+  , [customers]);
+
+  return <ListaQueFiltra itens={itens}
+    casa={(it,q)=>clienteCombina(it.dado, q)}
+    texto={value} onTexto={onChange}
+    onEscolher={it=>{ if(onPick) onPick(it.dado); }}
+    label={label} placeholder={placeholder} required={required}
+    limparAoEscolher={limparAoEscolher} ajuda={ajuda} rodape={rodape}
+    className={className} maxLista={maxLista}
+    vazioMsg="Nenhum aluno com"/>;
+}
+
+// ====== BUSCA DE PRODUTO ======
+// Mesmo campo, para as telas em que o produto era escolhido numa lista enorme.
+function BuscaProduto({products, value, onPick, label='Produto',
+                       placeholder='Digite o nome ou o SKU do produto',
+                       className='', bloquearSemEstoque=false, ajuda='', required=false}){
+  const escolhido = (products||[]).find(p=>String(p.id)===String(value));
+  const itens = useMemo(()=>
+    ordenarProdutos(products||[]).map(p=>({
+      chave: String(p.id),
+      titulo: p.name||'(sem nome)',
+      sub: [p.sku?('SKU '+p.sku):'', fmt(p.price),
+            (p.stock||0)>0 ? ((p.stock||0)+' em estoque') : 'SEM ESTOQUE'].filter(Boolean).join(' · '),
+      alvos: [p.name, p.sku],
+      desabilitado: bloquearSemEstoque && (p.stock||0)<=0,
+      dado: p
+    }))
+  , [products, bloquearSemEstoque]);
+
+  return <ListaQueFiltra itens={itens}
+    texto={escolhido ? (escolhido.name||'') : ''}
+    onEscolher={it=>{ if(onPick) onPick(it.dado); }}
+    label={label} placeholder={placeholder} required={required}
+    ajuda={ajuda} className={className}
+    vazioMsg="Nenhum produto com"/>;
+}
+
 // ====== SELETOR DE CLIENTE (reutilizável) ======
-// Combina digitação livre com seleção de cliente já cadastrado.
+// Digitação livre + escolha de um aluno já cadastrado, usando a busca acima.
 function ClientePicker({customers, value, onChange, onPick, label='Cliente', placeholder='Digite o nome ou o CPF', allowFree=true, required=false}){
-  const listId = useRef('cli-dl-'+Math.random().toString(36).slice(2,9)).current;
-  const [q,setQ]=useState(value||'');
-  useEffect(()=>{ setQ(value||''); },[value]);
-  const matched = findCustomerByName(customers, q);
-  const ordenados = [...(customers||[])].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-  function handle(v){
+  const matched = findCustomerByName(customers, value);
+
+  function selecionado(c){
+    if(onChange) onChange(c.name||'', c);
+    if(onPick) onPick(c);
+  }
+
+  function digitou(v){
     // Digitou o CPF inteiro? Troca pelo nome do aluno e segue.
     // Com dois alunos de mesmo nome, é o único jeito de escolher o certo
     // sem abrir a ficha de cada um.
     const porCpf = findCustomerByCpf(customers, v);
-    if(porCpf){
-      setQ(porCpf.name||'');
-      if(onChange) onChange(porCpf.name||'', porCpf);
-      if(onPick) onPick(porCpf);
-      return;
-    }
-    setQ(v);
+    if(porCpf){ selecionado(porCpf); return; }
     const c = findCustomerByName(customers, v);
     if(onChange) onChange(v, c);
     if(c && onPick) onPick(c);
   }
-  return <div className="form-group">
-    <label>{label}{required?' *':''}</label>
-    <input list={listId} value={q} placeholder={placeholder}
-      onChange={e=>handle(e.target.value)}
-      style={matched?{borderColor:'#1a6e2e'}:{}}/>
-    <datalist id={listId}>
-      {ordenados.map(c=>(
-        <option key={c.id} value={c.name}>
-          {[c.cpf, c.phone, c.school].filter(Boolean).join(' · ')}
-        </option>
-      ))}
-    </datalist>
-    {matched ? (
-      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5,flexWrap:'wrap'}}>
-        <span style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #bfe3c2',borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>✓ CLIENTE CADASTRADO</span>
-        <span style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#525252',letterSpacing:1}}>
-          {[matched.cpf, matched.phone, matched.school].filter(Boolean).join(' · ')||'sem telefone'}
-        </span>
-        <button type="button" onClick={()=>handle('')} style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,cursor:'pointer',padding:0}}>limpar</button>
-      </div>
-    ) : (q.trim() && allowFree ? (
-      <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:5}}>Cliente avulso (não cadastrado)</div>
-    ) : null)}
-  </div>;
+
+  const rodape = matched ? (
+    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5,flexWrap:'wrap'}}>
+      <span style={{background:'#e8f5e9',color:'#1a6e2e',border:'1px solid #bfe3c2',borderRadius:3,padding:'2px 8px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1}}>✓ CLIENTE CADASTRADO</span>
+      <span style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#525252',letterSpacing:1}}>
+        {[matched.cpf, matched.phone, matched.school].filter(Boolean).join(' · ')||'sem telefone'}
+      </span>
+      <button type="button" onMouseDown={e=>{e.preventDefault(); digitou('');}} style={{background:'none',border:'none',color:'#cc2222',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,cursor:'pointer',padding:0}}>limpar</button>
+    </div>
+  ) : (String(value||'').trim() && allowFree ? (
+    <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:5}}>Cliente avulso (não cadastrado)</div>
+  ) : null);
+
+  return <BuscaAluno customers={customers} value={value||''} label={label}
+    placeholder={placeholder} required={required}
+    onChange={digitou} onPick={selecionado} rodape={rodape}/>;
 }
 
 // ====== PAGAMENTO MÚLTIPLO (split) ======
@@ -1778,13 +1967,11 @@ function QuickEncomendaModal({product, customers, currentUser, onClose, onSave, 
             </div>
           ) : (
             <>
-            <div className="form-group full">
-              <label>Puxar cliente cadastrado</label>
-              <select defaultValue="" onChange={e=>puxarCliente(e.target.value)}>
-                <option value="">Selecionar cliente...</option>
-                {(customers||[]).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}</option>)}
-              </select>
-            </div>
+            <BuscaAluno customers={customers} className="full" limparAoEscolher
+              label="Puxar cliente cadastrado"
+              placeholder="Digite o nome, o CPF ou o telefone do aluno"
+              ajuda="Escolha na lista e os dados são preenchidos abaixo."
+              onPick={cu=>puxarCliente(cu.id)}/>
             <div className="form-group"><label>Nome do Cliente *</label><input placeholder="Nome completo" value={cliente} onChange={e=>setCliente(e.target.value)}/></div>
             <div className="form-group"><label>Telefone</label><input placeholder="(00) 00000-0000" value={clientePhone} onChange={e=>setClientePhone(e.target.value)}/></div>
             <div className="form-group"><label>Escola</label><input placeholder="Escola" value={escola} onChange={e=>setEscola(e.target.value)}/></div>
@@ -5510,20 +5697,23 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
   const descVal = form.desconto > 0 ? subtotal * (form.desconto / 100) : 0;
   const total = subtotal - descVal;
 
+  // O orçamento é uma PROPOSTA, não uma venda: o aluno pede o que quer, e o
+  // que não tiver em estoque vira encomenda na hora de converter em venda.
+  // Por isso aqui nada é bloqueado nem cortado — só avisado.
   function addItem(){
     if(!addProd) return;
     const p = products.find(x => String(x.id) === String(addProd));
     if(!p){ notify && notify('Produto não encontrado','error'); return; }
     const stock = p.stock||0;
-    if(stock<=0){ notify && notify(`${p.name} está sem estoque neste polo`,'error'); return; }
     const ex = form.items.find(x => String(x.productId) === String(p.id));
-    const jaNoOrc = ex ? ex.qty : 0;
-    const disponivel = stock - jaNoOrc;
-    if(disponivel<=0){ notify && notify(`Estoque máximo de ${p.name} (${stock} un.) já está no orçamento`,'error'); return; }
-    let q = Math.max(1, parseInt(addQty)||1);
-    if(q>disponivel){ notify && notify(`Apenas ${disponivel} un. de ${p.name} disponível(is) neste polo. Ajustado.`,'error'); q=disponivel; }
+    const q = Math.max(1, parseInt(addQty)||1);
+    const totalNoOrc = (ex ? ex.qty : 0) + q;
+    if(totalNoOrc > stock){
+      const faltam = totalNoOrc - stock;
+      notify && notify(`${p.name}: ${faltam} un. sem estoque — vira encomenda ao converter em venda`,'info');
+    }
     if(ex){
-      setForm({...form, items: form.items.map(x => String(x.productId) === String(p.id) ? {...x, qty: x.qty + q, maxStock:stock} : x)});
+      setForm({...form, items: form.items.map(x => String(x.productId) === String(p.id) ? {...x, qty: totalNoOrc, maxStock:stock} : x)});
     } else {
       setForm({...form, items: [...form.items, {productId:p.id, name:p.name, price:p.price, qty:q, sku:p.sku, maxStock:stock}]});
     }
@@ -5534,8 +5724,7 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
   function updateItemQty(pid, q){
     if(q <= 0){ removeItem(pid); return; }
     const p = products.find(x => String(x.id) === String(pid));
-    const stock = p ? (p.stock||0) : Infinity;
-    if(q > stock){ notify && notify(`Apenas ${stock} un. em estoque neste polo`,'error'); q = stock; }
+    const stock = p ? (p.stock||0) : null;
     setForm({...form, items: form.items.map(x => String(x.productId) === String(pid) ? {...x, qty: q, maxStock:(p?stock:x.maxStock)} : x)});
   }
 
@@ -5638,29 +5827,20 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
         <div className="form-group"><label>Validade</label><input type="text" placeholder="DD/MM/AAAA" value={form.validade} onChange={e=>setForm({...form,validade:e.target.value})}/></div>
         <div className="form-group"><label>Emissão</label><input value={form.createdAt} readOnly style={{background:'#f9f9f9',color:'#5f6368'}}/></div>
         <div className="section-divider">👤 Cliente</div>
-        <div className="form-group full">
-          <label>Puxar cliente cadastrado</label>
-          <select onChange={e=>{
-            const id=e.target.value;
-            if(!id) return;
-            const cu=customers.find(x=>String(x.id)===String(id));
-            if(cu) setForm(f=>({...f,cliente:cu.name,clienteEmail:cu.email||'',clientePhone:cu.phone||'',escola:cu.school||''}));
-          }} defaultValue="">
-            <option value="">Selecionar cliente cadastrado...</option>
-            {(customers||[]).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}</option>)}
-          </select>
-        </div>
+        <BuscaAluno customers={customers} className="full" limparAoEscolher
+          label="Puxar cliente cadastrado"
+          placeholder="Digite o nome, o CPF ou o telefone do aluno"
+          ajuda="Escolha na lista e nome, telefone, e-mail e escola são preenchidos abaixo."
+          onPick={cu=>setForm(f=>({...f,cliente:cu.name||'',clienteId:String(cu.id||''),clienteEmail:cu.email||'',clientePhone:cu.phone||'',escola:cu.school||''}))}/>
         <div className="form-group"><label>Nome do Cliente</label><input placeholder="Nome completo" value={form.cliente} onChange={e=>setForm({...form,cliente:e.target.value})}/></div>
         <div className="form-group"><label>Escola</label><input placeholder="Escola" value={form.escola} onChange={e=>setForm({...form,escola:e.target.value})}/></div>
         <div className="form-group"><label>Telefone / WhatsApp</label><input placeholder="(00) 00000-0000" value={form.clientePhone} onChange={e=>setForm({...form,clientePhone:e.target.value})}/></div>
         <div className="form-group"><label>E-mail</label><input placeholder="email@exemplo.com" value={form.clienteEmail} onChange={e=>setForm({...form,clienteEmail:e.target.value})}/></div>
         <div className="section-divider">📦 Itens</div>
         <div className="form-group full">
-          <div className="flex gap-2 items-center mb-2">
-            <select value={addProd} onChange={e=>setAddProd(e.target.value)} style={{flex:2}}>
-              <option value="">Selecionar produto...</option>
-              {ordenarProdutos(products).map(p=><option key={p.id} value={p.id} disabled={(p.stock||0)<=0}>{p.name} — {fmt(p.price)} · {(p.stock||0)} em estoque{(p.stock||0)<=0?' (esgotado)':''}</option>)}
-            </select>
+          <div className="flex gap-2 items-start mb-2">
+            <BuscaProduto products={products} value={addProd} label="" className="cresce"
+              onPick={p=>setAddProd(String(p.id))}/>
             <input type="number" min="1" value={addQty} onChange={e=>setAddQty(e.target.value)} style={{width:70}} placeholder="Qtd"/>
             <button className="btn btn-primary btn-sm" onClick={addItem}>+ Add</button>
           </div>
@@ -5668,9 +5848,17 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
             <table>
               <thead><tr><th>Produto</th><th>SKU</th><th>Qtd</th><th>Unit.</th><th>Total</th><th></th></tr></thead>
               <tbody>
-                {form.items.map(item=>(
+                {form.items.map(item=>{
+                  const pAtual = products.find(x=>String(x.id)===String(item.productId));
+                  const emEstoque = pAtual ? (pAtual.stock||0) : 0;
+                  const faltam = Math.max(0, item.qty - emEstoque);
+                  return (
                   <tr key={item.productId}>
-                    <td><strong>{item.name}</strong></td>
+                    <td><strong>{item.name}</strong>
+                      {faltam>0 && <div style={{fontFamily:'Share Tech Mono',fontSize:10,letterSpacing:1,color:'#bf360c',marginTop:2}}>
+                        🧵 {faltam} un. sem estoque · vira encomenda
+                      </div>}
+                    </td>
                     <td className="text-mono" style={{fontSize:11,color:'#5f6368'}}>{item.sku}</td>
                     <td>
                       <div className="qty-row">
@@ -5682,8 +5870,8 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
                     <td style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(item.price)}</td>
                     <td style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(item.price*item.qty)}</td>
                     <td><button className="btn btn-sm btn-danger" onClick={()=>removeItem(item.productId)}>✕</button></td>
-                  </tr>
-                ))}
+                  </tr>);
+                })}
               </tbody>
             </table>
           )}
@@ -5703,7 +5891,58 @@ function OrcamentoModal({orc, orcamentos, products, customers, onClose, onSave, 
   );
 }
 
-function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, setProducts, notify}){
+// ── converter orçamento em venda quando falta estoque ────────────────────────
+//
+// O orçamento é uma proposta: o aluno pede o que quer, e a loja pode não ter
+// tudo hoje. Antes o sistema simplesmente não deixava orçar o que estava
+// esgotado — o vendedor tinha que fazer um orçamento pela metade e uma
+// encomenda separada, na mão.
+//
+// Agora o item esgotado entra normalmente no orçamento e a decisão fica para a
+// hora de converter em venda, item por item:
+//   'parcial'    → vende o que tem agora e encomenda o que falta (padrão)
+//   'disponivel' → vende só o que tem, sem encomenda
+//   'encomendar' → não vende nada agora, encomenda a quantidade toda
+//
+// Só sai do estoque o que é realmente vendido; o resto vira uma encomenda
+// ligada ao orçamento, que segue o fluxo normal de produção e pagamento.
+const ESC_PARCIAL='parcial', ESC_DISPONIVEL='disponivel', ESC_ENCOMENDAR='encomendar';
+
+function planoDeConversao(orc, products, escolhas){
+  // O desconto do orçamento vale para os dois lados: o que é vendido agora e
+  // o que vai para a encomenda. O aluno fechou o preço proposto.
+  const fator = 1 - ((parseFloat(orc && orc.desconto)||0)/100);
+  const linhas = ((orc && orc.items) || []).map(item=>{
+    const prod = (products||[]).find(x=>String(x.id)===String(item.productId));
+    const emEstoque = prod ? Math.max(0, prod.stock||0) : 0;
+    const pedido = Math.max(0, parseInt(item.qty)||0);
+    const falta = Math.max(0, pedido - emEstoque);
+    let escolha = falta>0 ? ((escolhas||{})[String(item.productId)] || ESC_PARCIAL) : ESC_PARCIAL;
+    // Produto zerado não tem "parte disponível" para vender: a única saída é
+    // encomendar tudo. Deixar em 'parcial' faria a tela abrir sem opção marcada.
+    if(falta>0 && emEstoque===0 && escolha!==ESC_ENCOMENDAR) escolha = ESC_ENCOMENDAR;
+    let vender = Math.min(pedido, emEstoque);
+    let encomendar = 0;
+    if(falta>0){
+      if(escolha===ESC_ENCOMENDAR){ vender = 0; encomendar = pedido; }
+      else if(escolha===ESC_DISPONIVEL){ encomendar = 0; }
+      else { encomendar = falta; }
+    }
+    return {item, prod, emEstoque, pedido, falta, escolha, vender, encomendar,
+            totalVenda: r2(item.price * vender * fator),
+            totalEncomenda: r2(item.price * encomendar * fator)};
+  });
+  return {
+    linhas,
+    faltantes: linhas.filter(l=>l.falta>0),
+    vendidos: linhas.filter(l=>l.vender>0),
+    encomendados: linhas.filter(l=>l.encomendar>0),
+    totalVenda: r2(linhas.reduce((a,l)=>a+l.totalVenda,0)),
+    totalEncomenda: r2(linhas.reduce((a,l)=>a+l.totalEncomenda,0))
+  };
+}
+
+function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, setProducts, encomendas, setEncomendas, notify}){
   const [modal, setModal] = useState(null);
   const [editOrc, setEditOrc] = useState(null);
   const [search, setSearch] = useState('');
@@ -5713,6 +5952,8 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
   // pagamento dividido na conversão do orçamento em venda
   const [convertMulti, setConvertMulti] = useState(false);
   const [convertSplits, setConvertSplits] = useState([]);
+  // o que fazer com cada item que não tem estoque suficiente: {productId: escolha}
+  const [convertEsc, setConvertEsc] = useState({});
 
   const filtered = orcamentos.filter(o =>
     (statusFilter === 'Todos' || o.status === statusFilter) &&
@@ -5739,31 +5980,43 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
 
   function convertToSale(orc){
     if(orc.status === 'Convertido em Venda'){ notify('Já convertido em venda','error'); return; }
+    // Cada item sem estoque começa em "vender o que tem e encomendar o resto";
+    // o vendedor muda o que quiser antes de confirmar.
+    const inicial = {};
+    ((orc.items)||[]).forEach(it=>{ inicial[String(it.productId)] = ESC_PARCIAL; });
+    setConvertEsc(inicial);
+    setConvertMulti(false); setConvertSplits([]);
     setConvertModal(orc);
   }
 
   function confirmConvert(){
     const orc = convertModal;
+    const plano = planoDeConversao(orc, products, convertEsc);
+    if(!plano.vendidos.length && !plano.encomendados.length){
+      notify('Nada a converter: todos os itens ficaram de fora','error'); return;
+    }
+
     const now = new Date();
     const date = now.toLocaleDateString('pt-BR');
-    const subtotal = orc.items.reduce((a,b) => a + b.price * b.qty, 0);
-    const descVal = orc.desconto > 0 ? subtotal * (orc.desconto/100) : 0;
-    const total = subtotal - descVal;
+    const hora = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
-    // Pagamento dividido: valida e rateia entre os itens
-    if(convertMulti){
-      const err=validarSplits(total, convertSplits);
+    // ── o que sai do estoque agora ──
+    // O pagamento cobre só o que o aluno leva hoje. O que virou encomenda é
+    // cobrado depois, quando ficar pronto — por isso não entra neste total.
+    let parcelas = null, rateio = null;
+    const totaisVendidos = plano.vendidos.map(l=>l.totalVenda);
+    if(plano.totalVenda > 0 && convertMulti){
+      const err = validarSplits(plano.totalVenda, convertSplits);
       if(err){ notify(err,'error'); return; }
+      parcelas = splitsAplicados(plano.totalVenda, convertSplits);
+      rateio = ratearPagamentos(parcelas, totaisVendidos);
     }
-    const parcelas = convertMulti ? splitsAplicados(total, convertSplits) : null;
-    const itemTotals = orc.items.map(item=>parseFloat((item.price*item.qty).toFixed(2)));
-    const rateio = parcelas ? ratearPagamentos(parcelas, itemTotals) : null;
 
-    const newSales = orc.items.map((item,i) => ({
+    const newSales = plano.vendidos.map((l,i) => ({
       id: Date.now() + Math.random(),
-      productId: item.productId, productName: item.name, qty: item.qty,
-      unitPrice: item.price,
-      total: itemTotals[i],
+      productId: l.item.productId, productName: l.item.name, qty: l.vender,
+      unitPrice: l.item.price,
+      total: totaisVendidos[i],
       cost: 0,
       month: now.getMonth(), week: getWeekNum(now),
       date, ts: now.getTime(),
@@ -5772,20 +6025,66 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
       type: 'loja', status: 'Concluído',
       customer: orc.cliente,
       customerId: orc.clienteId?String(orc.clienteId):'',
+      orderNum: orc.numero, orderTs: now.getTime(),
     }));
-    setSales(prev => [...prev, ...newSales]);
-    setProducts(prev => prev.map(p => {
-      const item = orc.items.find(x => x.productId === p.id);
-      return item ? {...p, stock: Math.max(0, p.stock - item.qty)} : p;
-    }));
-    // registra movimentação
-    orc.items.forEach(item=>{
-      const p=products.find(x=>x.id===item.productId);
-      if(p) registrarMov(p.polo||'',p,'saida_orcamento',p.stock,-item.qty,orc.numero,orc.cliente,'Admin');
-    });
-    setOrcamentos(prev => prev.map(o => o.id === orc.id ? {...o, status:'Convertido em Venda', pagamento:(convertMulti?PGTO_MULTIPLO:convertPayment), payments:parcelas} : o));
-    setConvertModal(null); setConvertMulti(false); setConvertSplits([]);
-    notify(`Orçamento ${orc.numero} convertido em venda!`, 'success');
+    if(newSales.length){
+      setSales(prev => [...prev, ...newSales]);
+      setProducts(prev => prev.map(p => {
+        const l = plano.vendidos.find(x => String(x.item.productId) === String(p.id));
+        return l ? {...p, stock: Math.max(0, (p.stock||0) - l.vender)} : p;
+      }));
+      plano.vendidos.forEach(l=>{
+        const pr=products.find(x=>String(x.id)===String(l.item.productId));
+        if(pr) registrarMov(pr.polo||'',pr,'saida_orcamento',pr.stock,-l.vender,orc.numero,orc.cliente,'Admin');
+      });
+    }
+
+    // ── o que faltou vira UMA encomenda, com o número do orçamento no histórico ──
+    let enc = null;
+    if(plano.encomendados.length){
+      const itens = plano.encomendados.map(l=>({
+        productId:l.item.productId, name:l.item.name, sku:l.item.sku||'',
+        price:l.item.price, qty:l.encomendar
+      }));
+      enc = {
+        id: Date.now(),
+        numero: numeroPedido('ENC', encomendas),
+        tipo: 'Encomenda de Produto',
+        status: 'Novo Pedido',
+        prioridade: 'Normal',
+        cliente: orc.cliente||'',
+        clienteId: orc.clienteId?String(orc.clienteId):'',
+        clientePhone: orc.clientePhone||'',
+        clienteEmail: orc.clienteEmail||'',
+        escola: orc.escola||'',
+        descricao: 'Itens sem estoque do orçamento '+orc.numero+': '
+                 + itens.map(i=>i.qty+'x '+i.name).join(', '),
+        medidas: {},
+        items: itens,
+        precoTotal: plano.totalEncomenda.toFixed(2),
+        sinal: '', sinalPago: false, pagamento: 'Dinheiro',
+        prazoEntrega: '', dataPedido: date,
+        obs: 'Gerada na conversão do orçamento '+orc.numero+'.',
+        historico: [{ data:date, hora, acao:'Encomenda criada a partir do orçamento '+orc.numero, status:'Novo Pedido' }]
+      };
+      setEncomendas(prev => [...(prev||[]), enc]);
+    }
+
+    // O vínculo com a encomenda vai para as observações porque `obs` é gravado
+    // no banco — um campo novo se perderia no próximo carregamento.
+    const marca = enc ? ('Encomenda '+enc.numero+' gerada em '+date+' para os itens sem estoque.') : '';
+    setOrcamentos(prev => prev.map(o => o.id === orc.id ? {...o,
+      status:'Convertido em Venda',
+      pagamento: plano.totalVenda>0 ? (convertMulti?PGTO_MULTIPLO:convertPayment) : (o.pagamento||''),
+      payments: parcelas,
+      encomendaNumero: enc ? enc.numero : (o.encomendaNumero||''),
+      obs: marca ? [String(o.obs||'').trim(), marca].filter(Boolean).join('\n') : o.obs
+    } : o));
+
+    setConvertModal(null); setConvertMulti(false); setConvertSplits([]); setConvertEsc({});
+    if(newSales.length && enc) notify(`Venda registrada · encomenda ${enc.numero} criada para o que faltou`,'success');
+    else if(enc) notify(`Sem estoque agora — encomenda ${enc.numero} criada para ${enc.cliente}`,'success');
+    else notify(`Orçamento ${orc.numero} convertido em venda!`,'success');
   }
 
   function deleteOrc(id){ if(confirm('Excluir orçamento?')){ setOrcamentos(prev=>prev.filter(o=>o.id!==id)); notify('Excluído','success'); } }
@@ -5869,36 +6168,121 @@ function Orcamentos({products, customers, orcamentos, setOrcamentos, setSales, s
         />
       )}
 
-      {convertModal && (
+      {convertModal && (()=>{
+        const plano = planoDeConversao(convertModal, products, convertEsc);
+        const semNada = !plano.vendidos.length && !plano.encomendados.length;
+        return (
         <Modal title={`Converter em Venda — ${convertModal.numero}`} onClose={()=>setConvertModal(null)}
           actions={[
             <button key="c" className="btn" onClick={()=>setConvertModal(null)}>Cancelar</button>,
-            <button key="ok" className="btn btn-success" onClick={confirmConvert}>✓ Confirmar Venda</button>
+            <button key="ok" className="btn btn-success" onClick={confirmConvert} disabled={semNada}>
+              {plano.totalVenda>0 ? '✓ Confirmar Venda' : '🧵 Gerar Encomenda'}
+            </button>
           ]}>
+
+          {/* Falta estoque? O vendedor decide item por item o que fazer. */}
+          {plano.faltantes.length>0 && (
+            <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:'12px 14px',marginBottom:16}}>
+              <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:1,color:'#bf360c',marginBottom:4}}>
+                ⚠ {plano.faltantes.length===1?'Um item não tem estoque suficiente':`${plano.faltantes.length} itens não têm estoque suficiente`}
+              </div>
+              <div style={{fontSize:12,color:'#8a4b00',marginBottom:12}}>
+                O que faltar pode virar uma encomenda para <strong>{convertModal.cliente||'o cliente'}</strong>, com número próprio e acompanhamento na tela de Encomendas.
+              </div>
+
+              {plano.faltantes.map(l=>{
+                const pid = String(l.item.productId);
+                const opcoes = [
+                  l.emEstoque>0 && {id:ESC_PARCIAL, titulo:`Vender ${l.emEstoque} agora e encomendar ${l.falta}`, sub:'O aluno leva o que tem hoje e o resto fica encomendado'},
+                  l.emEstoque>0 && {id:ESC_DISPONIVEL, titulo:`Vender só as ${l.emEstoque} disponíveis`, sub:'Sem encomenda — o que falta sai do pedido'},
+                  {id:ESC_ENCOMENDAR, titulo:`Encomendar as ${l.pedido} unidades`, sub:'Nada sai do estoque agora'}
+                ].filter(Boolean);
+                return (
+                  <div key={pid} style={{background:'#fff',border:'1px solid #f0d6bd',borderRadius:4,padding:'10px 12px',marginBottom:8}}>
+                    <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:.5,marginBottom:2}}>{l.item.name}</div>
+                    <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',marginBottom:8}}>
+                      PEDIDO {l.pedido} UN · EM ESTOQUE {l.emEstoque} UN · FALTAM {l.falta}
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                      {opcoes.map(op=>(
+                        <div key={op.id} onClick={()=>setConvertEsc(e=>({...e,[pid]:op.id}))}
+                          style={{border:'2px solid '+(l.escolha===op.id?'#111':'#e8e8e8'),borderRadius:4,
+                            padding:'8px 10px',cursor:'pointer',background:l.escolha===op.id?'#fafafa':'#fff'}}>
+                          <div style={{fontFamily:'Oswald',fontSize:12,fontWeight:600,letterSpacing:.5}}>
+                            {l.escolha===op.id?'● ':'○ '}{op.titulo}
+                          </div>
+                          <div style={{fontSize:11,color:'#525252',marginLeft:16}}>{op.sub}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* O que sai do estoque e é cobrado agora */}
           <div style={{marginBottom:16}}>
-            <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#666',marginBottom:10}}>Resumo do Pedido</div>
-            {convertModal.items.map(item=>(
-              <div key={item.productId} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #f5f5f5',fontSize:13}}>
-                <span>{item.name} <span className="text-mono" style={{fontSize:11,color:'#5f6368'}}>x{item.qty}</span></span>
-                <span style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(item.price*item.qty)}</span>
+            <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#666',marginBottom:10}}>
+              {plano.encomendados.length ? 'Sai da loja hoje' : 'Resumo do Pedido'}
+            </div>
+            {plano.vendidos.length===0 && (
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',padding:'8px 0'}}>
+                NENHUM ITEM SAI DO ESTOQUE AGORA
+              </div>
+            )}
+            {plano.vendidos.map(l=>(
+              <div key={l.item.productId} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #f5f5f5',fontSize:13}}>
+                <span>{l.item.name} <span className="text-mono" style={{fontSize:11,color:'#5f6368'}}>x{l.vender}</span></span>
+                <span style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(l.totalVenda)}</span>
               </div>
             ))}
             <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 0',fontFamily:'Bebas Neue',fontSize:20,letterSpacing:2}}>
-              <span>Total</span>
-              <span>{fmt(convertModal.items.reduce((a,b)=>a+b.price*b.qty,0) * (1-(convertModal.desconto||0)/100))}</span>
+              <span>{plano.encomendados.length?'A receber agora':'Total'}</span>
+              <span>{fmt(plano.totalVenda)}</span>
             </div>
           </div>
-          <PagamentoMultiplo
-            label="Forma de Pagamento"
-            total={convertModal.items.reduce((a,b)=>a+b.price*b.qty,0) * (1-(convertModal.desconto||0)/100)}
-            payment={convertPayment} setPayment={setConvertPayment}
-            splits={convertSplits} setSplits={setConvertSplits}
-            multi={convertMulti} setMulti={setConvertMulti}/>
+
+          {/* O que vai para a encomenda, cobrado só quando ficar pronto */}
+          {plano.encomendados.length>0 && (
+            <div style={{background:'#f9f9f9',border:'1px solid #e8e8e8',borderRadius:4,padding:'12px 14px',marginBottom:16}}>
+              <div style={{fontFamily:'Oswald',fontSize:13,fontWeight:600,letterSpacing:2,textTransform:'uppercase',color:'#666',marginBottom:8}}>🧵 Vai para encomenda</div>
+              {plano.encomendados.map(l=>(
+                <div key={l.item.productId} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid #f0f0f0',fontSize:13}}>
+                  <span>{l.item.name} <span className="text-mono" style={{fontSize:11,color:'#5f6368'}}>x{l.encomendar}</span></span>
+                  <span style={{fontFamily:'Bebas Neue',fontSize:14,letterSpacing:1}}>{fmt(l.totalEncomenda)}</span>
+                </div>
+              ))}
+              <div style={{display:'flex',justifyContent:'space-between',paddingTop:8,fontFamily:'Bebas Neue',fontSize:16,letterSpacing:1}}>
+                <span>Total da encomenda</span><span>{fmt(plano.totalEncomenda)}</span>
+              </div>
+              <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#5f6368',marginTop:6}}>
+                Não é cobrado agora — a encomenda nasce como NÃO PAGA e é recebida no caixa quando ficar pronta.
+              </div>
+            </div>
+          )}
+
+          {plano.totalVenda>0 && (
+            <PagamentoMultiplo
+              label="Forma de Pagamento"
+              total={plano.totalVenda}
+              payment={convertPayment} setPayment={setConvertPayment}
+              splits={convertSplits} setSplits={setConvertSplits}
+              multi={convertMulti} setMulti={setConvertMulti}/>
+          )}
+
           <div style={{background:'rgba(26,110,46,.06)',border:'1px solid rgba(26,110,46,.2)',borderRadius:3,padding:'10px 14px',marginTop:12,fontSize:12,color:'#1a6e2e'}}>
-            ✅ Esta ação irá registrar a venda no sistema, baixar o estoque e marcar o orçamento como "Convertido em Venda".
+            {semNada
+              ? '⚠ Do jeito que está, nada seria vendido nem encomendado. Escolha outra opção acima.'
+              : (plano.encomendados.length
+                  ? (plano.totalVenda>0
+                      ? '✅ Registra a venda do que sai hoje, baixa só essas unidades do estoque, abre a encomenda do que faltou e marca o orçamento como "Convertido em Venda".'
+                      : '🧵 Nada sai do estoque: abre a encomenda com todos os itens e marca o orçamento como "Convertido em Venda".')
+                  : '✅ Esta ação irá registrar a venda no sistema, baixar o estoque e marcar o orçamento como "Convertido em Venda".')}
           </div>
         </Modal>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -5943,16 +6327,9 @@ function EncomendaItensTab({form, setForm, products}){
       <div style={{background:'#f0f7ff',border:'1px solid #b8d4f0',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:12,color:'#1a4e8e'}}>
         📦 Liste os produtos desta encomenda para facilitar a separação e o preparo do pedido.
       </div>
-      <div className="flex gap-2 mb-3 items-center">
-        <select value={addItemProd} onChange={e=>setAddItemProd(e.target.value)} style={{flex:2}}>
-          <option value="">Selecionar produto...</option>
-          {ordenarProdutos(products).map(p=>(
-            <option key={p.id} value={p.id}>
-              {p.name} — {(p.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-              {p.stock>0?' (est: '+p.stock+')':' (SEM ESTOQUE)'}
-            </option>
-          ))}
-        </select>
+      <div className="flex gap-2 mb-3 items-start">
+        <BuscaProduto products={products} value={addItemProd} label="" className="cresce"
+          onPick={p=>setAddItemProd(String(p.id))}/>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           <button className="qty-btn" onClick={()=>setAddItemQty(q=>Math.max(1,q-1))}>−</button>
           <input type="number" min="1" value={addItemQty} onChange={e=>setAddItemQty(Math.max(1,parseInt(e.target.value)||1))} style={{width:56,textAlign:'center',fontFamily:'Share Tech Mono',fontSize:13}}/>
@@ -6160,14 +6537,11 @@ function EncomendaModal({enc, encomendas, customers, products, onClose, onSave, 
           <div className="form-group"><label>Prazo de Entrega</label><input placeholder="DD/MM/AAAA" value={form.prazoEntrega} onChange={e=>setForm({...form,prazoEntrega:e.target.value})}/></div>
 
           <div className="section-divider">👤 Cliente</div>
-          <div className="form-group full">
-            <label>Puxar cliente cadastrado</label>
-            <select value="" onChange={e=>puxarCliente(e.target.value)}>
-              <option value="">Selecionar cliente cadastrado...</option>
-              {[...(customers||[])].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''))).map(cu=><option key={cu.id} value={cu.id}>{cu.name}{cu.school?' — '+cu.school:''}{cu.phone?' · '+cu.phone:''}</option>)}
-            </select>
-            <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',letterSpacing:1,marginTop:4}}>Ao selecionar, nome, telefone, e-mail e escola são preenchidos abaixo.</div>
-          </div>
+          <BuscaAluno customers={customers} className="full" limparAoEscolher
+            label="Puxar cliente cadastrado"
+            placeholder="Digite o nome, o CPF ou o telefone do aluno"
+            ajuda="Escolha na lista e nome, telefone, e-mail e escola são preenchidos abaixo."
+            onPick={cu=>puxarCliente(cu.id)}/>
           <div className="form-group"><label>Nome do Cliente *</label><input placeholder="Nome completo" value={form.cliente} onChange={e=>setForm({...form,cliente:e.target.value})}/></div>
           <div className="form-group"><label>Telefone / WhatsApp</label><input placeholder="(00) 00000-0000" value={form.clientePhone} onChange={e=>setForm({...form,clientePhone:e.target.value})}/></div>
           <div className="form-group"><label>E-mail</label><input placeholder="email@exemplo.com" value={form.clienteEmail} onChange={e=>setForm({...form,clienteEmail:e.target.value})}/></div>
@@ -7374,12 +7748,14 @@ function GestaoEstoque({activePolo, categories, setCategories, reloadProducts, n
     {tModal&&<Modal title={isGerente?'Enviar mercadoria para outro polo':'Transferir entre polos'} onClose={()=>setTModal(false)}
       actions={[<button key="c" className="btn" onClick={()=>setTModal(false)}>Cancelar</button>,<button key="s" className="btn btn-primary" onClick={doTransfer}>Transferir</button>]}>
       <div className="form-grid">
-        <div className="form-group full"><label>Produto</label>
-          <select value={tForm.key} onChange={e=>setTForm({...tForm,key:e.target.value})}>
-            <option value="">Selecionar produto...</option>
-            {Object.values(groupsMap).sort((a,b)=>cmpProdutoTamanho(a.name,b.name)).map(g=><option key={g.key} value={g.key}>{g.name}{g.sku?' ('+g.sku+')':''}</option>)}
-          </select>
-        </div>
+        <ListaQueFiltra className="full" label="Produto"
+          placeholder="Digite o nome ou o SKU do produto"
+          vazioMsg="Nenhum produto com"
+          texto={(groupsMap[tForm.key]&&groupsMap[tForm.key].name)||''}
+          itens={Object.values(groupsMap).sort((a,b)=>cmpProdutoTamanho(a.name,b.name)).map(g=>({
+            chave:g.key, titulo:g.name, sub:g.sku?('SKU '+g.sku):'', alvos:[g.name,g.sku], dado:g
+          }))}
+          onEscolher={it=>setTForm({...tForm,key:it.chave})}/>
         <div className="form-group"><label>De (origem)</label>
           {isGerente ? (() => {
             const g=groupsMap[tForm.key]; const r=g&&g.polos[poloGerente];
@@ -8182,7 +8558,7 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
         {page==="fechamento"&&<RedeDeSeguranca tela="Fechamento de Caixa"><Fechamento sales={sales} setSales={setSales} notify={notify} operador={operador} creditos={creditos} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
         {page==="clientes"&&<RedeDeSeguranca tela="Clientes"><Clientes customers={customers} setCustomers={setCustomers} notify={notify} sales={sales} encomendas={encomendas} creditos={creditos}/></RedeDeSeguranca>}
         {page==="crediario"&&<RedeDeSeguranca tela="Crediário"><Crediario customers={customers} creditos={creditos} addCreditos={addCreditos} operador={operador} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
-        {page==="orcamentos"&&<RedeDeSeguranca tela="Orçamentos"><Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} notify={notify}/></RedeDeSeguranca>}
+        {page==="orcamentos"&&<RedeDeSeguranca tela="Orçamentos"><Orcamentos products={products} customers={customers} orcamentos={orcamentos} setOrcamentos={setOrcamentos} setSales={setSales} setProducts={setProducts} encomendas={encomendas} setEncomendas={setEncomendas} notify={notify}/></RedeDeSeguranca>}
         {page==="encomendas"&&<RedeDeSeguranca tela="Encomendas"><Encomendas customers={customers} products={products} encomendas={encomendas} setEncomendas={setEncomendas} sales={sales} setSales={setSales} polo={polo.id} notify={notify}/></RedeDeSeguranca>}
         {page==="pedidos"&&<RedeDeSeguranca tela="Pedidos Online"><PedidosOnline sales={sales} setSales={setSales} products={products} setProducts={setProducts} setProductsSemGravar={setProductsSemGravar} notify={notify} customers={customers} polo={polo.id}/></RedeDeSeguranca>}
         {page==="despesas"&&role==='dono'&&<RedeDeSeguranca tela="Despesas"><Despesas operador={operador} notify={notify}/></RedeDeSeguranca>}
