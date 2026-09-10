@@ -532,7 +532,7 @@ const MONTHS = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov
 // convertido em saldo). Não entra dinheiro novo no caixa quando é usado.
 const PGTO_CREDIARIO = "Crediário — Saldo do Aluno";
 const PGTO_INTEGRA   = "Integra Card — Bolsa Uniforme";
-const PMTS = ["Dinheiro","Cartão Crédito","Cartão Débito","Pix",PGTO_INTEGRA,PGTO_CREDIARIO];
+const PMTS = ["Dinheiro","Cartão Crédito","Cartão Débito","Pix","Alelo",PGTO_INTEGRA,PGTO_CREDIARIO];
 // Formas que representam dinheiro entrando no caixa hoje
 const PMTS_DINHEIRO_NOVO = PMTS.filter(p=>p!==PGTO_CREDIARIO);
 const INIT_CATS = ["Fardamento","Calças","Acessórios","Calçados","Material Escolar"];
@@ -2913,6 +2913,7 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
   const totalDinheiro = totalPorForma('Dinheiro');
   const totalPix = totalPorForma('Pix');
   const totalCartao = totalPorForma(['Cartão Crédito','Cartão Débito']);
+  const totalAlelo = totalPorForma('Alelo');
   const totalIntegra = totalPorForma('Integra Card — Bolsa Uniforme');
   const sangrias = (caixa.movimentos||[]).filter(m=>m.tipo==='sangria').reduce((a,b)=>a+b.valor,0);
   const suprimentos = (caixa.movimentos||[]).filter(m=>m.tipo==='suprimento').reduce((a,b)=>a+b.valor,0);
@@ -2933,6 +2934,7 @@ function FechamentoCaixaModal({caixa, salesHoje, onClose, onFechar, polo}){
             ['Vendas em Dinheiro', totalDinheiro, '#111'],
             ['Vendas no Pix', totalPix, '#111'],
             ['Vendas no Cartão', totalCartao, '#111'],
+            ['Vendas no Alelo', totalAlelo, '#111'],
             ['Integra Card', totalIntegra, '#00643c'],
             ['─────────────────','',''],
             ['Total de Vendas', totalVendas, '#1a4e8e'],
@@ -4437,7 +4439,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
                 📍 Avisaremos quando estiver pronto. Retire na loja no horário de funcionamento.
               </div>
               <div style={{background:'#fff3e0',border:'1px solid #e65100',borderRadius:4,padding:14,fontSize:13,color:'#bf360c',margin:'0 0 10px'}}>
-                💵 <strong>Pagamento na loja</strong>, na hora da retirada — em dinheiro, cartão, Pix ou Integra Card.
+                💵 <strong>Pagamento na loja</strong>, na hora da retirada — em dinheiro, cartão, Pix, Alelo ou Integra Card.
               </div>
         <button className="btn btn-primary" onClick={()=>setStep("catalog")}>Continuar Comprando</button>
         <button className="btn" style={{marginTop:8,width:'100%',justifyContent:'center'}} onClick={()=>setStep("meus-pedidos")}>📋 Ver Meus Pedidos</button>
@@ -4474,7 +4476,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
           <div style={{fontSize:26,lineHeight:1}}>🏪</div>
           <div>
             <div style={{fontFamily:"Oswald",fontSize:14,fontWeight:600,letterSpacing:1,textTransform:"uppercase",color:'#7a4b00',marginBottom:4}}>Pagamento na loja, na retirada</div>
-            <div style={{fontSize:13,color:'#5f6368',lineHeight:1.5}}>Você faz o pedido agora e recebe um aviso quando ele estiver pronto. É só ir até a loja, retirar e pagar na hora — em dinheiro, cartão, Pix ou Integra Card, como preferir.</div>
+            <div style={{fontSize:13,color:'#5f6368',lineHeight:1.5}}>Você faz o pedido agora e recebe um aviso quando ele estiver pronto. É só ir até a loja, retirar e pagar na hora — em dinheiro, cartão, Pix, Alelo ou Integra Card, como preferir.</div>
           </div>
         </div>
       </div>
