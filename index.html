@@ -5033,16 +5033,23 @@ function SeletorDeFoto({valorUrl, valorImagem, nomeProduto, onEscolher, notify})
 //              plano de saúde. Não pertence a polo nenhum e fica
 //              fora do custo da operação.
 //
+// Dentro da empresa há ainda o custo GERAL: insumos, matéria-prima, imposto,
+// contador. É dinheiro da operação, mas não é de um polo só — vai para o
+// banco sem polo, como o pessoal, e aparece numa linha própria ao lado dos polos.
+//
 // As abas escolhem qual lado está na tela. Não passa pelo carregamento
 // por polo porque o dono precisa ver todos de uma vez para comparar.
 const DESP_CATEGORIAS = ['Aluguel','Água','Luz','Internet/Telefone','Salário',
-                         'Impostos','Fornecedor','Manutenção','Marketing','Outros'];
+                         'Insumos','Matéria-prima','Impostos','Fornecedor','Frete',
+                         'Contabilidade','Manutenção','Marketing','Outros'];
+const POLO_GERAL = '__geral';   // valor do filtro "Geral da empresa"
 // O gasto de casa não cabe nas categorias da loja — ninguém lança o mercado do
 // mês como "Fornecedor". Cada lado tem a sua própria lista.
 const DESP_CATEGORIAS_PESSOAL = ['Casa','Mercado','Saúde','Educação','Transporte',
                                  'Lazer','Cartão','Família','Outros'];
 const catsDoTipo = t => t==='pessoal' ? DESP_CATEGORIAS_PESSOAL : DESP_CATEGORIAS;
 const ehPessoal  = d => d && d.tipo==='pessoal';
+const ehGeral    = d => d && !ehPessoal(d) && !d.polo;
 
 function despFromDB(r){
   return {id:r.id, polo:r.polo||'', tipo:(r.tipo==='pessoal'?'pessoal':'empresa'),
@@ -5052,7 +5059,8 @@ function despFromDB(r){
           pagoEm:r.pago_em||'', forma:r.forma||'', obs:r.obs||'', operador:r.operador||''};
 }
 // Gasto pessoal vai para o banco sem polo. É o que garante que ele nunca
-// apareça no custo de loja nenhuma.
+// apareça no custo de loja nenhuma. O custo geral da empresa também vai sem
+// polo — o que o separa do pessoal é o tipo.
 function despToDB(d){
   const pessoal = ehPessoal(d);
   return {id:String(d.id), tipo:pessoal?'pessoal':'empresa', polo:pessoal?null:(d.polo||null),
@@ -5120,8 +5128,13 @@ function Despesas({operador, notify}){
   const doLado = useMemo(()=>doMes.filter(d=>tipo==='todos' || d.tipo===tipo),[doMes,tipo]);
   const usaPolo = tipo!=='pessoal';
 
+  // "Geral da empresa" no filtro mostra só o que não é de polo nenhum. Um polo
+  // escolhido não traz o custo geral: ele não é daquela loja.
+  const passaPolo = d => !usaPolo || poloFiltro==='Todos' ||
+    (poloFiltro===POLO_GERAL ? ehGeral(d) : d.polo===poloFiltro);
+
   const filtradas = useMemo(()=>doLado.filter(d=>
-    (!usaPolo || poloFiltro==='Todos' || d.polo===poloFiltro) &&
+    passaPolo(d) &&
     (situacao==='Todas' || (situacao==='Pagas' ? d.pago : !d.pago))
   ).sort((a,b)=>String(a.vencimento||'').localeCompare(String(b.vencimento||''))),[doLado,usaPolo,poloFiltro,situacao]);
 
@@ -5133,9 +5146,7 @@ function Despesas({operador, notify}){
             qtdVencidas:base.filter(estaVencida).length};
   }
 
-  const resumo = useMemo(()=>somar(
-    doLado.filter(d=>!usaPolo || poloFiltro==='Todos' || d.polo===poloFiltro)
-  ),[doLado,usaPolo,poloFiltro]);
+  const resumo = useMemo(()=>somar(doLado.filter(passaPolo)),[doLado,usaPolo,poloFiltro]);
 
   // Na aba "Tudo" os dois lados aparecem somados em separado. Um total único
   // misturaria o dinheiro da loja com o de casa, que é justamente o que se
@@ -5153,6 +5164,10 @@ function Despesas({operador, notify}){
             aberto:r2(dele.filter(d=>!d.pago).reduce((a,d)=>a+d.valor,0)),
             total:r2(dele.reduce((a,d)=>a+d.valor,0))};
   }).filter(x=>x.total>0).sort((a,b)=>b.total-a.total),[doMes]);
+
+  // O custo geral fica numa linha à parte, embaixo dos polos: soma no total da
+  // empresa, mas não deixa nenhuma loja parecer mais cara do que é.
+  const geral = useMemo(()=>somar(doMes.filter(ehGeral)),[doMes]);
 
   const meses = useMemo(()=>{
     const s=new Set(linhas.map(d=>mesDe(d.vencimento)).filter(Boolean));
@@ -5214,12 +5229,14 @@ function Despesas({operador, notify}){
     carregar();
   }
 
-  function novo(){
+  function novo(comoGeral){
     const hoje=new Date().toISOString().slice(0,10);
     // Abre já no lado da aba em que o dono está — em "Tudo", na empresa.
     const lado = tipo==='todos' ? 'empresa' : tipo;
-    setForm({id:'D'+Date.now(), tipo:lado, polo:Object.keys(POLOS)[0], descricao:'',
-             categoria:catsDoTipo(lado)[0],
+    // Custo geral: pelo botão próprio ou com o filtro "Geral da empresa" aberto
+    const geralAgora = lado==='empresa' && (comoGeral===true || poloFiltro===POLO_GERAL);
+    setForm({id:'D'+Date.now(), tipo:lado, polo:geralAgora?'':Object.keys(POLOS)[0], descricao:'',
+             categoria:geralAgora?'Insumos':catsDoTipo(lado)[0],
              valor:'', vencimento:hoje, pago:false, pagoEm:'', forma:'', obs:'',
              recorrente:false, recorrenciaId:''});
     setModal(true);
@@ -5230,7 +5247,6 @@ function Despesas({operador, notify}){
     if(!form.descricao.trim()){ notify('Descreva a despesa','error'); return; }
     const v=parseFloat(String(form.valor).replace(',','.'))||0;
     if(v<=0){ notify('Informe um valor maior que zero','error'); return; }
-    if(!ehPessoal(form) && !form.polo){ notify('Escolha o polo','error'); return; }
     setSalvando(true);
     const linha=despToDB({...form, valor:v, operador:form.operador||(operador&&operador.nome)||''});
     const {error}=await sb.from('despesas').upsert([linha]);
@@ -5306,6 +5322,7 @@ function Despesas({operador, notify}){
         {usaPolo && (
           <select value={poloFiltro} onChange={e=>setPoloFiltro(e.target.value)}>
             <option value="Todos">Todos os polos</option>
+            <option value={POLO_GERAL}>🏢 Geral da empresa (sem polo)</option>
             {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
           </select>
         )}
@@ -5313,9 +5330,17 @@ function Despesas({operador, notify}){
           {['Todas','Em aberto','Pagas'].map(x=><option key={x}>{x}</option>)}
         </select>
       </div>
-      <button className="btn btn-primary btn-sm" onClick={novo}>
-        {tipo==='pessoal' ? '+ Novo Gasto Pessoal' : '+ Nova Despesa'}
-      </button>
+      <div className="flex gap-2" style={{flexWrap:'wrap'}}>
+        {tipo!=='pessoal' && (
+          <button className="btn btn-sm" onClick={()=>novo(true)}
+                  title="Insumos, matéria-prima, imposto — custos que não são de um polo só">
+            + Custo Geral
+          </button>
+        )}
+        <button className="btn btn-primary btn-sm" onClick={()=>novo()}>
+          {tipo==='pessoal' ? '+ Novo Gasto Pessoal' : '+ Nova Despesa'}
+        </button>
+      </div>
     </div>
 
     {mensaisFaltando.length>0 && (
@@ -5353,11 +5378,12 @@ function Despesas({operador, notify}){
       </div>
     )}
 
-    {porPolo.length>0 && usaPolo && poloFiltro==='Todos' && (
+    {(porPolo.length>0 || geral.total>0) && usaPolo && poloFiltro==='Todos' && (
       <div className="card" style={{marginBottom:14}}>
         <div className="card-title">Quanto cada polo custa · {nomeDoMes(mes)}</div>
         <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',marginTop:-6,marginBottom:8}}>
           Só a conta da operação. Gasto pessoal fica de fora.
+          {geral.total>0 && ' Insumos, matéria-prima, imposto e outros custos gerais aparecem na última linha, fora de qualquer polo.'}
         </div>
         <div className="table-wrap"><table><thead><tr>
           {['Polo','Pago','A pagar','Total'].map(h=><th key={h}>{h}</th>)}
@@ -5368,6 +5394,15 @@ function Despesas({operador, notify}){
             <td className="text-mono" style={{fontSize:12,color:p.aberto>0?'#9a6a00':'#8a8a8a'}}>{fmt(p.aberto)}</td>
             <td className="text-mono" style={{fontSize:13,fontWeight:700}}>{fmt(p.total)}</td>
           </tr>)}
+          {geral.total>0 && (
+            <tr style={{background:'#f6f7f9',cursor:'pointer'}} onClick={()=>setPoloFiltro(POLO_GERAL)}
+                title="Ver só os custos gerais">
+              <td><strong>🏢 Geral da empresa</strong></td>
+              <td className="text-mono" style={{fontSize:12,color:'#1a6e2e'}}>{fmt(geral.pago)}</td>
+              <td className="text-mono" style={{fontSize:12,color:geral.aberto>0?'#9a6a00':'#8a8a8a'}}>{fmt(geral.aberto)}</td>
+              <td className="text-mono" style={{fontSize:13,fontWeight:700}}>{fmt(geral.total)}</td>
+            </tr>
+          )}
         </tbody></table></div>
       </div>
     )}
@@ -5397,7 +5432,9 @@ function Despesas({operador, notify}){
               </td>
               {usaPolo && <td>{ehPessoal(d)
                 ? <span style={{color:'#8a8a8a'}}>—</span>
-                : <span className="kb-pill">{(POLOS[d.polo]&&POLOS[d.polo].sigla)||d.polo}</span>}</td>}
+                : ehGeral(d)
+                  ? <span className="kb-pill" title="Custo geral da empresa, não é de nenhum polo">GERAL</span>
+                  : <span className="kb-pill">{(POLOS[d.polo]&&POLOS[d.polo].sigla)||d.polo}</span>}</td>}
               {tipo==='todos' && <td style={{fontSize:12,whiteSpace:'nowrap'}}>{ehPessoal(d)?'🏠 Pessoal':'🏪 Empresa'}</td>}
               <td>
                 <strong>{d.descricao}</strong>
@@ -5457,10 +5494,20 @@ function Despesas({operador, notify}){
             </div>
           </div>
           {!ehPessoal(form) && (
-            <div className="form-group"><label>Polo *</label>
-              <select value={form.polo} onChange={e=>setForm({...form,polo:e.target.value})}>
-                {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
-              </select>
+            <div className="form-group full"><label>De qual polo é este custo? *</label>
+              <div className="flex gap-2" style={{flexWrap:'wrap'}}>
+                <button type="button" className={'btn btn-sm '+(!ehGeral(form)?'btn-primary':'')}
+                  onClick={()=>setForm({...form, polo:form.polo||Object.keys(POLOS)[0]})}>🏬 De um polo</button>
+                <button type="button" className={'btn btn-sm '+(ehGeral(form)?'btn-primary':'')}
+                  onClick={()=>setForm({...form, polo:''})}>🏢 Geral da empresa</button>
+              </div>
+              {ehGeral(form)
+                ? <div style={{fontFamily:'Share Tech Mono',fontSize:11,color:'#5f6368',marginTop:6,lineHeight:1.7}}>
+                    Insumos, matéria-prima, imposto, contador. Entra no total da empresa, mas não no custo de nenhum polo.
+                  </div>
+                : <select style={{marginTop:8}} value={form.polo} onChange={e=>setForm({...form,polo:e.target.value})}>
+                    {Object.values(POLOS).map(p=><option key={p.id} value={p.id}>{p.sigla} — {p.nome}</option>)}
+                  </select>}
             </div>
           )}
           <div className="form-group"><label>Categoria</label>
@@ -5471,7 +5518,9 @@ function Despesas({operador, notify}){
           <div className="form-group full"><label>Descrição *</label>
             <input placeholder={ehPessoal(form)
                      ? 'Ex.: Mercado do mês · Escola da Ana · Plano de saúde'
-                     : 'Ex.: Aluguel da loja · Salário João · Conta de luz'}
+                     : ehGeral(form)
+                       ? 'Ex.: Tecido do lote de agosto · DAS do Simples · Linha e botões'
+                       : 'Ex.: Aluguel da loja · Salário João · Conta de luz'}
                    value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})}/>
           </div>
           <div className="form-group"><label>Valor *</label>
