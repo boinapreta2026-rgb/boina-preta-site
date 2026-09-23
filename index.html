@@ -261,6 +261,27 @@ td strong{color:var(--t1);font-weight:600;}
 .pdv-name{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:1px;flex:1;}
 .pdv-price{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:1px;}
 /* Selo de estoque: fica na linha, entre o nome e o preço. Nunca por cima. */
+/* Frente de caixa: modelo com tamanhos. Cada botão = um produto, com seu estoque. */
+.pdv-modelo{cursor:default;align-items:flex-start;}
+.pdv-modelo:hover{background:#fff;}
+.pdv-modelo.enc{border-color:#e65100;background:#fff8f2;}
+.pdv-dica{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:1px;color:#8a8a8a;text-transform:uppercase;margin:2px 0 6px;}
+.pdv-modelo.enc .pdv-dica{color:#e65100;}
+.pdv-tams{display:flex;flex-wrap:wrap;gap:6px;}
+.pdv-tam{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;padding:5px 8px;border:1.5px solid #cfcfcf;border-radius:5px;background:#fff;cursor:pointer;line-height:1.1;transition:all .12s;}
+.pdv-tam:hover{border-color:#111;background:#111;color:#fff;}
+.pdv-tam-t{font-family:"Oswald",sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;}
+.pdv-tam-q{font-family:"Share Tech Mono",monospace;font-size:10px;color:#6b6b6b;margin-top:2px;}
+.pdv-tam-q::before{content:"est. ";}
+.pdv-tam-p{font-family:"Share Tech Mono",monospace;font-size:10px;color:#6b6b6b;}
+.pdv-tam:hover .pdv-tam-q,.pdv-tam:hover .pdv-tam-p{color:#ddd;}
+.pdv-tam.baixo{border-color:#e65100;}
+.pdv-tam.baixo .pdv-tam-q{color:#e65100;font-weight:700;}
+.pdv-tam.esg{border-style:dashed;border-color:#e0a0a0;background:#fdf3f3;}
+.pdv-tam.esg .pdv-tam-t{color:#b0b0b0;text-decoration:line-through;}
+.pdv-tam.esg .pdv-tam-q{color:#cc2222;}
+.pdv-tam.casa{box-shadow:0 0 0 2px #f5b800;}
+.pdv-modelo.enc .pdv-tam{border-color:#e65100;}
 .pdv-selo{color:#fff;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;padding:2px 6px;border-radius:2px;flex-shrink:0;white-space:nowrap;}
 .receipt{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:3px;padding:16px;font-family:"Share Tech Mono",monospace;font-size:13px;color:#2b2b2b;}
 .receipt-line{display:flex;justify-content:space-between;padding:2px 0;}
@@ -330,6 +351,16 @@ td strong{color:var(--t1);font-weight:600;}
 .product-price{font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:2px;color:#111;}
 .product-stock{font-family:"Share Tech Mono",monospace;font-size:11px;color:#5f6368;margin-top:2px;}
 .product-actions{margin-top:auto;padding-top:12px;display:flex;flex-direction:column;gap:6px;}
+.product-price-de,.pd-preco-de{display:block;font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:1.5px;color:#5f6368;text-transform:uppercase;line-height:1.4;}
+.pd-preco-de{font-size:11px;margin-bottom:2px;}
+/* tamanhos no cartão: cada botão é um produto com o seu estoque */
+.product-tams{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px;}
+.product-tam{min-width:32px;height:30px;padding:0 7px;border:1.5px solid #d0d0d0;border-radius:5px;background:#fff;font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;color:#111;cursor:pointer;transition:all .12s;}
+.product-tam:hover{border-color:#111;}
+.product-tam.on{background:#111;color:#fff;border-color:#111;}
+.product-tam.esgotado{color:#a8a8a8;text-decoration:line-through;border-style:dashed;}
+.product-tam.esgotado.on{background:#6b6b6b;color:#fff;border-color:#6b6b6b;border-style:solid;}
+.product-add-btn:disabled{background:#d6d6d6;color:#6b6b6b;cursor:not-allowed;}
 .product-add-btn{width:100%;padding:10px 8px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
 .product-add-btn:hover{background:#333;}
 .product-add-btn.sec{background:transparent;color:#444;border:1px solid #cfcfcf;padding:8px;}
@@ -697,17 +728,39 @@ function isSaleOfYear(s, year){ const y=saleYear(s); return y===null ? true : y=
 // Os produtos são cadastrados com o tamanho no nome (ex.: "Camisa Camuflada G").
 // Sem tratamento, a ordem alfabética coloca G antes de M e de P. Aqui separamos
 // o nome-base do tamanho para listar na sequência real: PP, P, M, G, GG, XG...
-const ORDEM_TAM = ['PP','P','M','G','GG','XG','XGG','XXG','EG','EGG'];
-// alternativas mais longas primeiro para "GG" não ser lido como "G"
-const RE_TAM_LETRA = /^(.*?)[\s\-–,]+(?:tam(?:anho)?\.?\s*)?(PP|XGG|XXG|XG|EGG|EG|GG|G|M|P)\s*$/i;
-const RE_TAM_NUM   = /^(.*?)[\s\-–,]+(?:n[ºo°]?\.?\s*|tam(?:anho)?\.?\s*)?(\d{1,3})\s*$/i;
-const RE_TAM_IDADE = /^(.*?)[\s\-–,]+(?:tam(?:anho)?\.?\s*)?(\d{1,2})\s*anos?\s*$/i;
+const ORDEM_TAM = ['PP','P','M','G','GG','XG','EXG','XGG','XXG','EG','EGG'];
+// Entre o nome e o tamanho vem espaço, hífen ou vírgula — ou uma barra, quando
+// seguida de "tam" ("Camiseta/Tam.P", como alguns produtos foram cadastrados).
+// Alternativas mais longas primeiro para "GG" não ser lido como "G".
+const RE_TAM_LETRA = /^(.*?)(?:[\s\-–,]+|\s*\/\s*(?=tam))(?:tam(?:anho)?\.?\s*)?(PP|EXG|XGG|XXG|XG|EGG|EG|GG|G|M|P)\s*$/i;
+const RE_TAM_NUM   = /^(.*?)(?:[\s\-–,]+|\s*\/\s*(?=tam))(?:n[ºo°]?\.?\s*|tam(?:anho)?\.?\s*)?(\d{1,3})\s*$/i;
+const RE_TAM_IDADE = /^(.*?)(?:[\s\-–,]+|\s*\/\s*(?=tam))(?:tam(?:anho)?\.?\s*)?(\d{1,2})\s*anos?\s*$/i;
+// Numeração dupla de chinelo: "Chinelo Slide 37/38" (sem isto, virava tamanho "38")
+const RE_TAM_PAR   = /^(.*?)[\s\-–,]+(?:n[ºo°]?\.?\s*)?(\d{1,2})\s*\/\s*(\d{1,2})\s*$/i;
+// Série escolar: "Luva Camisa Social 6º Ano", "Divisa 1ª Série", "Luva Canícula 7 ANO".
+// "ano" no singular é série; "anos" no plural é idade ("Camiseta 12 Anos").
+const RE_TAM_SERIE = /^(.*?)[\s\-–,]+(\d)\s*[º°ª]?\s*(ano|s[ée]rie)\s*$/i;
 
 // Separa "Camisa Camuflada GG" em { base:"Camisa Camuflada", tam:"GG", rank:4 }
 function parseTamanho(nome){
+  const t = parseTamanhoBruto(nome);
+  // "Bermuda Cívico / Tam. G": a barra que separava o tamanho não é parte do nome
+  if(t.tam) t.base = t.base.replace(/[\s\/\\\-–,]+$/,'');
+  return t;
+}
+function parseTamanhoBruto(nome){
   const n = String(nome||'').trim();
-  let m = n.match(RE_TAM_IDADE);
-  if(m) return {base:m[1].trim(), rank:1000+parseInt(m[2]), tam:m[2]+' anos'};
+  let m = n.match(RE_TAM_SERIE);
+  if(m){
+    // Fundamental (6º a 9º ano) antes do médio (1º a 3º ano, ou 1ª a 3ª série)
+    const d = parseInt(m[2]), serie = /^s/i.test(m[3]);
+    const medio = serie || d<=3;
+    return {base:m[1].trim(), rank:(medio?3100:3000)+d, tam: serie ? d+'ª série' : d+'º ano'};
+  }
+  m = n.match(RE_TAM_IDADE);
+  if(m) return {base:m[1].trim(), rank:1000+parseInt(m[2]), tam:parseInt(m[2])+' anos'};
+  m = n.match(RE_TAM_PAR);
+  if(m) return {base:m[1].trim(), rank:2000+parseInt(m[2]), tam:parseInt(m[2])+'/'+parseInt(m[3])};
   m = n.match(RE_TAM_LETRA);
   if(m){
     const t = m[2].toUpperCase();
@@ -732,6 +785,41 @@ function cmpProdutoTamanho(nomeA, nomeB){
 function ordenarProdutos(lista){
   return [...(lista||[])].sort((a,b)=>cmpProdutoTamanho(a&&a.name, b&&b.name));
 }
+
+// ====== MODELOS DA LOJA: um cartão por produto, com os tamanhos dentro ======
+// No cadastro, cada tamanho é um produto próprio ("Camiseta P", "Camiseta M"),
+// com o SEU estoque. Isso continua igual — aqui só se junta para MOSTRAR.
+// O carrinho, a baixa de estoque e o pedido seguem usando o produto de cada
+// tamanho, então a quantidade de um tamanho nunca se mistura com a de outro.
+//
+// Junta pelo nome sem o tamanho, ignorando acento e maiúscula. Produto sem
+// tamanho no nome fica sozinho, mesmo que outro tenha o nome igual.
+function agruparModelos(lista){
+  const mapa=new Map(); const saida=[];
+  ordenarProdutos(lista).forEach(p=>{
+    const t=parseTamanho(p.name);
+    // A chave ignora acento, maiúscula e pontuação: "MASC." e "Masc" são o mesmo modelo
+    const chave=t.tam ? 'm:'+nomeNormal(t.base).replace(/[^a-z0-9]+/g,' ').trim() : 'p:'+String(p.id);
+    let m=mapa.get(chave);
+    if(!m){ m={id:chave, nome:t.tam?t.base:p.name, variantes:[]}; mapa.set(chave,m); saida.push(m); }
+    m.variantes.push(p);
+  });
+  saida.forEach(m=>{
+    const v=m.variantes;
+    // Com um tamanho só, o cartão fica como antes: nome completo, sem escolha.
+    m.temTamanhos = v.length>1;
+    if(!m.temTamanhos) m.nome=v[0].name;
+    m.estoque = v.reduce((a,p)=>a+(Number(p.stock)>0?Number(p.stock):0),0);
+    m.esgotado = v.every(p=>!(Number(p.stock)>0));
+    const precos=v.map(p=>Number(p.price)||0);
+    m.precoMin=Math.min(...precos); m.precoMax=Math.max(...precos);
+  });
+  return saida;
+}
+function tamanhoDe(p){ return parseTamanho(p&&p.name).tam || ''; }
+// Uma foto por modelo: busca só a de um tamanho (o que já tem foto, se houver),
+// para não baixar a mesma imagem uma vez por tamanho.
+function fotoRepresentante(m){ return m.variantes.find(p=>p.fotoUrl||p.photo) || m.variantes[0]; }
 
 // ====== CATEGORIAS DO PRODUTO (uma ou várias) ======
 // Um produto pode pertencer a mais de uma categoria (ex.: Fardamento E Calças).
@@ -3155,9 +3243,14 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
   const [splits,setSplits]=useState([]);
   // envio do comprovante por WhatsApp
   const [waModal,setWaModal]=useState(false);
-  const filtered=ordenarProdutos(products.filter(p=>combinaAlgum([p.name,p.sku],search)));
+  // Uma linha por modelo, com os tamanhos em botões. Cada botão é o produto
+  // daquele tamanho, com o SEU estoque: o que sai do M nunca sai do G.
+  const modelos=useMemo(()=>agruparModelos(products),[products]);
+  const filtered=modelos.filter(m=>m.variantes.some(p=>combinaAlgum([p.name,p.sku],search)));
   const pagProd = usePaginacao(filtered, 40);
-  const fotoDe = useFotosDaPagina(pagProd.visiveis);
+  const fotoDe = useFotosDaPagina(pagProd.visiveis.map(fotoRepresentante));
+  const fotoModelo = m => m.variantes.map(fotoDe).find(Boolean) || '';
+  const [encModelo,setEncModelo]=useState(null);   // linha em que o vendedor clicou "Encomendar" e falta o tamanho
   const subtotal=r2(cart.reduce((a,b)=>a+b.price*b.qty,0));
   const desconto=calcularDesconto(subtotal, descTipo, descValor);
   const total=r2(subtotal-desconto);
@@ -3186,7 +3279,7 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
     if(typeof addCreditos!=='function') return 'Crediário indisponível nesta tela';
     return null;
   }
-  function add(p){
+  function add(p, foto){
     if(p.stock===0){setOutOfStockModal(p);return;}
     const ex=cart.find(x=>x.id===p.id&&!x.isEncomenda);
     if(ex&&ex.qty>=p.stock){
@@ -3201,7 +3294,7 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
         return prev.map(x=>x.id===p.id&&!x.isEncomenda?{...x,qty:newQty}:x);
       }
       if(precisaDeAviso(p)) notify("⚠ Estoque baixo: apenas "+p.stock+" un. disponíveis","error");
-      return[...prev,{...p,qty:1,photo:fotoDe(p)||p.photo||''}];
+      return[...prev,{...p,qty:1,photo:foto||fotoDe(p)||p.photo||''}];
     });
   }
   function setCaixaQty(id,q){
@@ -3485,9 +3578,11 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
     <div className="caixa-grid">
     <div><div className="card"><div className="card-title">Produtos</div>
       <div className="search-box"><span className="search-icon">🔍</span><input placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-      {pagProd.visiveis.map(p=><div key={p.id} className="pdv-item">
-        <div className="pdv-thumb" onClick={()=>add(p)} style={{cursor:'pointer'}}>{fotoDe(p)?<img src={fotoDe(p)} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
-        <div className="pdv-name" onClick={()=>add(p)} style={{cursor:'pointer',flex:1}}>{p.name}</div>
+      {pagProd.visiveis.map(m=>{
+        const foto=fotoModelo(m);
+        if(!m.temTamanhos){ const p=m.variantes[0]; return <div key={m.id} className="pdv-item">
+        <div className="pdv-thumb" onClick={()=>add(p,foto)} style={{cursor:'pointer'}}>{foto?<img src={foto} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
+        <div className="pdv-name" onClick={()=>add(p,foto)} style={{cursor:'pointer',flex:1}}>{p.name}</div>
         {/* O selo fica AO LADO do preço, na mesma linha. Antes era desenhado
             por cima do canto direito — justamente onde o preço aparece — e o
             vendedor não conseguia ler o valor dos produtos que estavam
@@ -3504,7 +3599,40 @@ function Caixa({products,setProducts,setProductsSemGravar,sales,setSales,encomen
             🧵 ENCOMENDAR
           </button>
         </div>
-      </div>)}
+      </div>; }
+        // Modelo com tamanhos: um toque no tamanho já põe no carrinho.
+        // Se a busca bateu só em alguns tamanhos (ex.: pelo código), eles ficam marcados.
+        const buscando=!!String(search||'').trim();
+        const casa=v=>buscando && combinaAlgum([v.name,v.sku],search);
+        const destacar=buscando && !m.variantes.every(casa);
+        const modoEnc=encModelo===m.id;
+        return <div key={m.id} className={`pdv-item pdv-modelo ${modoEnc?'enc':''}`}>
+        <div className="pdv-thumb">{foto?<img src={foto} alt="" loading="lazy"/>:<span style={{fontFamily:"Share Tech Mono",fontSize:11,color:"#8a8a8a",textAlign:"center"}}>SEM FOTO</span>}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',alignItems:'baseline',gap:8,justifyContent:'space-between'}}>
+            <div className="pdv-name">{m.nome}</div>
+            <div className="pdv-price" style={{whiteSpace:'nowrap'}}>{m.precoMin!==m.precoMax?<><span className="text-mono" style={{fontSize:10,color:'#8a8a8a',letterSpacing:1,marginRight:4}}>A PARTIR DE</span>{fmt(m.precoMin)}</>:fmt(m.precoMin)}</div>
+          </div>
+          <div className="pdv-dica">{modoEnc?'🧵 Encomendar qual tamanho?':'Toque no tamanho para adicionar'}</div>
+          <div className="pdv-tams">
+            {m.variantes.map(v=>{
+              const esg=!(v.stock>0), baixo=!esg&&precisaDeAviso(v);
+              return <button key={v.id}
+                className={`pdv-tam ${esg?'esg':baixo?'baixo':''} ${destacar&&casa(v)?'casa':''}`}
+                title={v.name+' · '+fmt(v.price)+' · '+(esg?'sem estoque':v.stock+' em estoque')}
+                onClick={()=>{ if(modoEnc){ setEncModelo(null); setQuickEncModal({product:v,qty:1}); } else add(v,foto); }}>
+                <span className="pdv-tam-t">{tamanhoDe(v)}</span>
+                <span className="pdv-tam-q">{esg?'0':v.stock}</span>
+                {m.precoMin!==m.precoMax&&<span className="pdv-tam-p">{fmt(v.price)}</span>}
+              </button>;
+            })}
+          </div>
+        </div>
+        <button onClick={()=>setEncModelo(modoEnc?null:m.id)}
+          style={{alignSelf:'flex-start',background:modoEnc?'#e65100':'transparent',border:'1px solid '+(modoEnc?'#e65100':'#ccc'),borderRadius:2,padding:'3px 7px',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:modoEnc?'#fff':'#666',cursor:'pointer',whiteSpace:'nowrap'}}>
+          {modoEnc?'✕ CANCELAR':'🧵 ENCOMENDAR'}
+        </button>
+      </div>;})}
       <MostrarMais p={pagProd}/>
     </div></div>
     <div><div className="card">
@@ -4433,13 +4561,12 @@ function StorePoloBar({polo, onTrocarPolo}){
 }
 
 // ====== DETALHE DO PRODUTO ======
-// Abre ao clicar na foto (ou no nome) de um produto da loja: foto inteira, sem
-// corte, com preço, disponibilidade, descrição e os outros tamanhos do mesmo
-// modelo. Tocar na foto abre em tela cheia.
-function ProdutoDetalheModal({produto, products, fotoDe, cart, poloNome, onClose, onAdd, onEncomenda}){
-  const [atual,setAtual]=useState(produto);
+// Abre ao clicar na foto (ou no nome) de um modelo da loja: foto inteira, sem
+// corte, com preço, disponibilidade e descrição. Os tamanhos do modelo aparecem
+// como botões, e cada um mostra o SEU estoque. Tocar na foto abre em tela cheia.
+function ProdutoDetalheModal({modelo, tamanhoId, foto, cart, poloNome, onClose, onEscolher, onAdd, onEncomenda}){
+  const [tamId,setTamId]=useState(tamanhoId||null);
   const [telaCheia,setTelaCheia]=useState(false);
-  useEffect(()=>{ setAtual(produto); },[produto]);
 
   // Esc fecha (primeiro a tela cheia, depois o painel); a página de trás não rola.
   useEffect(()=>{
@@ -4453,30 +4580,30 @@ function ProdutoDetalheModal({produto, products, fotoDe, cart, poloNome, onClose
     return ()=>{ document.body.style.overflow=antes; };
   },[]);
 
-  // Os tamanhos são produtos separados com o tamanho no nome ("Calça Tática 42").
-  const base=parseTamanho(atual.name).base;
-  const tamanhos=useMemo(()=>{
-    const t=parseTamanho(produto.name);
-    if(!t.tam) return [];
-    return ordenarProdutos((products||[]).filter(p=>{
-      const x=parseTamanho(p.name);
-      return x.tam && x.base.toLowerCase()===t.base.toLowerCase();
-    }));
-  },[products,produto]);
+  const v=modelo.variantes;
+  // Sem tamanhos, o único produto já é o escolhido. Com tamanhos, o aluno escolhe.
+  const atual = modelo.temTamanhos ? (v.find(p=>p.id===tamId)||null) : v[0];
+  function escolher(p){ setTamId(p.id); onEscolher&&onEscolher(p.id); }
 
-  // Uma foto por modelo: se o tamanho escolhido ainda não trouxe a sua, usa a do que foi clicado.
-  const foto=fotoDe(atual)||fotoDe(produto)||'';
-  const noCarrinho=(cart||[]).filter(x=>!x.isEncomenda&&x.id===atual.id).reduce((a,b)=>a+b.qty,0);
-  const esgotado=atual.stock===0;
-  const pouco=!esgotado&&precisaDeAviso(atual);
-  const cats=prodCategoriasTexto(atual);
+  const esgotado = atual ? !(atual.stock>0) : modelo.esgotado;
+  const pouco = !!atual && !esgotado && precisaDeAviso(atual);
+  const cats = prodCategoriasTexto(atual||v[0]);
+  const disponiveis = v.filter(p=>p.stock>0).length;
+  // O que deste modelo já está no carrinho, tamanho por tamanho
+  const noCarrinho = v.map(p=>({p, q:(cart||[]).filter(x=>!x.isEncomenda&&x.id===p.id).reduce((a,b)=>a+b.qty,0)})).filter(x=>x.q>0);
 
-  return <div className="pd-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={atual.name}>
+  let status;
+  if(atual) status = esgotado ? 'Esgotado — sob encomenda'
+                   : pouco ? `Últimas unidades · ${atual.stock} un.` : `Disponível · ${atual.stock} un.`;
+  else status = modelo.esgotado ? 'Esgotado — sob encomenda'
+              : `Disponível em ${disponiveis} ${disponiveis>1?'tamanhos':'tamanho'}`;
+
+  return <div className="pd-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={modelo.nome}>
     <div className="pd-box" onClick={e=>e.stopPropagation()}>
       <button className="pd-close" onClick={onClose} aria-label="Fechar">✕</button>
       <button className="pd-foto" onClick={()=>foto&&setTelaCheia(true)} style={{cursor:foto?'zoom-in':'default'}} aria-label={foto?'Ver foto em tela cheia':undefined}>
         {foto
-          ? <img src={foto} alt={atual.name}/>
+          ? <img src={foto} alt={modelo.nome}/>
           : <div className="product-img-ph"><img src={LOGO} alt=""/>SEM FOTO</div>}
         {esgotado&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
         {pouco&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
@@ -4484,63 +4611,79 @@ function ProdutoDetalheModal({produto, products, fotoDe, cart, poloNome, onClose
       </button>
       <div className="pd-info">
         {cats!=='—'&&<div className="pd-cat">{cats}</div>}
-        <div className="pd-nome">{tamanhos.length>1?base:atual.name}</div>
-        {atual.sku&&<div className="pd-sku">Cód. {atual.sku}</div>}
-        <div className="pd-preco">{fmt(atual.price)}</div>
-        <span className={`pd-status ${esgotado?'fora':pouco?'pouco':'ok'}`}>
-          {esgotado?'Esgotado — sob encomenda':pouco?`Últimas unidades · ${atual.stock} un.`:`Disponível · ${atual.stock} un.`}
-        </span>
-        {tamanhos.length>1&&<div>
-          <div className="pd-rotulo">Tamanho: <strong style={{color:'#111'}}>{parseTamanho(atual.name).tam}</strong></div>
+        <div className="pd-nome">{modelo.nome}</div>
+        {atual&&atual.sku&&<div className="pd-sku">Cód. {atual.sku}</div>}
+        <div className="pd-preco">
+          {atual ? fmt(atual.price)
+            : modelo.precoMin!==modelo.precoMax ? <><span className="pd-preco-de">a partir de</span>{fmt(modelo.precoMin)}</>
+            : fmt(modelo.precoMin)}
+        </div>
+        <span className={`pd-status ${esgotado?'fora':pouco?'pouco':'ok'}`}>{status}</span>
+        {modelo.temTamanhos&&<div>
+          <div className="pd-rotulo">
+            {atual ? <>Tamanho: <strong style={{color:'#111'}}>{tamanhoDe(atual)}</strong></> : 'Escolha o tamanho'}
+          </div>
           <div className="pd-tams">
-            {tamanhos.map(t=><button key={t.id} className={`pd-tam ${t.id===atual.id?'on':''} ${t.stock===0?'esgotado':''}`}
-              onClick={()=>setAtual(t)} title={t.stock===0?'Esgotado — sob encomenda':t.stock+' em estoque'}>
-              {parseTamanho(t.name).tam}
+            {v.map(p=><button key={p.id} className={`pd-tam ${atual&&p.id===atual.id?'on':''} ${p.stock>0?'':'esgotado'}`}
+              onClick={()=>escolher(p)} title={p.stock>0?p.stock+' em estoque':'Esgotado — sob encomenda'}>
+              {tamanhoDe(p)}
             </button>)}
           </div>
         </div>}
-        {atual.description&&String(atual.description).trim()&&<div>
+        {(()=>{ const d=String((atual||v[0]).description||'').trim(); return d&&<div>
           <div className="pd-rotulo">Descrição</div>
-          <div className="pd-desc">{String(atual.description).trim()}</div>
-        </div>}
+          <div className="pd-desc">{d}</div>
+        </div>; })()}
         <ul className="pd-info-lista">
           <li><span aria-hidden="true">🏪</span><span>Retirada na loja{poloNome?' de '+poloNome:''} — você recebe um aviso quando estiver pronto.</span></li>
           <li><span aria-hidden="true">💵</span><span>Pagamento na retirada: dinheiro, cartão, Pix, Alelo ou Integra Card.</span></li>
         </ul>
         <div className="pd-acoes">
-          {noCarrinho>0&&<div className="pd-no-carrinho">✓ {noCarrinho} {noCarrinho>1?'unidades':'unidade'} deste item no carrinho</div>}
-          <button className={`product-add-btn ${esgotado?'enc':''}`} onClick={()=>onAdd(atual)}>
-            {esgotado?'📦 Fazer encomenda':'🛒 Adicionar ao carrinho'}
-          </button>
-          {!esgotado&&<button className="product-add-btn sec" onClick={()=>onEncomenda(atual)}>🧵 Fazer encomenda</button>}
+          {noCarrinho.length>0&&<div className="pd-no-carrinho">
+            ✓ No carrinho: {noCarrinho.map(x=>(modelo.temTamanhos?tamanhoDe(x.p)+' × ':'')+x.q+(modelo.temTamanhos?'':x.q>1?' unidades':' unidade')).join(' · ')}
+          </div>}
+          {atual
+            ? <button className={`product-add-btn ${esgotado?'enc':''}`} onClick={()=>onAdd(atual)}>
+                {esgotado?'📦 Fazer encomenda':'🛒 Adicionar ao carrinho'}{modelo.temTamanhos?' · '+tamanhoDe(atual):''}
+              </button>
+            : <button className="product-add-btn" disabled>Escolha um tamanho acima</button>}
+          {atual&&!esgotado&&<button className="product-add-btn sec" onClick={()=>onEncomenda(atual)}>🧵 Fazer encomenda</button>}
         </div>
       </div>
     </div>
     {telaCheia&&foto&&<div className="pd-tela-cheia" onClick={e=>{e.stopPropagation();setTelaCheia(false);}}>
-      <img src={foto} alt={atual.name}/>
+      <img src={foto} alt={modelo.nome}/>
       <button className="pd-close" onClick={e=>{e.stopPropagation();setTelaCheia(false);}} aria-label="Fechar foto">✕</button>
     </div>}
   </div>;
 }
+
 function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,onPedidoFeito,notify}){
   const [cart,setCart]=useCarrinhoGuardado(polo&&polo.id, products),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pagar na Loja"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
-  const [detalhe,setDetalhe]=useState(null);   // produto aberto no painel de detalhes
-  const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&combinaAlgum([p.name,p.sku],search)));
+  const [detalhe,setDetalhe]=useState(null);   // {modelo, tamanho} aberto no painel de detalhes
+  const [tamEscolhido,setTamEscolhido]=useState({});   // modelo -> id do produto do tamanho escolhido no cartão
+  // Um cartão por modelo. Se um tamanho bate com a busca/categoria, o modelo
+  // aparece com TODOS os tamanhos — o aluno procura "camiseta" e escolhe o dele.
+  const modelos=useMemo(()=>agruparModelos(products),[products]);
+  const filtered=modelos.filter(m=>m.variantes.some(p=>prodTemCategoria(p,cat)&&combinaAlgum([p.name,p.sku],search)));
   const pagLoja = usePaginacao(filtered, 24);
-  const fotoDe = useFotosDaPagina(pagLoja.visiveis);
+  const fotoDe = useFotosDaPagina(pagLoja.visiveis.map(fotoRepresentante));
+  const fotoModelo = m => m.variantes.map(fotoDe).find(Boolean) || '';
+  const modeloAberto = detalhe ? modelos.find(m=>m.id===detalhe.modelo) : null;   // sempre com o estoque atual
+  function escolherTam(m, id){ setTamEscolhido(t=>({...t,[m.id]:id})); }
   const cartTotal=cart.reduce((a,b)=>a+b.price*b.qty,0);
   const frete=0;
-  function addCart(p){
+  function addCart(p, foto){
     if(p.stock===0){setStoreOutModal(p);return;}
     const ex=cart.find(x=>x.id===p.id&&!x.isEncomenda);
     if(ex&&ex.qty>=p.stock){setStoreOutModal({...p,_overQty:ex.qty+1});return;}
     setCart(prev=>{
       const existing=prev.find(x=>x.id===p.id&&!x.isEncomenda);
       if(existing) return prev.map(x=>x.id===p.id&&!x.isEncomenda?{...x,qty:x.qty+1}:x);
-      return[...prev,{...p,qty:1,photo:fotoDe(p)||p.photo||''}];
+      return[...prev,{...p,qty:1,photo:foto||fotoDe(p)||p.photo||''}];
     });
     setCartOpen(true);
   }
@@ -4754,33 +4897,55 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       <div className="store-catalog-head">
         <div>
           <div className="store-section-title">{cat==="Todos"?"Produtos":cat}</div>
-          <div className="store-section-sub">{filtered.length} {filtered.length===1?"ITEM ENCONTRADO":"ITENS ENCONTRADOS"}</div>
+          <div className="store-section-sub">{filtered.length} {filtered.length===1?"PRODUTO ENCONTRADO":"PRODUTOS ENCONTRADOS"}</div>
         </div>
         <div className="store-search"><span className="store-search-icon">🔍</span><input type="search" placeholder="Buscar produto..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       </div>
       <div className="products-grid">
-        {pagLoja.visiveis.map(p=><div key={p.id} className="product-card">
-          <button className="product-img" onClick={()=>setDetalhe(p)} aria-label={"Ver detalhes de "+p.name}>
-            {fotoDe(p)?<img src={fotoDe(p)} alt={p.name} loading="lazy"/>:<div className="product-img-ph"><img src={LOGO} alt=""/>SEM FOTO</div>}
-            {p.stock===0&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
-            {p.stock>0&&precisaDeAviso(p)&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
+        {pagLoja.visiveis.map(m=>{
+          // Com tamanhos, nada é escolhido sozinho: o aluno toca no tamanho dele.
+          const p = m.temTamanhos ? m.variantes.find(x=>x.id===tamEscolhido[m.id]) : m.variantes[0];
+          const foto = fotoModelo(m);
+          const esgotado = p ? !(p.stock>0) : m.esgotado;
+          const abrir = ()=>setDetalhe({modelo:m.id, tamanho:p?p.id:null});
+          return <div key={m.id} className="product-card">
+          <button className="product-img" onClick={abrir} aria-label={"Ver detalhes de "+m.nome}>
+            {foto?<img src={foto} alt={m.nome} loading="lazy"/>:<div className="product-img-ph"><img src={LOGO} alt=""/>SEM FOTO</div>}
+            {esgotado&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
+            {p&&!esgotado&&precisaDeAviso(p)&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
             <span className="product-zoom" aria-hidden="true">🔍<span className="product-zoom-txt">Ver detalhes</span></span>
           </button>
           <div className="product-body">
-            <div className="product-cat">{prodCategoriasTexto(p)}</div>
-            <div className="product-name" onClick={()=>setDetalhe(p)} title={p.name}>{p.name}</div>
-            <div className="product-price">{fmt(p.price)}</div>
-            <div className="product-stock">{p.stock===0?"Sob encomenda":`Estoque: ${p.stock} un.`}</div>
+            <div className="product-cat">{prodCategoriasTexto(p||m.variantes[0])}</div>
+            <div className="product-name" onClick={abrir} title={m.nome}>{m.nome}</div>
+            <div className="product-price">
+              {p ? fmt(p.price)
+                : m.precoMin!==m.precoMax ? <><span className="product-price-de">a partir de</span>{fmt(m.precoMin)}</>
+                : fmt(m.precoMin)}
+            </div>
+            {m.temTamanhos&&<div className="product-tams" role="group" aria-label="Tamanhos">
+              {m.variantes.map(v=><button key={v.id}
+                className={`product-tam ${p&&v.id===p.id?'on':''} ${v.stock>0?'':'esgotado'}`}
+                onClick={()=>escolherTam(m,v.id)}
+                title={v.stock>0?v.stock+' em estoque':'Esgotado — sob encomenda'}>{tamanhoDe(v)}</button>)}
+            </div>}
+            <div className="product-stock">
+              {!m.temTamanhos ? (p.stock>0?`Estoque: ${p.stock} un.`:"Sob encomenda")
+                : p ? `Tam. ${tamanhoDe(p)}: `+(p.stock>0?`${p.stock} un.`:"sob encomenda")
+                : m.esgotado ? "Sob encomenda" : "Escolha o tamanho"}
+            </div>
             <div className="product-actions">
-              <button className={`product-add-btn ${p.stock===0?'enc':''}`} onClick={()=>addCart(p)}>
-                {p.stock===0?"📦 Encomendar":"+ Adicionar"}
-              </button>
-              {p.stock>0&&<button className="product-add-btn sec" onClick={()=>setStoreQuickEncModal({product:p,qty:1})}>
+              {p
+                ? <button className={`product-add-btn ${esgotado?'enc':''}`} onClick={()=>addCart(p,foto)}>
+                    {esgotado?"📦 Encomendar":"+ Adicionar"}{m.temTamanhos?" · "+tamanhoDe(p):""}
+                  </button>
+                : <button className="product-add-btn" onClick={abrir}>Escolher tamanho</button>}
+              {p&&!esgotado&&<button className="product-add-btn sec" onClick={()=>setStoreQuickEncModal({product:p,qty:1})}>
                 🧵 Fazer encomenda
               </button>}
             </div>
           </div>
-        </div>)}
+        </div>;})}
         {pagLoja.temMais&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"16px 0"}}>
           <button className="btn" onClick={pagLoja.mostrarMais}>▼ Ver mais produtos ({pagLoja.total-pagLoja.mostrando} restantes)</button>
         </div>}
@@ -4788,14 +4953,15 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       </div>
     </div>
     <StoreFooter/>
-    {detalhe&&<ProdutoDetalheModal
-      produto={detalhe}
-      products={products}
-      fotoDe={fotoDe}
+    {modeloAberto&&<ProdutoDetalheModal
+      modelo={modeloAberto}
+      tamanhoId={detalhe.tamanho}
+      foto={fotoModelo(modeloAberto)}
       cart={cart}
       poloNome={polo?.nome}
       onClose={()=>setDetalhe(null)}
-      onAdd={(p)=>{setDetalhe(null);addCart(p);}}
+      onEscolher={(id)=>escolherTam(modeloAberto,id)}
+      onAdd={(p)=>{const f=fotoModelo(modeloAberto);setDetalhe(null);addCart(p,f);}}
       onEncomenda={(p)=>{setDetalhe(null);setStoreQuickEncModal({product:p,qty:1});}}
     />}
     {storeQuickEncModal&&!currentUser&&<div className="modal-overlay" onClick={()=>setStoreQuickEncModal(null)}>
