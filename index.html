@@ -13,10 +13,10 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 
 /* ===== POLO SELECTOR ===== */
-.polo-overlay{position:fixed;inset:0;background:#0a0a0a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;}
+.polo-overlay{position:fixed;inset:0;background:#0a0a0a;z-index:9999;display:flex;padding:20px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .polo-overlay::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(255,255,255,.04) 0%,transparent 70%);}
-.polo-bg-text{position:absolute;font-family:"Bebas Neue",sans-serif;font-size:28vw;color:rgba(255,255,255,.018);letter-spacing:0.1em;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;user-select:none;}
-.polo-container{position:relative;z-index:1;text-align:center;max-width:780px;width:100%;}
+.polo-bg-text{position:fixed;font-family:"Bebas Neue",sans-serif;font-size:28vw;color:rgba(255,255,255,.018);letter-spacing:0.1em;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;user-select:none;}
+.polo-container{position:relative;z-index:1;text-align:center;max-width:780px;width:100%;margin:auto;} /* margin:auto centraliza e, se não couber, deixa rolar */
 .polo-logo-wrap{margin-bottom:32px;}
 .polo-logo{height:100px;object-fit:contain;filter:brightness(1.1);}
 .polo-headline{font-family:"Bebas Neue",sans-serif;font-size:14px;letter-spacing:8px;color:#444;text-transform:uppercase;margin-bottom:8px;}
@@ -37,7 +37,7 @@
 .polo-card:hover .polo-card-arrow{transform:translateX(5px);}
 .polo-card-accent{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:scaleX(0);transition:transform .3s;}
 .polo-card:hover .polo-card-accent{transform:scaleX(1);}
-.polo-footer{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#333;text-transform:uppercase;}
+.polo-footer{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#5a5a5a;text-transform:uppercase;}
 @keyframes polofadein{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .polo-container{animation:polofadein .6s ease both;}
 .polo-cards .polo-card:nth-child(1){animation:polofadein .6s .1s ease both;}
@@ -46,14 +46,24 @@
 /* ===== POLO BADGE IN ADMIN ===== */
 .polo-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:3px;padding:4px 10px;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;cursor:pointer;transition:all .15s;}
 .polo-badge:hover{background:rgba(255,255,255,.15);color:#fff;}
+.sb-polo-switch{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#f5b800;color:#111;border:none;border-radius:4px;padding:8px 10px;font-family:"Oswald",sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
+.sb-polo-switch:hover{background:#ffd23f;}
 .polo-badge-dot{width:6px;height:6px;border-radius:50%;background:#4caf50;flex-shrink:0;}
 
 /* ===== POLO BADGE IN STORE ===== */
-.store-polo-bar{background:#111;border-bottom:1px solid #222;padding:6px 24px;display:flex;align-items:center;justify-content:space-between;}
-.store-polo-bar-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
-.store-polo-name{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#555;text-transform:uppercase;}
-.store-polo-switch{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#444;cursor:pointer;transition:color .15s;background:none;border:none;padding:0;text-transform:uppercase;}
-.store-polo-switch:hover{color:#5f6368;}
+.store-polo-bar{background:#0b0b0b;border-bottom:1px solid #262626;padding:8px 24px;}
+.store-polo-bar-inner{max-width:1100px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.store-polo-name{display:flex;align-items:center;gap:10px;min-width:0;}
+.store-polo-dot{width:8px;height:8px;border-radius:50%;background:#4caf50;box-shadow:0 0 0 3px rgba(76,175,80,.22);flex-shrink:0;}
+.store-polo-txt{display:flex;flex-direction:column;min-width:0;line-height:1.25;}
+.store-polo-cap{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:2px;color:#8a8a8a;text-transform:uppercase;}
+.store-polo-nome{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;letter-spacing:1px;color:#fff;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Trocar polo: amarelo tático sobre o preto — é o botão que o aluno precisa achar */
+.store-polo-switch{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;background:#f5b800;color:#111;border:none;border-radius:999px;padding:9px 18px;font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:background .15s,transform .15s;animation:bpPoloPulso 2s ease-out 3;}
+.store-polo-switch:hover{background:#ffd23f;transform:translateY(-1px);}
+.store-polo-switch:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+.store-polo-switch-ico{font-size:16px;line-height:1;}
+@keyframes bpPoloPulso{0%{box-shadow:0 0 0 0 rgba(245,184,0,.6);}100%{box-shadow:0 0 0 12px rgba(245,184,0,0);}}
 
 /* ===== MEUS PEDIDOS (cliente) ===== */
 .mp-root{max-width:700px;margin:0 auto;padding:28px 20px;}
@@ -102,130 +112,12 @@
 .mp-chevron{font-size:12px;transition:transform .2s;color:#8a8a8a;flex-shrink:0;}
 .mp-chevron.open{transform:rotate(180deg);}
 .hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px;}
-.hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;transition:all .25s;}
+.hamburger span{display:block;width:22px;height:2px;background:#111;border-radius:2px;transition:all .25s;}
 .hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
 .hamburger.open span:nth-child(2){opacity:0;}
 .hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;}
 
-/* ===== RESPONSIVE ===== */
-
-/* --- Tablet landscape & small desktop (max 1024px) --- */
-@media(max-width:1024px){
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
-  .admin-main{margin-left:200px;}
-  .sidebar{width:200px;}
-  .store-nav-cat{padding:0 10px;font-size:11px;}
-}
-
-/* --- Tablet portrait (max 768px) --- */
-@media(max-width:768px){
-  /* Admin sidebar → drawer */
-  .hamburger{display:flex;}
-  .sidebar{transform:translateX(-100%);transition:transform .3s;width:260px;z-index:200;}
-  .sidebar.open{transform:translateX(0);}
-  .sidebar-overlay.open{display:block;}
-  .admin-main{margin-left:0;}
-  .topbar{padding:10px 14px;gap:8px;}
-  .page-title{font-size:16px;letter-spacing:2px;}
-  .topbar-badge{display:none;}
-  .topbar-badge:first-child{display:inline-block;}
-  .admin-content{padding:14px 14px;}
-
-  /* Stats */
-  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-
-  /* Caixa */
-  .caixa-grid{grid-template-columns:1fr;}
-
-  /* Tables */
-  .table-wrap{-webkit-overflow-scrolling:touch;}
-
-  /* Store hero */
-  .store-hero-inner{padding:24px 16px;gap:18px;flex-wrap:wrap;}
-  .store-hero-logo{height:72px;}
-  .store-hero-title{font-size:36px;letter-spacing:4px;}
-  .store-hero-slogan{font-size:11px;letter-spacing:3px;}
-  .store-hero-sub{font-size:12px;}
-
-  /* Store nav */
-  .store-nav-inner{padding:0 12px;height:auto;flex-wrap:wrap;gap:0;}
-  .store-nav-cats{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;width:100%;padding-bottom:2px;}
-  .store-nav-cat{padding:0 10px;font-size:11px;white-space:nowrap;height:46px;}
-  .store-nav-right{padding:6px 0;gap:6px;}
-  .login-btn-nav{padding:6px 10px;font-size:11px;}
-  .cart-btn{padding:6px 10px;font-size:11px;}
-
-  /* Store body */
-  .store-body{padding:16px 14px;}
-  .store-section-title{font-size:22px;}
-  .store-search{max-width:100%;}
-  .products-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;}
-
-  /* Cart drawer full width */
-  .cart-drawer{width:100%;}
-
-  /* Checkout */
-  .checkout-wrap{padding:16px 14px;}
-  .delivery-opts{grid-template-columns:1fr;}
-
-  /* Polo selector */
-  .polo-cards{grid-template-columns:1fr 1fr;}
-  .polo-title{font-size:28px;letter-spacing:4px;}
-  .polo-card{padding:22px 18px;}
-  .polo-card-city{font-size:22px;}
-  .polo-logo{height:72px;}
-  .polo-sub{margin-bottom:28px;}
-
-  /* Modal */
-  .modal{padding:18px 14px;max-height:94vh;}
-
-  /* Form grid */
-  .form-grid{grid-template-columns:1fr;}
-  .form-group.full{grid-column:1/-1;}
-}
-
-/* --- Mobile (max 480px) --- */
-@media(max-width:480px){
-  /* Stats single column */
-  .stats-grid{grid-template-columns:1fr 1fr;}
-  .stat-value{font-size:22px;}
-
-  /* Store hero compact */
-  .store-hero-inner{padding:16px 14px;gap:12px;}
-  .store-hero-logo{height:56px;}
-  .store-hero-title{font-size:28px;letter-spacing:3px;}
-  .store-hero-sub{display:none;}
-
-  /* Products grid: 2 columns */
-  .products-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .product-body{padding:10px;}
-  .product-name{font-size:12px;}
-  .product-price{font-size:20px;}
-  .product-img{height:140px;}
-  .product-add-btn{font-size:11px;padding:7px;}
-
-  /* Polo selector */
-  .polo-title{font-size:22px;letter-spacing:3px;}
-  .polo-logo{height:60px;}
-  .polo-logo-wrap{margin-bottom:20px;}
-  .polo-card-city{font-size:18px;}
-  .polo-bg-text{font-size:40vw;}
-  .polo-cards{grid-template-columns:1fr;}
-
-  /* Admin topbar */
-  .topbar{padding:8px 12px;}
-  .page-title{font-size:14px;}
-  .page-sub{display:none;}
-  .admin-content{padding:10px 10px;}
-
-  /* Notif */
-  .notif{left:12px;right:12px;bottom:12px;max-width:none;}
-
-  /* Checkout steps text */
-  .checkout-step span{display:none;}
-  .checkout-step-num{width:30px;height:30px;font-size:12px;}
-}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:#f0f0f0;}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
@@ -357,6 +249,10 @@ td strong{color:var(--t1);font-weight:600;}
 @media(max-width:768px){.bp-alerta-topo{padding:5px 9px;font-size:11px;}.bp-alerta-topo .bp-alerta-txt{display:none;}}
 .nav-item .bp-nav-num{margin-left:auto;background:#cc2222;color:#fff;border-radius:10px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-family:"Share Tech Mono",monospace;font-size:10px;font-weight:700;animation:bpAlertaPisca 1s ease-in-out infinite;}
 .admin-content{padding:22px 26px;}
+/* grades do painel que precisam se reorganizar em tela pequena */
+.bp-grid-lateral{display:grid;grid-template-columns:minmax(0,1fr) var(--lateral,280px);gap:16px;}
+.bp-grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
+.bp-grid-filtros{display:grid;grid-template-columns:1fr 1fr 1fr auto;}
 .caixa-grid{display:grid;grid-template-columns:1fr 310px;gap:16px;}
 .pdv-item{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:3px;cursor:pointer;transition:all .15s;background:#fff;margin-bottom:7px;}
 .pdv-item:hover{border-color:#525252;background:#fafafa;}
@@ -386,16 +282,18 @@ td strong{color:var(--t1);font-weight:600;}
 .store-hero-logo{height:120px;object-fit:contain;filter:brightness(1);}
 .store-hero-text{}
 .store-hero-title{font-family:"Bebas Neue",sans-serif;font-size:52px;letter-spacing:8px;color:#fff;line-height:1;}
-.store-hero-slogan{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:5px;color:#525252;text-transform:uppercase;margin-top:6px;}
-.store-hero-sub{font-family:"Barlow",sans-serif;font-size:14px;color:#5f6368;margin-top:10px;}
+.store-hero-slogan{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:5px;color:#8a8a8a;text-transform:uppercase;margin-top:6px;}
+.store-hero-sub{font-family:"Barlow",sans-serif;font-size:14px;color:#a0a0a0;margin-top:10px;}
 /* NAV */
 .store-nav{background:#fff;border-bottom:2px solid #111;position:sticky;top:0;z-index:80;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 .store-nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px;}
-.store-nav-cats{display:flex;gap:0;}
-.store-nav-cat{padding:0 16px;height:54px;display:flex;align-items:center;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#666;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
+.store-nav-cats{display:flex;gap:0;min-width:0;overflow-x:auto;scrollbar-width:none;}
+.store-nav-cats::-webkit-scrollbar{display:none;}
+.store-nav-cat{padding:0 16px;height:54px;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#666;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;}
 .store-nav-cat:hover{color:#111;}
 .store-nav-cat.active{color:#111;border-bottom-color:#111;}
-.store-nav-right{display:flex;align-items:center;gap:10px;}
+.store-nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.store-user{display:flex;align-items:center;gap:6px;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#555;}
 .cart-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s;position:relative;}
 .cart-btn:hover{background:#333;}
 .cart-count{background:#fff;color:#111;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:"Share Tech Mono",monospace;}
@@ -405,25 +303,39 @@ td strong{color:var(--t1);font-weight:600;}
 .store-body{max-width:1100px;margin:0 auto;padding:28px 24px;}
 .store-section-title{font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:4px;color:#111;margin-bottom:4px;}
 .store-section-sub{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:3px;color:#5f6368;margin-bottom:20px;}
-.store-search{position:relative;max-width:360px;margin-bottom:24px;}
+.store-catalog-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+.store-catalog-head .store-section-sub{margin-bottom:0;}
+.store-search{position:relative;width:100%;max-width:360px;}
 .store-search input{border:2px solid #111;border-radius:3px;padding:10px 14px 10px 38px;font-size:13px;background:#fff;}
 .store-search input:focus{outline:none;border-color:#555;}
 .store-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#5f6368;}
 .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;}
-.product-card{background:#fff;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;transition:box-shadow .2s,transform .2s;cursor:pointer;}
-.product-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);transform:translateY(-3px);}
-.product-img{height:180px;background:#f5f5f5;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;}
+.product-card{background:#fff;border:1px solid #e8e8e8;border-radius:8px;overflow:hidden;transition:box-shadow .2s,transform .2s,border-color .2s;display:flex;flex-direction:column;}
+.product-card:hover{box-shadow:0 10px 28px rgba(0,0,0,.1);transform:translateY(-3px);border-color:#d0d0d0;}
+.product-img{aspect-ratio:1/1;background:#f5f5f5;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;cursor:zoom-in;border:none;padding:0;width:100%;}
+.product-img:focus-visible{outline:3px solid #f5b800;outline-offset:-3px;}
 .product-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
 .product-card:hover .product-img img{transform:scale(1.04);}
-.product-img-ph{font-family:"Share Tech Mono",monospace;font-size:11px;color:#6b6b6b;letter-spacing:1px;}
+.product-img-ph{display:flex;flex-direction:column;align-items:center;gap:8px;font-family:"Share Tech Mono",monospace;font-size:11px;color:#8a8a8a;letter-spacing:1px;}
+.product-img .product-img-ph img,.pd-foto .product-img-ph img{width:44%;height:auto;max-height:none;opacity:.12;filter:grayscale(1);transform:none;}
+/* "ver detalhes": aparece ao passar o mouse; no toque fica só a lupa, sempre visível */
+.product-zoom{position:absolute;right:8px;bottom:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(17,17,17,.82);color:#fff;border-radius:999px;padding:6px 10px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;pointer-events:none;}
+.product-zoom-txt{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .25s;}
+.product-card:hover .product-zoom-txt,.product-img:focus-visible .product-zoom-txt{max-width:120px;}
 .product-badge{position:absolute;top:8px;left:8px;background:#111;color:#fff;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;padding:3px 7px;border-radius:2px;}
-.product-body{padding:14px;}
+.product-body{padding:14px;display:flex;flex-direction:column;flex:1;}
 .product-cat{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;margin-bottom:4px;}
-.product-name{font-family:"Oswald",sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#111;margin-bottom:8px;line-height:1.2;}
+.product-name{font-family:"Oswald",sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#111;margin-bottom:8px;line-height:1.25;cursor:pointer;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.product-name:hover{text-decoration:underline;text-underline-offset:3px;}
 .product-price{font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:2px;color:#111;}
 .product-stock{font-family:"Share Tech Mono",monospace;font-size:11px;color:#5f6368;margin-top:2px;}
-.product-add-btn{width:100%;margin-top:12px;padding:9px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
+.product-actions{margin-top:auto;padding-top:12px;display:flex;flex-direction:column;gap:6px;}
+.product-add-btn{width:100%;padding:10px 8px;background:#111;color:#fff;border:none;border-radius:3px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
 .product-add-btn:hover{background:#333;}
+.product-add-btn.sec{background:transparent;color:#444;border:1px solid #cfcfcf;padding:8px;}
+.product-add-btn.sec:hover{background:#f5f5f5;border-color:#888;color:#111;}
+.product-add-btn.enc{background:#996622;}
+.product-add-btn.enc:hover{background:#7d531b;}
 /* CART DRAWER */
 .cart-drawer{position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;border-left:1px solid #e0e0e0;display:flex;flex-direction:column;z-index:150;transform:translateX(100%);transition:transform .3s;box-shadow:-4px 0 20px rgba(0,0,0,.1);}
 .cart-drawer.open{transform:translateX(0);}
@@ -432,6 +344,10 @@ td strong{color:var(--t1);font-weight:600;}
 .cart-drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:#5f6368;padding:2px;}
 .cart-drawer-close:hover{color:#111;}
 .cart-drawer-items{flex:1;overflow-y:auto;padding:14px 18px;}
+.cart-drawer .qty-btn{width:30px;height:30px;font-size:16px;border-radius:4px;}
+.cart-drawer .qty-n{min-width:24px;}
+.cart-remove{background:none;border:none;color:#8a8a8a;font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:4px 0 0;}
+.cart-remove:hover{color:#cc2222;}
 .cart-drawer-footer{padding:16px 20px;border-top:1px solid #e8e8e8;}
 .cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .cart-total-lbl{font-family:"Share Tech Mono",monospace;font-size:12px;letter-spacing:1.5px;color:#5f6368;}
@@ -487,7 +403,46 @@ td strong{color:var(--t1);font-weight:600;}
 .store-footer{background:#111;padding:28px 24px;margin-top:40px;}
 .store-footer-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
 .store-footer-logo img{height:50px;object-fit:contain;opacity:.8;}
-.store-footer-text{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#555;text-align:right;}
+.store-footer-text{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#8a8a8a;text-align:right;line-height:1.7;}
+/* DETALHE DO PRODUTO (abre ao clicar na foto ou no nome) */
+@keyframes pdFade{from{opacity:0}to{opacity:1}}
+@keyframes pdSobe{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.pd-overlay{position:fixed;inset:0;background:rgba(10,10,10,.72);z-index:210;display:flex;padding:24px;overflow-y:auto;animation:pdFade .2s ease;}
+.pd-box{position:relative;margin:auto;background:#fff;border-radius:10px;width:100%;max-width:940px;display:grid;grid-template-columns:1.1fr 1fr;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:pdSobe .25s ease;}
+.pd-close{position:absolute;top:12px;right:12px;z-index:3;width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.92);color:#111;font-size:18px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;}
+.pd-close:hover{background:#111;color:#fff;}
+.pd-foto{position:relative;background:#f3f3f3;min-height:420px;display:flex;align-items:center;justify-content:center;border:none;padding:0;cursor:zoom-in;width:100%;}
+.pd-foto img{width:100%;height:100%;max-height:78vh;object-fit:contain;display:block;}
+.pd-foto-dica{position:absolute;left:12px;bottom:12px;background:rgba(17,17,17,.78);color:#fff;border-radius:999px;padding:6px 12px;font-family:"Oswald",sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;pointer-events:none;}
+.pd-foto .product-badge{top:14px;left:14px;font-size:12px;padding:4px 9px;}
+.pd-info{padding:30px 28px 24px;display:flex;flex-direction:column;gap:14px;min-width:0;}
+.pd-cat{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;}
+.pd-nome{font-family:"Oswald",sans-serif;font-size:26px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#111;line-height:1.15;margin-top:-6px;}
+.pd-sku{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;color:#8a8a8a;margin-top:-8px;}
+.pd-preco{font-family:"Bebas Neue",sans-serif;font-size:40px;letter-spacing:2px;color:#111;line-height:1;}
+.pd-status{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;border-radius:999px;padding:5px 12px;font-family:"Oswald",sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;}
+.pd-status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;}
+.pd-status.ok{background:rgba(26,110,46,.1);color:#1a6e2e;}
+.pd-status.pouco{background:rgba(153,102,34,.12);color:#8a5a14;}
+.pd-status.fora{background:rgba(204,34,34,.1);color:#b31d1d;}
+.pd-rotulo{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:2px;color:#5f6368;text-transform:uppercase;margin-bottom:8px;}
+.pd-tams{display:flex;flex-wrap:wrap;gap:8px;}
+.pd-tam{min-width:46px;height:40px;padding:0 12px;border:1.5px solid #d0d0d0;border-radius:6px;background:#fff;font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;letter-spacing:.5px;color:#111;cursor:pointer;transition:all .15s;}
+.pd-tam:hover{border-color:#111;}
+.pd-tam.on{background:#111;color:#fff;border-color:#111;}
+.pd-tam.esgotado{color:#a0a0a0;text-decoration:line-through;}
+.pd-tam.esgotado.on{color:#fff;background:#6b6b6b;border-color:#6b6b6b;}
+.pd-desc{font-family:"Barlow",sans-serif;font-size:14px;line-height:1.6;color:#3d3d3d;white-space:pre-line;}
+.pd-info-lista{list-style:none;border-top:1px solid #eee;padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#3d3d3d;line-height:1.45;}
+.pd-info-lista li{display:flex;gap:10px;}
+.pd-acoes{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:6px;}
+.pd-acoes .product-add-btn{padding:14px;font-size:13px;border-radius:6px;}
+.pd-no-carrinho{font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:1px;color:#1a6e2e;text-align:center;}
+/* foto em tela cheia */
+.pd-tela-cheia{position:fixed;inset:0;z-index:220;background:#000;display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:pdFade .2s ease;}
+.pd-tela-cheia img{max-width:100vw;max-height:100vh;object-fit:contain;}
+.pd-tela-cheia .pd-close{position:fixed;top:14px;right:14px;}
+@media(prefers-reduced-motion:reduce){.store-polo-switch,.pd-overlay,.pd-box,.pd-tela-cheia{animation:none;}}
 /* ===== KANBAN (Trello-style) ===== */
 .kb-board{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 14px;align-items:flex-start;}
 .kb-col{flex:0 0 240px;min-width:240px;background:#f4f4f5;border:1px solid #e6e6e8;border-radius:8px;display:flex;flex-direction:column;max-height:72vh;transition:background .15s,box-shadow .15s;}
@@ -513,6 +468,172 @@ td strong{color:var(--t1);font-weight:600;}
 .ge-stock-cell{display:inline-flex;align-items:center;gap:6px;}
 .ge-mini-btn{border:1px solid #ddd;background:#fafafa;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:13px;line-height:1;color:#333;}
 .ge-mini-btn:hover{background:#111;color:#fff;border-color:#111;}
+
+/* As regras de tela pequena ficam no FIM da folha de estilo: com a mesma
+   especificidade, vale a que vem depois. No topo, eram anuladas pelas regras
+   normais e o celular recebia o layout de computador. */
+/* ===== RESPONSIVE ===== */
+
+/* --- Tablet landscape & small desktop (max 1024px) --- */
+@media(max-width:1024px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .admin-main{margin-left:200px;}
+  .sidebar{width:200px;}
+  .store-nav-cat{padding:0 10px;font-size:11px;}
+}
+
+/* --- Tablet portrait (max 768px) --- */
+@media(max-width:768px){
+  /* Admin sidebar → drawer */
+  .hamburger{display:flex;}
+  .sidebar{transform:translateX(-100%);transition:transform .3s;width:260px;z-index:200;}
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-overlay.open{display:block;}
+  .admin-main{margin-left:0;}
+  .topbar{padding:10px 14px;gap:8px;}
+  .page-title{font-size:16px;letter-spacing:2px;}
+  .topbar-badge{display:none;}
+  .topbar-badge:first-child{display:inline-block;}
+  .admin-content{padding:14px 14px;}
+
+  /* Stats */
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+
+  /* Caixa */
+  .caixa-grid{grid-template-columns:1fr;}
+  .bp-grid-lateral{grid-template-columns:minmax(0,1fr);}
+  .bp-grid-4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .bp-grid-filtros{grid-template-columns:1fr 1fr;}
+
+  /* Tables */
+  .table-wrap{-webkit-overflow-scrolling:touch;}
+
+  /* Barra do polo */
+  .store-polo-bar{padding:8px 14px;}
+  .store-polo-switch{padding:8px 14px;font-size:12px;letter-spacing:1px;}
+
+  /* Store hero: logo e nome lado a lado, sem ocupar a tela toda */
+  .store-hero-inner{padding:20px 16px;gap:16px;}
+  .store-hero-logo{height:72px;}
+  .store-hero-title{font-size:36px;letter-spacing:4px;}
+  .store-hero-slogan{font-size:11px;letter-spacing:3px;}
+  .store-hero-sub{font-size:12px;}
+
+  /* Store nav: categorias rolam de lado, botões ficam só com o ícone */
+  .store-nav-inner{padding:0 0 0 4px;height:50px;gap:8px;}
+  .store-nav-cats{flex:1;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:18px;}
+  .store-nav-cat{padding:0 10px;font-size:11px;height:50px;}
+  .store-nav-right{gap:6px;padding-right:12px;}
+  .store-nav-lbl{display:none;}
+  .store-user-nome{display:none;}
+  .login-btn-nav,.cart-btn{padding:0;width:40px;height:40px;justify-content:center;font-size:17px;}
+  .cart-btn .cart-count{position:absolute;top:-5px;right:-5px;border:2px solid #fff;width:20px;height:20px;}
+  .store-user .btn{padding:0;width:36px;height:36px;justify-content:center;font-size:15px;}
+
+  /* Store body */
+  .store-body{padding:18px 14px;}
+  .store-section-title{font-size:24px;}
+  .store-catalog-head{margin-bottom:16px;gap:12px;}
+  .store-search{max-width:100%;}
+  .store-search input{font-size:16px;} /* 16px evita o zoom automático do iPhone ao tocar */
+  .products-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;}
+
+  /* Cart drawer full width */
+  .cart-drawer{width:100%;}
+
+  /* Detalhe do produto: vira uma folha de tela cheia, botões presos embaixo */
+  .pd-overlay{padding:0;}
+  .pd-box{grid-template-columns:1fr;border-radius:0;min-height:100%;margin:0;}
+  .pd-foto{min-height:0;height:52vh;max-height:460px;}
+  .pd-foto img{max-height:100%;}
+  .pd-info{padding:20px 16px 0;gap:12px;}
+  .pd-nome{font-size:21px;}
+  .pd-preco{font-size:34px;}
+  .pd-acoes{position:sticky;bottom:0;background:#fff;margin:4px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #eee;box-shadow:0 -6px 16px rgba(0,0,0,.06);}
+
+  /* Footer */
+  .store-footer{padding:22px 16px;margin-top:28px;}
+  .store-footer-inner{flex-direction:column;gap:12px;text-align:center;}
+  .store-footer-text{text-align:center;}
+
+  /* Checkout */
+  .checkout-wrap{padding:16px 14px;}
+  .delivery-opts{grid-template-columns:1fr;}
+
+  /* Polo selector */
+  .polo-cards{grid-template-columns:1fr 1fr;gap:12px;}
+  .polo-title{font-size:28px;letter-spacing:4px;}
+  .polo-card{padding:22px 18px;}
+  .polo-card-city{font-size:22px;}
+  .polo-logo{height:72px;}
+  .polo-sub{margin-bottom:28px;}
+
+  /* Modal */
+  .modal{padding:18px 14px;max-height:94vh;}
+
+  /* Form grid */
+  .form-grid{grid-template-columns:1fr;}
+  .form-group.full{grid-column:1/-1;}
+}
+
+/* --- Mobile (max 480px) --- */
+@media(max-width:480px){
+  /* Stats single column */
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .stat-value{font-size:22px;}
+
+  /* Barra do polo: rótulo curto, botão continua grande */
+  .store-polo-cap{font-size:9px;letter-spacing:1.5px;}
+  .store-polo-nome{font-size:13px;line-height:1.2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .store-polo-switch-txt2{display:none;}
+
+  /* Store hero compact */
+  .store-hero-inner{padding:14px 14px;gap:12px;}
+  .store-hero-logo{height:52px;}
+  .store-hero-title{font-size:28px;letter-spacing:3px;}
+  .store-hero-slogan{font-size:10px;letter-spacing:2px;margin-top:4px;}
+  .store-hero-sub{display:none;}
+
+  /* Products grid: 2 columns */
+  .products-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .product-body{padding:10px;}
+  .product-cat{font-size:10px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .product-name{font-size:13px;letter-spacing:.5px;}
+  .product-price{font-size:22px;}
+  .product-add-btn{font-size:11px;letter-spacing:1px;padding:10px 4px;}
+  .product-add-btn.sec{padding:8px 4px;}
+  .product-badge{font-size:10px;padding:2px 6px;top:6px;left:6px;}
+
+  /* Polo selector: cartões compactos, cidade numa linha só, seta à direita */
+  .polo-overlay{padding:24px 14px;}
+  .polo-title{font-size:24px;letter-spacing:3px;}
+  .polo-logo{height:60px;}
+  .polo-logo-wrap{margin-bottom:16px;}
+  .polo-sub{margin-bottom:20px;letter-spacing:2px;}
+  .polo-bg-text{font-size:40vw;}
+  .polo-cards{grid-template-columns:1fr;gap:10px;margin-bottom:20px;}
+  .polo-card{padding:14px 52px 14px 16px;border-color:rgba(255,255,255,.14);}
+  .polo-card-label{font-size:10px;margin-bottom:2px;}
+  .polo-card-city{display:inline;font-size:20px;letter-spacing:2px;}
+  .polo-card-city+.polo-card-city::before{content:" ";}
+  .polo-card-state{margin:4px 0 0;font-size:12px;}
+  .polo-card-enter{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#bdbdbd;}
+  .polo-card-enter span:first-child{display:none;}
+  .polo-card-arrow{font-size:20px;}
+
+  /* Admin topbar */
+  .topbar{padding:8px 12px;}
+  .page-title{font-size:14px;}
+  .page-sub{display:none;}
+  .admin-content{padding:10px 10px;}
+
+  /* Notif */
+  .notif{left:12px;right:12px;bottom:12px;max-width:none;}
+
+  /* Checkout steps text */
+  .checkout-step span{display:none;}
+  .checkout-step-num{width:30px;height:30px;font-size:12px;}
+}
 </style>
 </head>
 <body>
@@ -2197,7 +2318,7 @@ function Dashboard({products,sales,role,customers,polo,notify}){
       <div className="stat-card gold"><div className="stat-icon">📦</div><div className="stat-label">Produtos</div><div className="stat-value">{products.length}</div><div className="stat-change">{low.length} estoque baixo</div></div>
       <div className="stat-card"><div className="stat-icon">📈</div><div className="stat-label">Receita Total</div><div className="stat-value">{fmt(rev)}</div><div className="stat-change">{sales.length} vendas</div></div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 280px",gap:16}}>
+    <div className="bp-grid-lateral" style={{"--lateral":"280px"}}>
       <div className="card"><div className="card-title">Vendas {ano}</div>
         <div className="chart-bar-wrap">{ms.map((m,i)=><div className="chart-bar-col" key={i}><div className="chart-val">{m.total>=1000?(m.total/1000).toFixed(1)+"k":m.total.toFixed(0)}</div><div className={`chart-bar${i===cm?" hi":""}`} style={{height:(m.total/mx*100)+"%"}}/><div className="chart-label">{MONTHS[i]}</div></div>)}</div>
       </div>
@@ -2586,7 +2707,7 @@ function HistoricoEstoque({polo, products}){
 
   return <div>
     {/* Resumo do dia */}
-    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:18}}>
+    <div className="bp-grid-4" style={{gap:12,marginBottom:18}}>
       <div className="stat-card green">
         <div className="stat-icon">📈</div>
         <div className="stat-label">Entradas Hoje</div>
@@ -2615,7 +2736,7 @@ function HistoricoEstoque({polo, products}){
 
     {/* Filtros */}
     <div className="card mb-3">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,alignItems:'end'}}>
+      <div className="bp-grid-filtros" style={{gap:10,alignItems:'end'}}>
         <div className="form-group">
           <label>Buscar produto / SKU / referência</label>
           <div className="search-box" style={{margin:0}}>
@@ -3620,7 +3741,7 @@ function Vendas({sales, polo, customers, notify}){
       <div className="stat-card"><div className="stat-label">Transações</div><div className="stat-value">{f.length}</div></div>
       <div className="stat-card"><div className="stat-label">Ticket Médio</div><div className="stat-value">{fmt(f.length?rev/f.length:0)}</div></div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 240px",gap:16}}>
+    <div className="bp-grid-lateral" style={{"--lateral":"240px"}}>
       <div className="card">
         <div className="card-title">Histórico
           <div className="flex gap-2">{["Todos","loja","online"].map(t=><button key={t} className={`btn btn-sm ${type===t?"btn-primary":""}`} onClick={()=>setType(t)}>{t==="Todos"?"Todos":t==="loja"?"Loja":"Online"}</button>)}</div>
@@ -4291,11 +4412,122 @@ function useCarrinhoGuardado(poloId, products){
 }
 
 // ====== CUSTOMER STORE ======
+// Faixa do topo da loja: mostra em qual polo o aluno está e o botão para trocar.
+// O botão é amarelo e grande de propósito — quem cai no polo errado precisa achá-lo.
+function StorePoloBar({polo, onTrocarPolo}){
+  return <div className="store-polo-bar">
+    <div className="store-polo-bar-inner">
+      <div className="store-polo-name">
+        <span className="store-polo-dot" aria-hidden="true"/>
+        <span className="store-polo-txt">
+          <span className="store-polo-cap">Você está no polo</span>
+          <span className="store-polo-nome" title={polo?.nome}>{polo?.nome}</span>
+        </span>
+      </div>
+      <button className="store-polo-switch" onClick={onTrocarPolo} title="Escolher outro polo">
+        <span className="store-polo-switch-ico" aria-hidden="true">⇄</span>
+        <span>Trocar<span className="store-polo-switch-txt2"> de</span> polo</span>
+      </button>
+    </div>
+  </div>;
+}
+
+// ====== DETALHE DO PRODUTO ======
+// Abre ao clicar na foto (ou no nome) de um produto da loja: foto inteira, sem
+// corte, com preço, disponibilidade, descrição e os outros tamanhos do mesmo
+// modelo. Tocar na foto abre em tela cheia.
+function ProdutoDetalheModal({produto, products, fotoDe, cart, poloNome, onClose, onAdd, onEncomenda}){
+  const [atual,setAtual]=useState(produto);
+  const [telaCheia,setTelaCheia]=useState(false);
+  useEffect(()=>{ setAtual(produto); },[produto]);
+
+  // Esc fecha (primeiro a tela cheia, depois o painel); a página de trás não rola.
+  useEffect(()=>{
+    function tecla(e){ if(e.key==='Escape'){ if(telaCheia) setTelaCheia(false); else onClose(); } }
+    document.addEventListener('keydown',tecla);
+    return ()=>document.removeEventListener('keydown',tecla);
+  },[telaCheia,onClose]);
+  useEffect(()=>{
+    const antes=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return ()=>{ document.body.style.overflow=antes; };
+  },[]);
+
+  // Os tamanhos são produtos separados com o tamanho no nome ("Calça Tática 42").
+  const base=parseTamanho(atual.name).base;
+  const tamanhos=useMemo(()=>{
+    const t=parseTamanho(produto.name);
+    if(!t.tam) return [];
+    return ordenarProdutos((products||[]).filter(p=>{
+      const x=parseTamanho(p.name);
+      return x.tam && x.base.toLowerCase()===t.base.toLowerCase();
+    }));
+  },[products,produto]);
+
+  // Uma foto por modelo: se o tamanho escolhido ainda não trouxe a sua, usa a do que foi clicado.
+  const foto=fotoDe(atual)||fotoDe(produto)||'';
+  const noCarrinho=(cart||[]).filter(x=>!x.isEncomenda&&x.id===atual.id).reduce((a,b)=>a+b.qty,0);
+  const esgotado=atual.stock===0;
+  const pouco=!esgotado&&precisaDeAviso(atual);
+  const cats=prodCategoriasTexto(atual);
+
+  return <div className="pd-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={atual.name}>
+    <div className="pd-box" onClick={e=>e.stopPropagation()}>
+      <button className="pd-close" onClick={onClose} aria-label="Fechar">✕</button>
+      <button className="pd-foto" onClick={()=>foto&&setTelaCheia(true)} style={{cursor:foto?'zoom-in':'default'}} aria-label={foto?'Ver foto em tela cheia':undefined}>
+        {foto
+          ? <img src={foto} alt={atual.name}/>
+          : <div className="product-img-ph"><img src={LOGO} alt=""/>SEM FOTO</div>}
+        {esgotado&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
+        {pouco&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
+        {foto&&<span className="pd-foto-dica">🔍 Ampliar foto</span>}
+      </button>
+      <div className="pd-info">
+        {cats!=='—'&&<div className="pd-cat">{cats}</div>}
+        <div className="pd-nome">{tamanhos.length>1?base:atual.name}</div>
+        {atual.sku&&<div className="pd-sku">Cód. {atual.sku}</div>}
+        <div className="pd-preco">{fmt(atual.price)}</div>
+        <span className={`pd-status ${esgotado?'fora':pouco?'pouco':'ok'}`}>
+          {esgotado?'Esgotado — sob encomenda':pouco?`Últimas unidades · ${atual.stock} un.`:`Disponível · ${atual.stock} un.`}
+        </span>
+        {tamanhos.length>1&&<div>
+          <div className="pd-rotulo">Tamanho: <strong style={{color:'#111'}}>{parseTamanho(atual.name).tam}</strong></div>
+          <div className="pd-tams">
+            {tamanhos.map(t=><button key={t.id} className={`pd-tam ${t.id===atual.id?'on':''} ${t.stock===0?'esgotado':''}`}
+              onClick={()=>setAtual(t)} title={t.stock===0?'Esgotado — sob encomenda':t.stock+' em estoque'}>
+              {parseTamanho(t.name).tam}
+            </button>)}
+          </div>
+        </div>}
+        {atual.description&&String(atual.description).trim()&&<div>
+          <div className="pd-rotulo">Descrição</div>
+          <div className="pd-desc">{String(atual.description).trim()}</div>
+        </div>}
+        <ul className="pd-info-lista">
+          <li><span aria-hidden="true">🏪</span><span>Retirada na loja{poloNome?' de '+poloNome:''} — você recebe um aviso quando estiver pronto.</span></li>
+          <li><span aria-hidden="true">💵</span><span>Pagamento na retirada: dinheiro, cartão, Pix, Alelo ou Integra Card.</span></li>
+        </ul>
+        <div className="pd-acoes">
+          {noCarrinho>0&&<div className="pd-no-carrinho">✓ {noCarrinho} {noCarrinho>1?'unidades':'unidade'} deste item no carrinho</div>}
+          <button className={`product-add-btn ${esgotado?'enc':''}`} onClick={()=>onAdd(atual)}>
+            {esgotado?'📦 Fazer encomenda':'🛒 Adicionar ao carrinho'}
+          </button>
+          {!esgotado&&<button className="product-add-btn sec" onClick={()=>onEncomenda(atual)}>🧵 Fazer encomenda</button>}
+        </div>
+      </div>
+    </div>
+    {telaCheia&&foto&&<div className="pd-tela-cheia" onClick={e=>{e.stopPropagation();setTelaCheia(false);}}>
+      <img src={foto} alt={atual.name}/>
+      <button className="pd-close" onClick={e=>{e.stopPropagation();setTelaCheia(false);}} aria-label="Fechar foto">✕</button>
+    </div>}
+  </div>;
+}
 function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,setProducts,setProductsSemGravar,currentUser,setCurrentUser,customers,setCustomers,encomendas,setEncomendas,onShowAuth,onPedidoFeito,notify}){
   const [cart,setCart]=useCarrinhoGuardado(polo&&polo.id, products),[cartOpen,setCartOpen]=useState(false),[search,setSearch]=useState(""),[cat,setCat]=useState("Todos"),[step,setStep]=useState("catalog"),[orderForm,setOrderForm]=useState({delivery:"retirada",address:"",payment:"Pagar na Loja"}),[orderResult,setOrderResult]=useState(null);
   const [storeOutModal,setStoreOutModal]=useState(null);
   const [storePartialModal,setStorePartialModal]=useState(null);
   const [storeQuickEncModal,setStoreQuickEncModal]=useState(null);
+  const [detalhe,setDetalhe]=useState(null);   // produto aberto no painel de detalhes
   const filtered=ordenarProdutos(products.filter(p=>prodTemCategoria(p,cat)&&combinaAlgum([p.name,p.sku],search)));
   const pagLoja = usePaginacao(filtered, 24);
   const fotoDe = useFotosDaPagina(pagLoja.visiveis);
@@ -4408,12 +4640,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
     setCart([]);setStep("confirmed");
   }
   if(step==="meus-pedidos") return <div className="store-root">
-    <div className="store-polo-bar">
-      <div className="store-polo-bar-inner">
-        <span className="store-polo-name">Polo {polo?.sigla} — {polo?.nome}</span>
-        <button className="store-polo-switch" onClick={onTrocarPolo}>⇄ Trocar polo</button>
-      </div>
-    </div>
+    <StorePoloBar polo={polo} onTrocarPolo={onTrocarPolo}/>
     <div style={{background:"#111",padding:"14px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
       <img src={LOGO} alt="Boina Preta" style={{height:48,objectFit:"contain"}}/>
       <button className="btn" style={{background:"transparent",border:"1px solid #444",color:"#d0d0d0"}} onClick={()=>setStep("catalog")}>← Voltar à Loja</button>
@@ -4493,12 +4720,7 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
   </div>;
 
   return <div className="store-root">
-    <div className="store-polo-bar">
-      <div className="store-polo-bar-inner">
-        <span className="store-polo-name">Polo {polo?.sigla} — {polo?.nome}</span>
-        <button className="store-polo-switch" onClick={onTrocarPolo}>⇄ Trocar polo</button>
-      </div>
-    </div>
+    <StorePoloBar polo={polo} onTrocarPolo={onTrocarPolo}/>
     <div className="store-hero">
       <div className="store-hero-inner">
         <img src={LOGO} className="store-hero-logo" alt="Boina Preta"/>
@@ -4516,43 +4738,47 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
           {categoriasUnicas(categories).map(c=><div key={c} className={`store-nav-cat ${cat===c?"active":""}`} onClick={()=>setCat(c)}>{c}</div>)}
         </div>
         <div className="store-nav-right">
-          {currentUser?<div style={{fontFamily:"Oswald",fontSize:12,letterSpacing:1,textTransform:"uppercase",color:"#555",display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:16}}>👤</span>
-            <span>{currentUser.name.split(" ")[0]}</span>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setStep("meus-pedidos")} style={{color:'#555'}}>📋 Pedidos</button>
-            <button className="btn btn-ghost btn-sm" onClick={()=>{apiLogout();setCurrentUser(null);}}>Sair</button>
-          </div>:<button className="login-btn-nav" onClick={onShowAuth}>👤 Entrar / Cadastrar</button>}
-          <button className="cart-btn" onClick={()=>setCartOpen(!cartOpen)}>
-            🛒 Carrinho
+          {currentUser?<div className="store-user">
+            <span className="store-user-nome" style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:16}}>👤</span>{currentUser.name.split(" ")[0]}</span>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setStep("meus-pedidos")} style={{color:'#555'}} title="Meus pedidos" aria-label="Meus pedidos">📋<span className="store-nav-lbl"> Pedidos</span></button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>{apiLogout();setCurrentUser(null);}} title="Sair" aria-label="Sair">🚪<span className="store-nav-lbl"> Sair</span></button>
+          </div>:<button className="login-btn-nav" onClick={onShowAuth} title="Entrar / Cadastrar" aria-label="Entrar ou cadastrar">👤<span className="store-nav-lbl"> Entrar / Cadastrar</span></button>}
+          <button className="cart-btn" onClick={()=>setCartOpen(!cartOpen)} title="Carrinho" aria-label="Carrinho">
+            🛒<span className="store-nav-lbl"> Carrinho</span>
             {cart.length>0&&<span className="cart-count">{cart.reduce((a,b)=>a+b.qty,0)}</span>}
           </button>
         </div>
       </div>
     </div>
     <div className="store-body">
-      <div className="store-section-title">Produtos</div>
-      <div className="store-section-sub">{filtered.length} ITENS ENCONTRADOS</div>
-      <div className="store-search"><span className="store-search-icon">🔍</span><input placeholder="Buscar produto..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div className="store-catalog-head">
+        <div>
+          <div className="store-section-title">{cat==="Todos"?"Produtos":cat}</div>
+          <div className="store-section-sub">{filtered.length} {filtered.length===1?"ITEM ENCONTRADO":"ITENS ENCONTRADOS"}</div>
+        </div>
+        <div className="store-search"><span className="store-search-icon">🔍</span><input type="search" placeholder="Buscar produto..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      </div>
       <div className="products-grid">
         {pagLoja.visiveis.map(p=><div key={p.id} className="product-card">
-          <div className="product-img">
-            {fotoDe(p)?<img src={fotoDe(p)} alt={p.name} loading="lazy"/>:<div className="product-img-ph">SEM FOTO</div>}
+          <button className="product-img" onClick={()=>setDetalhe(p)} aria-label={"Ver detalhes de "+p.name}>
+            {fotoDe(p)?<img src={fotoDe(p)} alt={p.name} loading="lazy"/>:<div className="product-img-ph"><img src={LOGO} alt=""/>SEM FOTO</div>}
             {p.stock===0&&<div className="product-badge" style={{background:'#cc2222'}}>ESGOTADO</div>}
             {p.stock>0&&precisaDeAviso(p)&&<div className="product-badge" style={{background:'#996622'}}>ÚLTIMAS UNIDADES</div>}
-          </div>
+            <span className="product-zoom" aria-hidden="true">🔍<span className="product-zoom-txt">Ver detalhes</span></span>
+          </button>
           <div className="product-body">
             <div className="product-cat">{prodCategoriasTexto(p)}</div>
-            <div className="product-name">{p.name}</div>
+            <div className="product-name" onClick={()=>setDetalhe(p)} title={p.name}>{p.name}</div>
             <div className="product-price">{fmt(p.price)}</div>
-            <div className="product-stock">Estoque: {p.stock} un.</div>
-            <button className="product-add-btn" onClick={()=>addCart(p)}
-              style={{background:p.stock===0?'#996622':precisaDeAviso(p)?'#555':'#111',marginBottom:6}}>
-              {p.stock===0?"📦 Fazer Encomenda":precisaDeAviso(p)?"⚠ Últimas unidades — Comprar":"+ Adicionar ao Carrinho"}
-            </button>
-            <button className="product-add-btn" onClick={()=>setStoreQuickEncModal({product:p,qty:1})}
-              style={{background:'transparent',color:'#555',border:'1px solid #ccc',fontSize:11,padding:'6px'}}>
-              🧵 Fazer Encomenda
-            </button>
+            <div className="product-stock">{p.stock===0?"Sob encomenda":`Estoque: ${p.stock} un.`}</div>
+            <div className="product-actions">
+              <button className={`product-add-btn ${p.stock===0?'enc':''}`} onClick={()=>addCart(p)}>
+                {p.stock===0?"📦 Encomendar":"+ Adicionar"}
+              </button>
+              {p.stock>0&&<button className="product-add-btn sec" onClick={()=>setStoreQuickEncModal({product:p,qty:1})}>
+                🧵 Fazer encomenda
+              </button>}
+            </div>
           </div>
         </div>)}
         {pagLoja.temMais&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"16px 0"}}>
@@ -4562,6 +4788,16 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
       </div>
     </div>
     <StoreFooter/>
+    {detalhe&&<ProdutoDetalheModal
+      produto={detalhe}
+      products={products}
+      fotoDe={fotoDe}
+      cart={cart}
+      poloNome={polo?.nome}
+      onClose={()=>setDetalhe(null)}
+      onAdd={(p)=>{setDetalhe(null);addCart(p);}}
+      onEncomenda={(p)=>{setDetalhe(null);setStoreQuickEncModal({product:p,qty:1});}}
+    />}
     {storeQuickEncModal&&!currentUser&&<div className="modal-overlay" onClick={()=>setStoreQuickEncModal(null)}>
       <div className="modal" style={{maxWidth:400,textAlign:'center',padding:32}}>
         <div style={{fontSize:48,marginBottom:12}}>🔒</div>
@@ -4624,7 +4860,8 @@ function CustomerStore({polo,onTrocarPolo,products,categories,sales,setSales,set
               {item.isEncomenda&&<span style={{background:'#e65100',color:'#fff',fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,padding:'2px 6px',borderRadius:2,flexShrink:0}}>ENCOMENDA</span>}
             </div>
             <div className="cart-price">{item.isEncomenda?'🧵 Encomenda #'+item.encNumero:fmt(item.price)+'/un'}</div>
-            <div className="qty-row"><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty-1)}>−</button><span className="qty-n">{item.qty}</span><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty+1)}>+</button><span style={{marginLeft:"auto",fontFamily:"Bebas Neue",fontSize:14}}>{fmt(item.price*item.qty)}</span></div>
+            <div className="qty-row"><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty-1)} aria-label="Diminuir">−</button><span className="qty-n">{item.qty}</span><button className="qty-btn" onClick={()=>qtyUpd(item.id,item.qty+1)} aria-label="Aumentar">+</button><span style={{marginLeft:"auto",fontFamily:"Bebas Neue",fontSize:18,letterSpacing:1}}>{fmt(item.price*item.qty)}</span></div>
+            <button className="cart-remove" onClick={()=>qtyUpd(item.id,0)}>✕ Remover</button>
           </div>
         </div>)}
       </div>
@@ -8542,8 +8779,8 @@ function AdminPanel({polo,onTrocarPolo,products,setProducts,setProductsSemGravar
       <div className="sidebar-logo"><img src={LOGO} alt="Boina Preta"/></div>
       <div style={{padding:"8px 16px 0",borderBottom:"1px solid #2a2a2a",paddingBottom:10}}>
         <div style={{fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:3,color:"#444",textTransform:"uppercase",marginBottom:3}}>Polo Ativo</div>
-        <div style={{fontFamily:"Oswald",fontSize:11,fontWeight:600,letterSpacing:1,color:"#6b6b6b",textTransform:"uppercase",marginBottom:6}}>{polo.sigla} — {polo.nome.split(' ').slice(0,3).join(' ')}</div>
-        <button onClick={onTrocarPolo} style={{background:"transparent",border:"1px solid #2a2a2a",borderRadius:2,padding:"4px 8px",fontFamily:"Share Tech Mono",fontSize:11,letterSpacing:2,color:"#555",cursor:"pointer",textTransform:"uppercase",width:"100%",transition:"all .15s"}} onMouseOver={e=>{e.target.style.borderColor="#555";e.target.style.color="#aaa";}} onMouseOut={e=>{e.target.style.borderColor="#2a2a2a";e.target.style.color="#555";}}>⇄ Trocar Polo</button>
+        <div style={{fontFamily:"Oswald",fontSize:12,fontWeight:600,letterSpacing:1,color:"#d8d8d8",textTransform:"uppercase",marginBottom:8}}>{polo.sigla} — {polo.nome.split(' ').slice(0,3).join(' ')}</div>
+        <button className="sb-polo-switch" onClick={onTrocarPolo}>⇄ Trocar Polo</button>
       </div>
       {/* operador logado */}
       {operador&&<div style={{padding:"8px 16px",borderBottom:"1px solid #1a1a1a"}}>
