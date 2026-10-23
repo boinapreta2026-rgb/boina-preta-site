@@ -8748,6 +8748,115 @@ function CargaCrediarioModal({customers, creditos, operador, polo, onClose, onSa
   </Modal>;
 }
 
+// ====== CREDIÁRIO — REDUZIR OU ENCERRAR O SALDO ======
+// O extrato nunca é apagado: a redução vira um movimento de "ajuste" negativo,
+// com o motivo e o operador. Encerrar zera o saldo e tira o aluno da lista.
+const CRED_REF_ENCERRADO = 'CREDIÁRIO ENCERRADO';
+function credEncerrado(creditos, clienteId){
+  const ult=credMovimentosDoCliente(creditos, clienteId)[0];
+  return !!ult && ult.ref===CRED_REF_ENCERRADO && credSaldo(creditos, clienteId)<=0.005;
+}
+function AjusteCrediarioModal({cliente, creditos, operador, polo, onClose, onSalvar, notify}){
+  const clienteId=cliente.clienteId||cliente.id;
+  const nomeAluno=cliente.nome||cliente.name||'';
+  const saldoAtual=credSaldo(creditos, clienteId);
+  const [modo,setModo]=useState('reduzir');   // reduzir | encerrar
+  const [novoSaldo,setNovoSaldo]=useState('');
+  const [motivo,setMotivo]=useState('');
+  const [confirma,setConfirma]=useState(false);
+  const [salvando,setSalvando]=useState(false);
+
+  const alvo = modo==='encerrar' ? 0 : r2(novoSaldo);
+  const reducao = r2(saldoAtual - alvo);
+  const novoValido = modo==='encerrar' || (novoSaldo!=='' && alvo>=0 && alvo<saldoAtual-0.005);
+
+  function impedimento(){
+    if(modo==='reduzir'){
+      if(novoSaldo==='') return 'Informe o novo saldo';
+      if(alvo<0) return 'O saldo não pode ficar negativo';
+      if(alvo>=saldoAtual-0.005) return 'O novo saldo precisa ser menor que o atual. Para aumentar, use "Lançar crédito"';
+    }
+    if(!motivo.trim()) return 'Informe o motivo';
+    if(modo==='encerrar' && !confirma) return 'Confirme o encerramento';
+    return null;
+  }
+
+  async function salvar(){
+    const imp=impedimento();
+    if(imp){ notify(imp,'error'); return; }
+    setSalvando(true);
+    const mov=credNovoMov({
+      polo, clienteId, clienteNome:nomeAluno,
+      tipo:'ajuste', valor:-Math.max(reducao,0),
+      ref: modo==='encerrar' ? CRED_REF_ENCERRADO : 'Redução de saldo',
+      obs: motivo.trim(), operador:operador?.nome||'—'
+    });
+    const r=await onSalvar(mov);
+    setSalvando(false);
+    if(r&&r.error){ notify('Não foi possível registrar: '+r.error.message,'error'); return; }
+    const primeiro=String(nomeAluno).split(' ')[0];
+    notify(modo==='encerrar'
+      ? `Crediário de ${primeiro} encerrado`
+      : `Saldo de ${primeiro} reduzido para ${fmt(alvo)}`,'success');
+    onClose();
+  }
+
+  const imp=impedimento();
+  return <Modal title={`✎ Alterar crediário — ${nomeAluno}`} onClose={onClose} wide
+    actions={[
+      <button key="c" className="btn" onClick={onClose}>Cancelar</button>,
+      <button key="s" className={`btn ${modo==='encerrar'?'btn-danger':'btn-primary'}`} onClick={salvar} disabled={salvando||!!imp}>
+        {salvando?'Registrando...':modo==='encerrar'?'Encerrar crediário':'Reduzir saldo'}
+      </button>
+    ]}>
+    <div className="flex gap-2" style={{marginBottom:14,flexWrap:'wrap'}}>
+      <button className={`btn btn-sm ${modo==='reduzir'?'btn-primary':''}`} onClick={()=>setModo('reduzir')}>⬇ Reduzir saldo</button>
+      <button className={`btn btn-sm ${modo==='encerrar'?'btn-primary':''}`} onClick={()=>setModo('encerrar')}>✕ Excluir crediário</button>
+    </div>
+
+    <div style={{background:'#fff8e8',border:'1px solid #e8d3a0',borderRadius:4,padding:'10px 14px',marginBottom:14,fontSize:13,color:'#7a5a12'}}>
+      {modo==='encerrar'
+        ? 'O saldo do aluno vai a zero e ele sai da lista do crediário. O extrato continua guardado, e um novo crédito reabre o crediário.'
+        : 'Use para corrigir um crédito lançado a mais ou um valor devolvido ao aluno. A redução fica registrada no extrato com o motivo.'}
+      {' '}Esta alteração não mexe no caixa: se houver devolução em dinheiro, registre a saída à parte.
+    </div>
+
+    <div className="form-grid">
+      {modo==='reduzir' && <div className="form-group">
+        <label>Novo saldo *</label>
+        <input type="number" step="0.01" min="0" placeholder="0,00" value={novoSaldo}
+          onChange={e=>setNovoSaldo(e.target.value)}/>
+      </div>}
+      <div className={`form-group ${modo==='reduzir'?'':'full'}`}>
+        <label>Motivo *</label>
+        <input placeholder={modo==='encerrar'?'Ex.: aluno desistiu do curso':'Ex.: crédito lançado em duplicidade'}
+          value={motivo} onChange={e=>setMotivo(e.target.value)} onKeyDown={e=>e.key==='Enter'&&salvar()}/>
+      </div>
+    </div>
+
+    {modo==='encerrar' && <div className="form-group full" style={{margin:'4px 0 10px'}}>
+      <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',marginBottom:0}}>
+        <input type="checkbox" style={{width:'auto',margin:0}} checked={confirma} onChange={e=>setConfirma(e.target.checked)}/>
+        <span>Confirmo que o saldo de {fmt(saldoAtual)} deve ser zerado</span>
+      </label>
+    </div>}
+
+    <div style={{background:'#eef7ee',border:'1px solid #bfe3c2',borderRadius:6,padding:'12px 16px',marginTop:6}}>
+      {[['Saldo atual',fmt(saldoAtual)],['Redução',novoValido&&reducao>0.005?'− '+fmt(reducao):'—']].map(([l,x])=>(
+        <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'3px 0',fontSize:13}}>
+          <span style={{color:'#5f6368'}}>{l}</span><span style={{fontWeight:600}}>{x}</span>
+        </div>
+      ))}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:9,marginTop:6,borderTop:'1px solid #bfe3c2'}}>
+        <span style={{fontFamily:'Oswald',fontSize:14,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>Novo saldo</span>
+        <span style={{fontFamily:'Bebas Neue',fontSize:26,letterSpacing:2,color:'#1a6e2e'}}>{novoValido?fmt(alvo):'—'}</span>
+      </div>
+    </div>
+    {imp && (novoSaldo!==''||motivo||modo==='encerrar') &&
+      <div style={{fontFamily:'Share Tech Mono',fontSize:11,letterSpacing:1,color:'#cc2222',marginTop:8}}>{imp}</div>}
+  </Modal>;
+}
+
 // Extrato de um aluno
 function ExtratoCrediarioModal({cliente, creditos, onClose}){
   const movs=credMovimentosDoCliente(creditos, cliente.clienteId||cliente.id);
@@ -8794,8 +8903,11 @@ function Crediario({customers, creditos, addCreditos, operador, polo, notify}){
   const [extrato,setExtrato]=useState(null);
   const [clientePre,setClientePre]=useState(null);
   const [soComSaldo,setSoComSaldo]=useState(false);
+  const [ajuste,setAjuste]=useState(null);
+  const podeAjustar=['dono','gerente'].includes(operador?.role);
 
-  const saldos=credSaldosPorCliente(creditos, customers);
+  // Crediários encerrados saem da lista; o extrato continua no banco
+  const saldos=credSaldosPorCliente(creditos, customers).filter(g=>!credEncerrado(creditos, g.clienteId));
   const filtrados=saldos.filter(g=>{
     // O saldo guarda só o nome do aluno. Para procurar pelo CPF, buscamos a
     // ficha dele no cadastro — é lá que o CPF está.
@@ -8853,6 +8965,7 @@ function Crediario({customers, creditos, addCreditos, operador, polo, notify}){
                   <button className="btn btn-sm" title="Ver extrato" onClick={()=>setExtrato(g)}>🧾</button>
                   <button className="btn btn-sm" title="Lançar mais crédito"
                     onClick={()=>{const c=findCustomerById(customers,g.clienteId)||{id:g.clienteId,name:g.nome};setClientePre(c);setModalCarga(true);}}>⬆</button>
+                  {podeAjustar && <button className="btn btn-sm" title="Reduzir saldo ou excluir crediário" onClick={()=>setAjuste(g)}>✎</button>}
                 </div></td>
               </tr>
             ))}
@@ -8865,6 +8978,8 @@ function Crediario({customers, creditos, addCreditos, operador, polo, notify}){
       onClose={()=>{setModalCarga(false);setClientePre(null);}}
       onSalvar={addCreditos}/>}
     {extrato&&<ExtratoCrediarioModal cliente={extrato} creditos={creditos} onClose={()=>setExtrato(null)}/>}
+    {ajuste&&podeAjustar&&<AjusteCrediarioModal cliente={ajuste} creditos={creditos} operador={operador} polo={polo}
+      notify={notify} onClose={()=>setAjuste(null)} onSalvar={addCreditos}/>}
   </div>;
 }
 
